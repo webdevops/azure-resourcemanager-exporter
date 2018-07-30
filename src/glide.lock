@@ -1,11 +1,17 @@
-hash: de5de6d1f1d13b5a6ac7300c4e3c03e30ecf8bee0502791b6bf474a77b969654
-updated: 2018-07-27T21:11:59.997085+02:00
+hash: 30a035468c0228c04814d5f98725e92283e17ea33fc5a8dfd86693ba7efd8d37
+updated: 2018-07-30T18:51:15.45634+02:00
 imports:
 - name: github.com/Azure/azure-sdk-for-go
-  version: 520918e6c8e8e1064154f51d13e02fad92b287b8
+  version: 4e8cbbfb1aeab140cd0fa97fd16b64ee18c3ca6a
   subpackages:
+  - profiles/latest/compute/mgmt/compute
+  - profiles/latest/network/mgmt/network
   - profiles/latest/resources/mgmt/subscriptions
+  - profiles/latest/storage/mgmt/storage
+  - services/compute/mgmt/2018-04-01/compute
+  - services/network/mgmt/2018-01-01/network
   - services/resources/mgmt/2016-06-01/subscriptions
+  - services/storage/mgmt/2017-10-01/storage
   - version
 - name: github.com/Azure/go-autorest
   version: 1ff28809256a84bb6966640ff3d0371af82ccba4
@@ -16,6 +22,7 @@ imports:
   - autorest/azure/auth
   - autorest/date
   - autorest/to
+  - autorest/validation
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
   subpackages:
