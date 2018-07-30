@@ -2,7 +2,7 @@ Azure ResourceManager Exporter
 ==============================
 
 [![license](https://img.shields.io/github/license/mblaschke/azure-resourcemanager-exporter.svg)](https://github.com/mblaschke/azure-resourcemanager-exporter/blob/master/LICENSE)
-[![Docker](https://img.shields.io/badge/docker-mblaschke%2Fazure--scheduledevents--exporter-blue.svg?longCache=true&style=flat&logo=docker)](https://hub.docker.com/r/mblaschke/azure-resourcemanager-exporter/)
+[![Docker](https://img.shields.io/badge/docker-mblaschke%2Fazure--resourcemanager--exporter-blue.svg?longCache=true&style=flat&logo=docker)](https://hub.docker.com/r/mblaschke/azure-resourcemanager-exporter/)
 [![Docker Build Status](https://img.shields.io/docker/build/mblaschke/azure-resourcemanager-exporter.svg)](https://hub.docker.com/r/mblaschke/azure-resourcemanager-exporter/)
 
 Prometheus exporter for Azure API ratelimit (currently read only) and quota usage.
