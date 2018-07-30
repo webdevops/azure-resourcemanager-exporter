@@ -25,10 +25,10 @@ var (
 )
 
 var opts struct {
-	AzureSubscription []string ` long:"azure-subscription"  env:"AZURE_SUBSCRIPTION_ID"   description:"Azure Subscription ID"`
-	ScrapeTime  int    `         long:"scrape-time"         env:"SCRAPE_TIME"   description:"Scrape time in seconds"        default:"120"`
-	ServerBind  string `         long:"bind"                env:"SERVER_BIND"   description:"Server address"                default:":8080"`
-
+	AzureSubscription []string ` long:"azure-subscription"  env:"AZURE_SUBSCRIPTION_ID"   env-delim:" " description:"Azure subscription ID"`
+	AzureLocation []string `     long:"azure-location"      env:"AZURE_LOCATION"          env-delim:" " description:"Azure locations" default:"westeurope" default:"northeurope"`
+	ScrapeTime  int    `         long:"scrape-time"         env:"SCRAPE_TIME"                           description:"Scrape time in seconds"        default:"120"`
+	ServerBind  string `         long:"bind"                env:"SERVER_BIND"                           description:"Server address"                default:":8080"`
 }
 
 func main() {

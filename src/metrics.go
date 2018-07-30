@@ -9,11 +9,22 @@ import (
 	"net/http"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 )
 
 var (
+	prometheusSubscriptionInfo = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_subscription_info",
+			Help: "Azure ResourceManager subscription info",
+		},
+		[]string{"subscription", "name", "spendingLimit", "quotaID", "locationPlacementID"},
+	)
+
 	prometheusApiQuota = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_ratelimit",
@@ -21,10 +32,39 @@ var (
 		},
 		[]string{"subscription", "scope", "type"},
 	)
+
+
+	prometheusQuotaInfo = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_quota_info",
+			Help: "Azure ResourceManager quota info",
+		},
+		[]string{"subscription", "location", "scope", "name", "localizedName"},
+	)
+
+	prometheusQuotaCurrent = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_quota_current",
+			Help: "Azure ResourceManager quota current value",
+		},
+		[]string{"subscription", "location", "scope", "name"},
+	)
+
+	prometheusQuotaLimit = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_quota_limit",
+			Help: "Azure ResourceManager quota limit",
+		},
+		[]string{"subscription", "location", "scope", "name"},
+	)
 )
 
 func initMetrics() {
+	prometheus.MustRegister(prometheusSubscriptionInfo)
 	prometheus.MustRegister(prometheusApiQuota)
+	prometheus.MustRegister(prometheusQuotaInfo)
+	prometheus.MustRegister(prometheusQuotaCurrent)
+	prometheus.MustRegister(prometheusQuotaLimit)
 
 	go func() {
 		for {
@@ -44,7 +84,12 @@ func startHttpServer() {
 func probeCollect() {
 	context := context.Background()
 
+	prometheusSubscriptionInfo.Reset()
 	prometheusApiQuota.Reset()
+	prometheusQuotaInfo.Reset()
+	prometheusQuotaCurrent.Reset()
+	prometheusQuotaLimit.Reset()
+
 
 	for _, subscription := range AzureSubscriptions {
 		subscriptionClient := subscriptions.NewClient()
@@ -55,6 +100,16 @@ func probeCollect() {
 			panic(err)
 		}
 
+		prometheusSubscriptionInfo.With(
+			prometheus.Labels{
+				"subscription": *sub.SubscriptionID,
+				"name": *sub.DisplayName,
+				"spendingLimit": string(sub.SubscriptionPolicies.SpendingLimit),
+				"quotaID": *sub.SubscriptionPolicies.QuotaID,
+				"locationPlacementID": *sub.SubscriptionPolicies.LocationPlacementID,
+			},
+		).Set(1)
+
 		// subscription rate limits
 		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "subscription", "type": "read"})
 		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-requests"})
@@ -64,6 +119,68 @@ func probeCollect() {
 		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "tenant", "type": "read"})
 		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-requests"})
 		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-entities-read"})
+
+		// compute usage
+		computeClient := compute.NewUsageClient(*sub.SubscriptionID)
+		computeClient.Authorizer = AzureAuthorizer
+		for _, location := range opts.AzureLocation {
+			list, err := computeClient.List(context, location)
+
+			if err != nil {
+				panic(err)
+			}
+
+			for _, val := range list.Values() {
+				labels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "compute", "name": *val.Name.Value}
+				infoLabels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "compute", "name": *val.Name.Value, "localizedName": *val.Name.LocalizedValue}
+				prometheusQuotaInfo.With(infoLabels).Set(1)
+				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
+				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+			}
+		}
+
+		// network usage
+		// disabled due to
+		// https://github.com/Azure/azure-sdk-for-go/issues/2340
+		// https://github.com/Azure/azure-rest-api-specs/issues/1624
+		networkClient := network.NewUsagesClient(*sub.SubscriptionID)
+		networkClient.Authorizer = AzureAuthorizer
+		//for _, location := range opts.AzureLocation {
+		//	list, err := networkClient.List(context, location)
+		//
+		//	if err != nil {
+		//		panic(err)
+		//	}
+		//
+		//	for _, val := range list.Values() {
+		//		labels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "network", "name": *val.Name.Value}
+		//		infoLabels := labels
+		//		infoLabels["localizedName"] = *val.Name.LocalizedValue
+		//		prometheusQuotaInfo.With(infoLabels).Set(1)
+		//		prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
+		//		prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+		//	}
+		//}
+
+		// storage usage
+		storageClient := storage.NewUsageClient(*sub.SubscriptionID)
+		storageClient.Authorizer = AzureAuthorizer
+		for _, location := range opts.AzureLocation {
+			list, err := storageClient.List(context)
+
+			if err != nil {
+				panic(err)
+			}
+
+			for _, val := range *list.Value {
+				labels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "storage", "name": *val.Name.Value}
+				infoLabels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "storage", "name": *val.Name.Value, "localizedName": *val.Name.LocalizedValue}
+				prometheusQuotaInfo.With(infoLabels).Set(1)
+				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
+				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+			}
+		}
+
 	}
 }
 

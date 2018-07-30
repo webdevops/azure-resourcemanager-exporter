@@ -15,6 +15,7 @@ Normally no configuration is needed but can be customized using environment vari
 | Environment variable     | DefaultValue                | Description                                                       |
 |--------------------------|-----------------------------|-------------------------------------------------------------------|
 | `AZURE_SUBSCRIPTION_ID`  | `empty`                     | Azure Subscription IDs (empty for auto lookup)                    |
+| `AZURE_LOCATION`         | `westeurope`, `northeurope` | Azure location for usage statitics                                |
 | `SCRAPE_TIME`            | `120`                       | Time between API calls                                            |
 | `SERVER_BIND`            | `:8080`                     | IP/Port binding                                                   |
 
