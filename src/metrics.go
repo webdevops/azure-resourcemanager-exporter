@@ -84,13 +84,6 @@ func startHttpServer() {
 func probeCollect() {
 	context := context.Background()
 
-	prometheusSubscriptionInfo.Reset()
-	prometheusApiQuota.Reset()
-	prometheusQuotaInfo.Reset()
-	prometheusQuotaCurrent.Reset()
-	prometheusQuotaLimit.Reset()
-
-
 	for _, subscription := range AzureSubscriptions {
 		subscriptionClient := subscriptions.NewClient()
 		subscriptionClient.Authorizer = AzureAuthorizer
