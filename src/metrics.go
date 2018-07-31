@@ -22,7 +22,7 @@ var (
 			Name: "azurerm_subscription_info",
 			Help: "Azure ResourceManager subscription info",
 		},
-		[]string{"subscription", "name", "spendingLimit", "quotaID", "locationPlacementID"},
+		[]string{"subscriptionID", "subscriptionName", "spendingLimit", "quotaID", "locationPlacementID"},
 	)
 
 	prometheusApiQuota = prometheus.NewGaugeVec(
@@ -30,7 +30,7 @@ var (
 			Name: "azurerm_ratelimit",
 			Help: "Azure ResourceManager ratelimit",
 		},
-		[]string{"subscription", "scope", "type"},
+		[]string{"subscriptionID", "scope", "type"},
 	)
 
 
@@ -39,7 +39,7 @@ var (
 			Name: "azurerm_quota_info",
 			Help: "Azure ResourceManager quota info",
 		},
-		[]string{"subscription", "location", "scope", "name", "localizedName"},
+		[]string{"subscriptionID", "location", "scope", "quota", "quotaName"},
 	)
 
 	prometheusQuotaCurrent = prometheus.NewGaugeVec(
@@ -47,7 +47,7 @@ var (
 			Name: "azurerm_quota_current",
 			Help: "Azure ResourceManager quota current value",
 		},
-		[]string{"subscription", "location", "scope", "name"},
+		[]string{"subscriptionID", "location", "scope", "quota"},
 	)
 
 	prometheusQuotaLimit = prometheus.NewGaugeVec(
@@ -55,7 +55,7 @@ var (
 			Name: "azurerm_quota_limit",
 			Help: "Azure ResourceManager quota limit",
 		},
-		[]string{"subscription", "location", "scope", "name"},
+		[]string{"subscriptionID", "location", "scope", "quota"},
 	)
 )
 
@@ -102,8 +102,8 @@ func probeCollect() {
 
 		prometheusSubscriptionInfo.With(
 			prometheus.Labels{
-				"subscription": *sub.SubscriptionID,
-				"name": *sub.DisplayName,
+				"subscriptionID": *sub.SubscriptionID,
+				"subscriptionName": *sub.DisplayName,
 				"spendingLimit": string(sub.SubscriptionPolicies.SpendingLimit),
 				"quotaID": *sub.SubscriptionPolicies.QuotaID,
 				"locationPlacementID": *sub.SubscriptionPolicies.LocationPlacementID,
@@ -111,14 +111,14 @@ func probeCollect() {
 		).Set(1)
 
 		// subscription rate limits
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "subscription", "type": "read"})
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-requests"})
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-entities-read"})
+		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "read"})
+		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-requests"})
+		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-entities-read"})
 
 		// tenant rate limits
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "tenant", "type": "read"})
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-requests"})
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscription": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-entities-read"})
+		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "read"})
+		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-requests"})
+		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-entities-read"})
 
 		// compute usage
 		computeClient := compute.NewUsageClient(*sub.SubscriptionID)
@@ -131,8 +131,8 @@ func probeCollect() {
 			}
 
 			for _, val := range list.Values() {
-				labels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "compute", "name": *val.Name.Value}
-				infoLabels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "compute", "name": *val.Name.Value, "localizedName": *val.Name.LocalizedValue}
+				labels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "compute", "quota": *val.Name.Value}
+				infoLabels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "compute", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
 				prometheusQuotaInfo.With(infoLabels).Set(1)
 				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
 				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
@@ -153,9 +153,8 @@ func probeCollect() {
 		//	}
 		//
 		//	for _, val := range list.Values() {
-		//		labels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "network", "name": *val.Name.Value}
-		//		infoLabels := labels
-		//		infoLabels["localizedName"] = *val.Name.LocalizedValue
+		//      labels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value}
+		//      infoLabels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
 		//		prometheusQuotaInfo.With(infoLabels).Set(1)
 		//		prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
 		//		prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
@@ -173,8 +172,8 @@ func probeCollect() {
 			}
 
 			for _, val := range *list.Value {
-				labels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "storage", "name": *val.Name.Value}
-				infoLabels := prometheus.Labels{"subscription": *sub.SubscriptionID, "location": location, "scope": "storage", "name": *val.Name.Value, "localizedName": *val.Name.LocalizedValue}
+				labels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value}
+				infoLabels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
 				prometheusQuotaInfo.With(infoLabels).Set(1)
 				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
 				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
