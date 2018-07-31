@@ -1,9 +1,15 @@
 FROM golang:1.10 as build
-WORKDIR /go/src/azure-resourcemanager-exporter/src
-COPY ./src /go/src/azure-resourcemanager-exporter/src
+
+WORKDIR /tmp/app/
+COPY ./src/glide.yaml /tmp/app/
+COPY ./src/glide.lock /tmp/app/
 RUN curl https://glide.sh/get | sh \
     && glide install
+
+WORKDIR /go/src/azure-resourcemanager-exporter/src
+COPY ./src /go/src/azure-resourcemanager-exporter/src
 RUN mkdir /app/ \
+    && cp -a /tmp/app/vendor ./vendor/ \
     && cp -a entrypoint.sh /app/ \
     && chmod 555 /app/entrypoint.sh \
     && go build -o /app/azure-resourcemanager-exporter
