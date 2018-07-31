@@ -1,5 +1,5 @@
-hash: 30a035468c0228c04814d5f98725e92283e17ea33fc5a8dfd86693ba7efd8d37
-updated: 2018-07-30T18:51:15.45634+02:00
+hash: e711f14da3b1c97eed33996499eee708679ae910f2e251072afceac67007fd59
+updated: 2018-07-31T07:25:17.198968+02:00
 imports:
 - name: github.com/Azure/azure-sdk-for-go
   version: 4e8cbbfb1aeab140cd0fa97fd16b64ee18c3ca6a
@@ -14,7 +14,7 @@ imports:
   - services/storage/mgmt/2017-10-01/storage
   - version
 - name: github.com/Azure/go-autorest
-  version: 1ff28809256a84bb6966640ff3d0371af82ccba4
+  version: f04d503958a4fe854c1b41667c73f8813c9dd9c3
   subpackages:
   - autorest
   - autorest/adal
