@@ -1,5 +1,6 @@
 FROM golang:1.10 as build
 
+# golang deps
 WORKDIR /tmp/app/
 COPY ./src/glide.yaml /tmp/app/
 COPY ./src/glide.lock /tmp/app/
