@@ -25,7 +25,7 @@ for Azure API authentication (using ENV vars) see https://github.com/Azure/azure
 Metrics
 -------
 
-| Environment variable              | Description                                                                           |
+| Metric                            | Description                                                                           |
 |-----------------------------------|---------------------------------------------------------------------------------------|
 | `azurerm_subscription`            | Azure Subscription details (ID, name, ...)                                            |
 | `azurerm_resourcegroup`           | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
