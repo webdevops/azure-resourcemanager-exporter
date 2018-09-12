@@ -1,20 +1,22 @@
 hash: e711f14da3b1c97eed33996499eee708679ae910f2e251072afceac67007fd59
-updated: 2018-07-31T07:25:17.198968+02:00
+updated: 2018-09-12T21:46:13.645062+02:00
 imports:
 - name: github.com/Azure/azure-sdk-for-go
-  version: 4e8cbbfb1aeab140cd0fa97fd16b64ee18c3ca6a
+  version: 2935c0241c74bd8549b843978dd6fc1be6f48b4a
   subpackages:
   - profiles/latest/compute/mgmt/compute
   - profiles/latest/network/mgmt/network
+  - profiles/latest/resources/mgmt/resources
   - profiles/latest/resources/mgmt/subscriptions
   - profiles/latest/storage/mgmt/storage
   - services/compute/mgmt/2018-04-01/compute
   - services/network/mgmt/2018-01-01/network
   - services/resources/mgmt/2016-06-01/subscriptions
+  - services/resources/mgmt/2018-02-01/resources
   - services/storage/mgmt/2017-10-01/storage
   - version
 - name: github.com/Azure/go-autorest
-  version: f04d503958a4fe854c1b41667c73f8813c9dd9c3
+  version: a88c19ef2016e095f0b6c3b451074b4663f53bed
   subpackages:
   - autorest
   - autorest/adal
@@ -23,6 +25,8 @@ imports:
   - autorest/date
   - autorest/to
   - autorest/validation
+  - logger
+  - version
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
   subpackages:
@@ -31,6 +35,10 @@ imports:
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/dimchansky/utfbom
   version: 5448fe645cb1964ba70ac8f9f2ffe975e61a536c
+- name: github.com/gogo/protobuf
+  version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
+  subpackages:
+  - proto
 - name: github.com/golang/protobuf
   version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
@@ -42,16 +50,17 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/prometheus/client_golang
-  version: bcbbc08eb2ddff3af83bbf11e7ec13b4fd730b6e
+  version: b5bfa0eb2c8d46bd91dc58271e973c5f0bbebcfa
   subpackages:
   - prometheus
+  - prometheus/internal
   - prometheus/promhttp
 - name: github.com/prometheus/client_model
   version: 5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 7600349dcfe1abd18d72d3a1770870d9800a7801
+  version: c7de2306084e37d54b8be01f3541a8464345e9a5
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
