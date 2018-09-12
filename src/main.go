@@ -8,11 +8,12 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	)
+)
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.1.0"
+	Version = "0.3.0"
+	AZURE_RESOURCEGROUP_TAG_PREFIX = "tag_"
 )
 
 var (
@@ -27,6 +28,7 @@ var (
 var opts struct {
 	AzureSubscription []string ` long:"azure-subscription"  env:"AZURE_SUBSCRIPTION_ID"   env-delim:" " description:"Azure subscription ID"`
 	AzureLocation []string `     long:"azure-location"      env:"AZURE_LOCATION"          env-delim:" " description:"Azure locations" default:"westeurope" default:"northeurope"`
+	AzureResourceGroupTags []string `long:"azure-resourcegroup-tags"      env:"AZURE_RESOURCEGROUP_TAGS"          env-delim:" " description:"Azure ResourceGroup tags" default:"owner"`
 	ScrapeTime  int    `         long:"scrape-time"         env:"SCRAPE_TIME"                           description:"Scrape time in seconds"        default:"120"`
 	ServerBind  string `         long:"bind"                env:"SERVER_BIND"                           description:"Server address"                default:":8080"`
 }
