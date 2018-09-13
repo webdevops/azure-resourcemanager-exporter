@@ -27,9 +27,9 @@ Metrics
 
 | Metric                            | Description                                                                           |
 |-----------------------------------|---------------------------------------------------------------------------------------|
-| `azurerm_subscription`            | Azure Subscription details (ID, name, ...)                                            |
-| `azurerm_resourcegroup`           | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
-| `azurerm_publicip`                | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
+| `azurerm_subscription_info`       | Azure Subscription details (ID, name, ...)                                            |
+| `azurerm_resourcegroup_info`      | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
+| `azurerm_publicip_info`           | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
 | `azurerm_ratelimit`               | Azure API ratelimit (left calls)                                                      |
 | `azurerm_quota`                   | Azure RM quota details (readable name, scope, ...)                                    |
 | `azurerm_quota_current`           | Azure RM quota current (current value)                                                |

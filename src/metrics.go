@@ -33,7 +33,7 @@ var (
 func initMetrics() {
 	prometheusSubscription = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_subscription",
+			Name: "azurerm_subscription_info",
 			Help: "Azure ResourceManager subscription",
 		},
 		[]string{"subscriptionID", "subscriptionName", "spendingLimit", "quotaID", "locationPlacementID"},
@@ -41,7 +41,7 @@ func initMetrics() {
 
 	prometheusResourceGroup = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_resourcegroup",
+			Name: "azurerm_resourcegroup_info",
 			Help: "Azure ResourceManager resourcegroups",
 		},
 		append([]string{"subscriptionID", "resourceGroup", "location"}, prefixSlice(AZURE_RESOURCEGROUP_TAG_PREFIX, opts.AzureResourceGroupTags)...),
@@ -49,7 +49,7 @@ func initMetrics() {
 
 	prometheusPublicIp = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_publicip",
+			Name: "azurerm_publicip_info",
 			Help: "Azure ResourceManager public ip",
 		},
 		[]string{"subscriptionID", "resourceGroup", "location", "ipAddress", "ipAllocationMethod", "ipAdressVersion"},
@@ -65,7 +65,7 @@ func initMetrics() {
 
 	prometheusQuota = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_quota",
+			Name: "azurerm_quota_info",
 			Help: "Azure ResourceManager quota info",
 		},
 		[]string{"subscriptionID", "location", "scope", "quota", "quotaName"},
