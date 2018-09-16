@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
+	"context"
 	"regexp"
 	"strconv"
-	"context"
-	"net/http"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
@@ -15,7 +13,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -30,7 +27,7 @@ var (
 	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
 )
 
-func initMetrics() {
+func initMetricsAzureRm() {
 	prometheusSubscription = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_subscription_info",
@@ -44,7 +41,10 @@ func initMetrics() {
 			Name: "azurerm_resourcegroup_info",
 			Help: "Azure ResourceManager resourcegroups",
 		},
-		append([]string{"subscriptionID", "resourceGroup", "location"}, prefixSlice(AZURE_RESOURCEGROUP_TAG_PREFIX, opts.AzureResourceGroupTags)...),
+		append(
+			[]string{"subscriptionID", "resourceGroup", "location"},
+			prefixSlice(AZURE_RESOURCEGROUP_TAG_PREFIX, opts.AzureResourceGroupTags)...
+		),
 	)
 
 	prometheusPublicIp = prometheus.NewGaugeVec(
@@ -106,10 +106,7 @@ func initMetrics() {
 	}()
 }
 
-func startHttpServer() {
-	http.Handle("/metrics", promhttp.Handler())
-	log.Fatal(http.ListenAndServe(opts.ServerBind, nil))
-}
+
 
 func probeCollect() {
 	context := context.Background()
@@ -193,11 +190,15 @@ func probeCollect() {
 			panic(err)
 		}
 
+		publicIpList := []string{}
 		for _, val := range list.Values() {
 			ipAdress := ""
 
 			if val.IPAddress != nil {
 				ipAdress = *val.IPAddress
+				publicIpList = append(publicIpList, ipAdress)
+			} else {
+				ipAdress = "none"
 			}
 
 			resourceGroup := ""
@@ -215,6 +216,12 @@ func probeCollect() {
 				"ipAllocationMethod": string(val.PublicIPAllocationMethod),
 				"ipAdressVersion": string(val.PublicIPAddressVersion),
 			}).Set(1)
+		}
+
+		// update portscanner public ips
+		if portscanner != nil {
+			portscanner.SetIps(publicIpList)
+			portscanner.Cleanup()
 		}
 
 		//---------------------------------------
@@ -290,6 +297,7 @@ func probeCollect() {
 	}
 }
 
+// read header and set prometheus api quota (if found)
 func probeProcessHeader(response autorest.Response, header string, labels prometheus.Labels) {
 	if val := response.Header.Get(header); val != "" {
 		valFloat, err := strconv.ParseFloat(val, 64)

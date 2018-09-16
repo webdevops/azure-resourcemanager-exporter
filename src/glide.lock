@@ -1,6 +1,11 @@
-hash: e711f14da3b1c97eed33996499eee708679ae910f2e251072afceac67007fd59
-updated: 2018-09-12T21:46:13.645062+02:00
+hash: 0b40e8ec9b474c1c6129ebcf8aca651b35e2cb428e77638f87e4011bbb62316a
+updated: 2018-09-16T15:24:18.763656+02:00
 imports:
+- name: github.com/anvie/port-scanner
+  version: 8159197d3770eb6dbf3a9706a6d40462ebb69cec
+  subpackages:
+  - predictors
+  - predictors/webserver
 - name: github.com/Azure/azure-sdk-for-go
   version: 2935c0241c74bd8549b843978dd6fc1be6f48b4a
   subpackages:
@@ -35,10 +40,6 @@ imports:
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/dimchansky/utfbom
   version: 5448fe645cb1964ba70ac8f9f2ffe975e61a536c
-- name: github.com/gogo/protobuf
-  version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
-  subpackages:
-  - proto
 - name: github.com/golang/protobuf
   version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
@@ -50,7 +51,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/prometheus/client_golang
-  version: b5bfa0eb2c8d46bd91dc58271e973c5f0bbebcfa
+  version: b7b390014bf2ea0679a8e477638afa1b706cbd70
   subpackages:
   - prometheus
   - prometheus/internal
@@ -71,6 +72,8 @@ imports:
   - internal/util
   - nfs
   - xfs
+- name: github.com/remeh/sizedwaitgroup
+  version: 5e7302b12ccef91dce9fde2f5bda6d5c7ea5d2eb
 - name: golang.org/x/crypto
   version: 49796115aa4b964c318aad4f3084fdb41e9aa067
   subpackages:
