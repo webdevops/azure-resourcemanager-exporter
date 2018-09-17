@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"time"
 	"regexp"
 	"context"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.4.3"
+	Version = "0.5.0"
 	AZURE_RESOURCEGROUP_TAG_PREFIX = "tag_"
 )
 
@@ -41,7 +42,7 @@ var opts struct {
 
 	// server settings
 	ServerBind  string `         long:"bind"                          env:"SERVER_BIND"                              description:"Server address"                                   default:":8080"`
-	ScrapeTime  int    `         long:"scrape-time"                   env:"SCRAPE_TIME"                              description:"Scrape time in seconds"                           default:"120"`
+	ScrapeTime  time.Duration `  long:"scrape-time"                   env:"SCRAPE_TIME"                              description:"Scrape time (time.duration)"                      default:"2m"`
 
 	// azure settings
 	AzureSubscription []string ` long:"azure-subscription"            env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID"`
@@ -50,7 +51,7 @@ var opts struct {
 
 	// portscan settings
 	Portscan  bool    `          long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
-	PortscanTime  int    `       long:"portscan-time"                 env:"PORTSCAN_TIME"                            description:"Portscan time in seconds"                         default:"1800"`
+	PortscanTime  time.Duration `long:"portscan-time"                 env:"PORTSCAN_TIME"                            description:"Portscan time (time.duration)"                         default:"30m"`
 	PortscanPrallel  int    `    long:"portscan-parallel"             env:"PORTSCAN_PARALLEL"                        description:"Portscan parallel scans (parallel * threads = concurrent gofuncs)"  default:"2"`
 	PortscanThreads  int    `    long:"portscan-threads"              env:"PORTSCAN_THREADS"                         description:"Portscan threads (concurrent port scans per IP)"  default:"1000"`
 	PortscanTimeout  int    `    long:"portscan-timeout"              env:"PORTSCAN_TIMEOUT"                         description:"Portscan timeout (seconds)"                       default:"5"`
@@ -61,11 +62,11 @@ var opts struct {
 func main() {
 	initArgparser()
 
-	// Init logger
-	Verbose = len(opts.Verbose) >= 1
-
 	Logger = CreateDaemonLogger(0)
 	ErrorLogger = CreateDaemonErrorLogger(0)
+
+	// set verbosity
+	Verbose = len(opts.Verbose) >= 1
 
 	Logger.Messsage("Init Azure ResourceManager exporter v%s (written by %v)", Version, Author)
 

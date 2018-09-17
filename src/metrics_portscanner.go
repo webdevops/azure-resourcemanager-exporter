@@ -99,14 +99,14 @@ func startMetricsCollectionPortscanner() {
 		for {
 			if portscanner.Enabled && len(portscanner.PublicIps) > 0 {
 				portscanner.Start()
-				time.Sleep(time.Duration(opts.PortscanTime) * time.Second)
+				time.Sleep(opts.PortscanTime * time.Second)
 			} else {
 				if firstStart {
 					// short delayed first time start
 					time.Sleep(time.Duration(10) * time.Second)
 				} else {
 					// longer delayed restart
-					time.Sleep(time.Duration(opts.ScrapeTime + 5) * time.Second)
+					time.Sleep(opts.ScrapeTime + 5)
 				}
 			}
 		}

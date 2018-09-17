@@ -16,12 +16,12 @@ Normally no configuration is needed but can be customized using environment vari
 |-----------------------------------|-----------------------------|-------------------------------------------------------------------|
 | `AZURE_SUBSCRIPTION_ID`           | `empty`                     | Azure Subscription IDs (empty for auto lookup)                    |
 | `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
-| `SCRAPE_TIME`                     | `120`                       | Time between API calls                                            |
+| `SCRAPE_TIME`                     | `2m`                        | Time (time.Duration) between API calls                                            |
 | `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
 | `AZURE_RESOURCEGROUP_TAGS`        | `owner`                     | Tags which should be included                                     |
 | `PORTSCAN`                        | `0`                         | Enables portscanner for public IPs (experimental)                 |
 | `PORTSCAN_RANGE`                  | `1-65535`                   | Port range to scan (single port or range, mutliple ranges possible -> space as seperator)  |
-| `PORTSCAN_TIME`                   | `1800`                      | Time (seconds) between portscanner runs                           |
+| `PORTSCAN_TIME`                   | `30m`                       | Time (time.Duration) between portscanner runs                           |
 | `PORTSCAN_PARALLEL`               | `2`                         | Parallel IPs which are scanned at the same time                   |
 | `PORTSCAN_THREADS`                | `1000`                      | Number of threads per IP (parallel scanned ports)                 |
 | `PORTSCAN_TIMEOUT`                | `5`                         | Timeout (seconds) for each port                                   |

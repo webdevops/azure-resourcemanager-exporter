@@ -106,7 +106,7 @@ func startMetricsCollectionAzureRm() {
 			go func() {
 				runMetricsCollectionAzureRm()
 			}()
-			time.Sleep(time.Duration(opts.ScrapeTime) * time.Second)
+			time.Sleep(opts.ScrapeTime)
 		}
 	}()
 }
