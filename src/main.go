@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 	"regexp"
+	"errors"
 	"context"
 	"net/http"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
@@ -16,7 +17,7 @@ import (
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.5.0"
+	Version = "0.5.1"
 	AZURE_RESOURCEGROUP_TAG_PREFIX = "tag_"
 )
 
@@ -133,6 +134,10 @@ func initAzureConnection() {
 			panic(err)
 		}
 		AzureSubscriptions = listResult.Values()
+
+		if len(AzureSubscriptions) == 0 {
+			panic(errors.New("No Azure Subscriptions found via auto detection, does this ServicePrincipal have read permissions to the subcriptions?"))
+		}
 	} else {
 		// fixed subscription list
 		AzureSubscriptions = []subscriptions.Subscription{}
