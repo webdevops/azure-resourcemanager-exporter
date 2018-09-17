@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 	"context"
 	"regexp"
@@ -109,142 +110,180 @@ func initMetricsAzureRm() {
 
 
 func probeCollect() {
+	var wg sync.WaitGroup
 	context := context.Background()
 
 	prometheusResourceGroup.Reset()
 	prometheusPublicIp.Reset()
 
+	publicIpChannel := make(chan []string)
+
 	for _, subscription := range AzureSubscriptions {
 		subscriptionClient := subscriptions.NewClient()
 		subscriptionClient.Authorizer = AzureAuthorizer
 
-		sub, err := subscriptionClient.Get(context, *subscription.SubscriptionID)
-		if err != nil {
-			panic(err)
-		}
+		Logger.Messsage(
+			"Starting metrics update for Azure Subscription %v",
+			*subscription.SubscriptionID,
+		)
 
 		//---------------------------------------
 		// Subscription
 		//---------------------------------------
 
-		prometheusSubscription.With(
-			prometheus.Labels{
-				"subscriptionID": *sub.SubscriptionID,
-				"subscriptionName": *sub.DisplayName,
-				"spendingLimit": string(sub.SubscriptionPolicies.SpendingLimit),
-				"quotaID": *sub.SubscriptionPolicies.QuotaID,
-				"locationPlacementID": *sub.SubscriptionPolicies.LocationPlacementID,
-			},
-		).Set(1)
+		wg.Add(1)
+		go func(subscriptionId string) {
+			defer wg.Done()
 
-		// subscription rate limits
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "read"})
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-requests"})
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-entities-read"})
+			sub, err := subscriptionClient.Get(context, subscriptionId)
+			if err != nil {
+				panic(err)
+			}
 
-		// tenant rate limits
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "read"})
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-requests"})
-		probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-entities-read"})
+			prometheusSubscription.With(
+				prometheus.Labels{
+					"subscriptionID": *sub.SubscriptionID,
+					"subscriptionName": *sub.DisplayName,
+					"spendingLimit": string(sub.SubscriptionPolicies.SpendingLimit),
+					"quotaID": *sub.SubscriptionPolicies.QuotaID,
+					"locationPlacementID": *sub.SubscriptionPolicies.LocationPlacementID,
+				},
+			).Set(1)
+
+			// subscription rate limits
+			probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "read"})
+			probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-requests"})
+			probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-entities-read"})
+
+			// tenant rate limits
+			probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "read"})
+			probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-requests"})
+			probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-entities-read"})
+
+			Logger.Verbose("%v: finished Azure Subscription collection", subscriptionId)
+		}(*subscription.SubscriptionID)
 
 		//---------------------------------------
 		// ResourceGroups
 		//---------------------------------------
 
-		resourceGroupClient := resources.NewGroupsClient(*subscription.SubscriptionID)
-		resourceGroupClient.Authorizer = AzureAuthorizer
 
-		resourceGroupResult, err := resourceGroupClient.ListComplete(context, "", nil)
-		if err != nil {
-			panic(err)
-		}
+		wg.Add(1)
+		go func(subscriptionId string) {
+			defer wg.Done()
 
-		for _, item := range *resourceGroupResult.Response().Value {
-			rgLabels := prometheus.Labels{
-				"subscriptionID": *sub.SubscriptionID,
-				"resourceGroup": *item.Name,
-				"location": *item.Location,
+			resourceGroupClient := resources.NewGroupsClient(subscriptionId)
+			resourceGroupClient.Authorizer = AzureAuthorizer
+
+			resourceGroupResult, err := resourceGroupClient.ListComplete(context, "", nil)
+			if err != nil {
+				panic(err)
 			}
 
-			for _, rgTag := range opts.AzureResourceGroupTags {
-				rgTabLabel := AZURE_RESOURCEGROUP_TAG_PREFIX + rgTag
-
-				if _, ok := item.Tags[rgTag]; ok {
-					rgLabels[rgTabLabel] = *item.Tags[rgTag]
-				} else {
-					rgLabels[rgTabLabel] = ""
+			for _, item := range *resourceGroupResult.Response().Value {
+				rgLabels := prometheus.Labels{
+					"subscriptionID": subscriptionId,
+					"resourceGroup": *item.Name,
+					"location": *item.Location,
 				}
+
+				for _, rgTag := range opts.AzureResourceGroupTags {
+					rgTabLabel := AZURE_RESOURCEGROUP_TAG_PREFIX + rgTag
+
+					if _, ok := item.Tags[rgTag]; ok {
+						rgLabels[rgTabLabel] = *item.Tags[rgTag]
+					} else {
+						rgLabels[rgTabLabel] = ""
+					}
+				}
+				prometheusResourceGroup.With(rgLabels).Set(1)
 			}
-			prometheusResourceGroup.With(rgLabels).Set(1)
-		}
+
+			Logger.Verbose("%v: finished Azure ResourceGroup collection", subscriptionId)
+		}(*subscription.SubscriptionID)
 
 		//---------------------------------------
 		// Public IPs
 		//---------------------------------------
 
-		netPublicIpClient := network.NewPublicIPAddressesClient(*sub.SubscriptionID)
-		netPublicIpClient.Authorizer = AzureAuthorizer
+		wg.Add(1)
+		go func(subscriptionId string) {
+			defer wg.Done()
 
-		list, err := netPublicIpClient.ListAll(context)
-		if err != nil {
-			panic(err)
-		}
+			ipAddressList := []string{}
 
-		publicIpList := []string{}
-		for _, val := range list.Values() {
-			ipAdress := ""
+			netPublicIpClient := network.NewPublicIPAddressesClient(subscriptionId)
+			netPublicIpClient.Authorizer = AzureAuthorizer
 
-			if val.IPAddress != nil {
-				ipAdress = *val.IPAddress
-				publicIpList = append(publicIpList, ipAdress)
-			} else {
-				ipAdress = "none"
-			}
-
-			resourceGroup := ""
-			rgSubMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(*val.ID)
-
-			if len(rgSubMatch) >= 1 {
-				resourceGroup = rgSubMatch[1]
-			}
-
-			prometheusPublicIp.With(prometheus.Labels{
-				"subscriptionID": *sub.SubscriptionID,
-				"resourceGroup": resourceGroup,
-				"location": *val.Location,
-				"ipAddress": ipAdress,
-				"ipAllocationMethod": string(val.PublicIPAllocationMethod),
-				"ipAdressVersion": string(val.PublicIPAddressVersion),
-			}).Set(1)
-		}
-
-		// update portscanner public ips
-		if portscanner != nil {
-			portscanner.SetIps(publicIpList)
-			portscanner.Cleanup()
-		}
-
-		//---------------------------------------
-		// Computer usage
-		//---------------------------------------
-
-		computeClient := compute.NewUsageClient(*sub.SubscriptionID)
-		computeClient.Authorizer = AzureAuthorizer
-		for _, location := range opts.AzureLocation {
-			list, err := computeClient.List(context, location)
-
+			list, err := netPublicIpClient.ListAll(context)
 			if err != nil {
 				panic(err)
 			}
 
 			for _, val := range list.Values() {
-				labels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "compute", "quota": *val.Name.Value}
-				infoLabels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "compute", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
-				prometheusQuota.With(infoLabels).Set(1)
-				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
-				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+				ipAddress := ""
+				gaugeValue := float64(1)
+
+				if val.IPAddress != nil {
+					ipAddress = *val.IPAddress
+					ipAddressList = append(ipAddressList, ipAddress)
+				} else {
+					ipAddress = "not allocated"
+					gaugeValue = 0
+				}
+
+				resourceGroup := ""
+				rgSubMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(*val.ID)
+
+				if len(rgSubMatch) >= 1 {
+					resourceGroup = rgSubMatch[1]
+				}
+
+				prometheusPublicIp.With(prometheus.Labels{
+					"subscriptionID": subscriptionId,
+					"resourceGroup": resourceGroup,
+					"location": *val.Location,
+					"ipAddress": ipAddress,
+					"ipAllocationMethod": string(val.PublicIPAllocationMethod),
+					"ipAdressVersion": string(val.PublicIPAddressVersion),
+				}).Set(gaugeValue)
 			}
-		}
+
+			publicIpChannel <- ipAddressList
+
+			Logger.Verbose("%v: finished Azure PublicIP collection", subscriptionId)
+		}(*subscription.SubscriptionID)
+
+		//---------------------------------------
+		// Computer usage
+		//---------------------------------------
+
+		wg.Add(1)
+		go func(subscriptionId string) {
+			defer wg.Done()
+
+			computeClient := compute.NewUsageClient(subscriptionId)
+			computeClient.Authorizer = AzureAuthorizer
+			for _, location := range opts.AzureLocation {
+				list, err := computeClient.List(context, location)
+
+				if err != nil {
+					panic(err)
+				}
+
+				for _, val := range list.Values() {
+					labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "compute", "quota": *val.Name.Value}
+					infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "compute", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
+					prometheusQuota.With(infoLabels).Set(1)
+					prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
+					prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+				}
+			}
+
+			Logger.Verbose("%v: finished Azure ComputerUsage collection", subscriptionId)
+		}(*subscription.SubscriptionID)
+
+
 
 		//---------------------------------------
 		// Network usage
@@ -254,47 +293,82 @@ func probeCollect() {
 		// disabled due to
 		// https://github.com/Azure/azure-sdk-for-go/issues/2340
 		// https://github.com/Azure/azure-rest-api-specs/issues/1624
-		//networkClient := network.NewUsagesClient(*sub.SubscriptionID)
-		//networkClient.Authorizer = AzureAuthorizer
-		//for _, location := range opts.AzureLocation {
-		//	list, err := networkClient.List(context, location)
 		//
-		//	if err != nil {
-		//		panic(err)
-		//	}
+		//wg.Add(1)
+		//go func(subscriptionId string) {
+		//	defer wg.Done()
 		//
-		//	for _, val := range list.Values() {
-		//      labels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value}
-		//      infoLabels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
-		//    	prometheusQuota.With(infoLabels).Set(1)
-		//		prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
-		//		prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+		//	networkClient := network.NewUsagesClient(*sub.SubscriptionID)
+		//	networkClient.Authorizer = AzureAuthorizer
+		//	for _, location := range opts.AzureLocation {
+		//		list, err := networkClient.List(context, location)
+		//
+		//		if err != nil {
+		//			panic(err)
+		//		}
+		//
+		//		for _, val := range list.Values() {
+		//			labels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value}
+		//			infoLabels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
+		//			prometheusQuota.With(infoLabels).Set(1)
+		//			prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
+		//			prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+		//		}
 		//	}
-		//}
+		// Logger.Verbose("%v: finished Azure NetworkUsage collection", subscriptionId)
+		//}(*subscription.SubscriptionID)
 
 
 		//---------------------------------------
 		// Storage usage
 		//---------------------------------------
 
-		storageClient := storage.NewUsageClient(*sub.SubscriptionID)
-		storageClient.Authorizer = AzureAuthorizer
-		for _, location := range opts.AzureLocation {
-			list, err := storageClient.List(context)
+		wg.Add(1)
+		go func(subscriptionId string) {
+			defer wg.Done()
 
-			if err != nil {
-				panic(err)
+			storageClient := storage.NewUsageClient(subscriptionId)
+			storageClient.Authorizer = AzureAuthorizer
+			for _, location := range opts.AzureLocation {
+				list, err := storageClient.List(context)
+
+				if err != nil {
+					panic(err)
+				}
+
+				for _, val := range *list.Value {
+					labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": *val.Name.Value}
+					infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
+					prometheusQuota.With(infoLabels).Set(1)
+					prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
+					prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+				}
 			}
 
-			for _, val := range *list.Value {
-				labels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value}
-				infoLabels := prometheus.Labels{"subscriptionID": *sub.SubscriptionID, "location": location, "scope": "storage", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
-				prometheusQuota.With(infoLabels).Set(1)
-				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
-				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
-			}
-		}
+			Logger.Verbose("%v: finished Azure Storage collection", subscriptionId)
+		}(*subscription.SubscriptionID)
 	}
+
+	// process publicIP list and pass it to portscanner
+	go func() {
+		publicIpList := []string{}
+		for ipAddressList := range publicIpChannel {
+			publicIpList = append(publicIpList, ipAddressList...)
+		}
+
+		// update portscanner public ips
+		if portscanner != nil {
+			portscanner.SetIps(publicIpList)
+			portscanner.Cleanup()
+			portscanner.Enable()
+		}
+	}()
+
+	// wait for all funcs
+	wg.Wait()
+	close(publicIpChannel)
+
+	Logger.Messsage("Finished Azure Subscription metrics collection")
 }
 
 // read header and set prometheus api quota (if found)
