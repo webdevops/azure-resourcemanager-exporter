@@ -40,9 +40,5 @@ Metrics
 | `azurerm_quota`                     | Azure RM quota details (readable name, scope, ...)                                    |
 | `azurerm_quota_current`             | Azure RM quota current (current value)                                                |
 | `azurerm_quota_limit`               | Azure RM quota limit (maximum limited value)                                          |
-| `azurerm_publicip_portscan_status`  | Status of scanned ports (1=scanned, 0=scan is running)                                |
-| `azurerm_publicip_portscan_updated` | Unix timestamp of last scan                                                           |
+| `azurerm_publicip_portscan_status`  | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
 | `azurerm_publicip_portscan_port`    | List of opend ports per IP                                                            |
-
-
-

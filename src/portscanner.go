@@ -18,28 +18,34 @@ type PortscannerResult struct {
 type Portscanner struct {
 	List map[string][]PortscannerResult
 	PublicIps map[string]string
+	Enabled bool
 	mux sync.Mutex
 
 	Callbacks struct {
 		StartupScan func(c *Portscanner)
 		FinishScan func(c *Portscanner)
 		StartScanIpAdress func(c *Portscanner, ipAddress string)
-		FinishScanIpAdress func(c *Portscanner, ipAddress string)
+		FinishScanIpAdress func(c *Portscanner, ipAddress string, elapsed float64)
 		ResultCleanup func(c *Portscanner)
 		ResultPush func(c *Portscanner, result PortscannerResult)
 	}
 }
 
-func (c *Portscanner) Reset() {
+func (c *Portscanner) Init() {
+	c.Enabled = false
 	c.List = map[string][]PortscannerResult{}
 	c.PublicIps = map[string]string{}
 
 	portscanner.Callbacks.StartupScan = func(c *Portscanner) {}
 	portscanner.Callbacks.FinishScan = func(c *Portscanner) {}
 	portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {}
-	portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string) {}
+	portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string, elapsed float64) {}
 	portscanner.Callbacks.ResultCleanup = func(c *Portscanner) {}
 	portscanner.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {}
+}
+
+func (c *Portscanner) Enable() {
+	c.Enabled = true
 }
 
 func (c *Portscanner) SetIps(ipAddresses []string) {
@@ -112,9 +118,9 @@ func (c *Portscanner) Start() {
 
 			c.Callbacks.StartScanIpAdress(c, ipAddress)
 			
-			results := c.scanIp(ipAddress, portscanTimeout)
+			results, elapsed := c.scanIp(ipAddress, portscanTimeout)
 
-			c.Callbacks.FinishScanIpAdress(c, ipAddress)
+			c.Callbacks.FinishScanIpAdress(c, ipAddress, elapsed)
 			
 			portscanner.addResults(ipAddress, results)
 		}(ipAddress, portscanTimeout)
@@ -131,7 +137,9 @@ func (c *Portscanner) Start() {
 
 }
 
-func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (result []PortscannerResult) {
+func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (result []PortscannerResult, elapsed float64) {
+	startTime := time.Now().Unix()
+
 	ps := scanner.NewPortScanner(ipAddress, portscanTimeout, opts.PortscanThreads)
 
 	for _, portrange := range opts.portscanPortRange {
@@ -155,5 +163,7 @@ func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (r
 		}
 	}
 
-	return result
+	elapsed = float64(time.Now().Unix() - startTime)
+
+	return result, elapsed
 }

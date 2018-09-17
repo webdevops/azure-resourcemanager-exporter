@@ -15,22 +15,14 @@ var (
 
 func initMetricsPortscanner() {
 	portscanner = &Portscanner{}
-	portscanner.Reset()
+	portscanner.Init()
 
 	prometheusPublicIpPortscanStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_publicip_portscan_status",
 			Help: "Azure ResourceManager public ip portscan status",
 		},
-		[]string{"ipAddress"},
-	)
-
-	prometheusPublicIpPortscanUpdated = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_publicip_portscan_updated",
-			Help: "Azure ResourceManager public ip portscan uptime timestamp",
-		},
-		[]string{"ipAddress"},
+		[]string{"ipAddress", "type"},
 	)
 
 	prometheusPublicIpPortscanPort = prometheus.NewGaugeVec(
@@ -42,7 +34,6 @@ func initMetricsPortscanner() {
 	)
 
 	prometheus.MustRegister(prometheusPublicIpPortscanStatus)
-	prometheus.MustRegister(prometheusPublicIpPortscanUpdated)
 	prometheus.MustRegister(prometheusPublicIpPortscanPort)
 
 
@@ -64,18 +55,30 @@ func initMetricsPortscanner() {
 	portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {
 		Logger.Messsage("Start port scanning for %v", ipAddress)
 
+		// set the ipAdress to be scanned
 		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
+			"type": "finished",
 		}).Set(0)
 	}
 
-	portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string) {
+	portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string, elapsed float64) {
+		// set ipAddess to be finsihed
 		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
+			"type": "finished",
 		}).Set(1)
 
-		prometheusPublicIpPortscanUpdated.With(prometheus.Labels{
+		// set the elapsed time
+		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
+			"type": "elapsed",
+		}).Set(elapsed)
+
+		// set update time
+		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
+			"ipAddress": ipAddress,
+			"type": "updated",
 		}).Set(float64(time.Now().Unix()))
 	}
 
@@ -90,7 +93,7 @@ func initMetricsPortscanner() {
 	firstStart := true
 	go func() {
 		for {
-			if len(portscanner.PublicIps) > 0 {
+			if portscanner.Enabled && len(portscanner.PublicIps) > 0 {
 				portscanner.Start()
 				time.Sleep(time.Duration(opts.PortscanTime) * time.Second)
 			} else {
