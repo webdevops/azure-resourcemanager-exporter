@@ -13,6 +13,7 @@ var (
 	portscanner *Portscanner
 )
 
+// Create and setup metrics and collection
 func initMetricsPortscanner() {
 	portscanner = &Portscanner{}
 	portscanner.Init()
@@ -89,7 +90,10 @@ func initMetricsPortscanner() {
 	portscanner.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {
 		prometheusPublicIpPortscanPort.With(result.Labels).Set(result.Value)
 	}
+}
 
+// Start backgrounded metrics collection
+func startMetricsCollectionPortscanner() {
 	firstStart := true
 	go func() {
 		for {
@@ -108,4 +112,3 @@ func initMetricsPortscanner() {
 		}
 	}()
 }
-

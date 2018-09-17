@@ -15,7 +15,7 @@ import (
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.4.1"
+	Version = "0.4.2"
 	AZURE_RESOURCEGROUP_TAG_PREFIX = "tag_"
 )
 
@@ -74,10 +74,12 @@ func main() {
 
 	Logger.Messsage("Starting metrics collection")
 	Logger.Messsage("  scape time: %v", opts.ScrapeTime)
-	initMetrics()
+	setupMetricsCollection()
+	startMetricsCollection()
 
 	Logger.Messsage("Starting http server on %s", opts.ServerBind)
 	startHttpServer()
+
 }
 
 // init argparser and parse/validate arguments
@@ -143,14 +145,22 @@ func initAzureConnection() {
 	}
 }
 
-// start metrics collection
-func initMetrics() {
+func setupMetricsCollection() {
 	initMetricsAzureRm()
 
 	if opts.Portscan {
 		initMetricsPortscanner()
 	}
 }
+
+func startMetricsCollection() {
+	startMetricsCollectionAzureRm()
+
+	if opts.Portscan {
+		startMetricsCollectionPortscanner()
+	}
+}
+
 
 // start and handle prometheus handler
 func startHttpServer() {
