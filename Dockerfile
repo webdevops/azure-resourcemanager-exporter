@@ -1,4 +1,4 @@
-FROM golang:1.10 as build
+FROM golang:1.11 as build
 
 # golang deps
 WORKDIR /tmp/app/
