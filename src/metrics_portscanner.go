@@ -80,7 +80,7 @@ func initMetricsPortscanner() {
 		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type": "updated",
-		}).Set(float64(time.Now().Unix()))
+		}).SetToCurrentTime()
 	}
 
 	portscanner.Callbacks.ResultCleanup = func(c *Portscanner) {
