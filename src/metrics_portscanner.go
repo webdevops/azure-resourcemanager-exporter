@@ -51,6 +51,8 @@ func initMetricsPortscanner() {
 			opts.PortscanTimeout,
 			opts.portscanPortRange,
 		)
+
+		prometheusPublicIpPortscanStatus.Reset()
 	}
 
 	portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {
@@ -99,11 +101,11 @@ func startMetricsCollectionPortscanner() {
 		for {
 			if portscanner.Enabled && len(portscanner.PublicIps) > 0 {
 				portscanner.Start()
-				time.Sleep(opts.PortscanTime * time.Second)
+				time.Sleep(opts.PortscanTime)
 			} else {
 				if firstStart {
 					// short delayed first time start
-					time.Sleep(time.Duration(10) * time.Second)
+					time.Sleep(time.Duration(10))
 				} else {
 					// longer delayed restart
 					time.Sleep(opts.ScrapeTime + 5)

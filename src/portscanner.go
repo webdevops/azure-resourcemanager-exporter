@@ -50,7 +50,7 @@ func (c *Portscanner) Enable() {
 
 func (c *Portscanner) SetIps(ipAddresses []string) {
 	c.mux.Lock()
-	
+
 	// build map
 	ipAddressList := map[string]string{}
 	for _, ipAddress := range ipAddresses {
@@ -72,6 +72,7 @@ func (c *Portscanner) addResults(ipAddress string, results []PortscannerResult) 
 func (c *Portscanner) Cleanup() {
 	// cleanup
 	c.mux.Lock()
+
 	orphanedIpList := []string{}
 	for ipAddress,_ := range c.List {
 		if _, ok := c.PublicIps[ipAddress]; !ok {
@@ -83,6 +84,7 @@ func (c *Portscanner) Cleanup() {
 	for _, ipAddress := range orphanedIpList {
 		delete(c.List, ipAddress)
 	}
+
 	c.mux.Unlock()
 }
 
@@ -134,7 +136,6 @@ func (c *Portscanner) Start() {
 	portscanner.Publish()
 
 	c.Callbacks.FinishScan(c)
-
 }
 
 func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (result []PortscannerResult, elapsed float64) {
@@ -155,7 +156,7 @@ func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (r
 						"ipAddress": ipAddress,
 						"protocol": "TCP",
 						"port": strconv.Itoa(port),
-						"description": ps.DescribePort(port),
+						"description": "",
 					},
 					Value: 1,
 				},
