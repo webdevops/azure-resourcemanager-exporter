@@ -141,6 +141,11 @@ func (c *Portscanner) Start() {
 func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (result []PortscannerResult, elapsed float64) {
 	startTime := time.Now().Unix()
 
+	// check if public ip is still owned
+	if _, ok := c.PublicIps[ipAddress]; !ok {
+		return
+	}
+
 	ps := scanner.NewPortScanner(ipAddress, portscanTimeout, opts.PortscanThreads)
 
 	for _, portrange := range opts.portscanPortRange {
