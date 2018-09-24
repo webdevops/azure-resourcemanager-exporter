@@ -17,7 +17,7 @@ import (
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.5.1"
+	Version = "0.6.0"
 	AZURE_RESOURCEGROUP_TAG_PREFIX = "tag_"
 )
 
@@ -48,7 +48,7 @@ var opts struct {
 	// azure settings
 	AzureSubscription []string ` long:"azure-subscription"            env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID"`
 	AzureLocation []string `     long:"azure-location"                env:"AZURE_LOCATION"            env-delim:" "  description:"Azure locations"                                  default:"westeurope" default:"northeurope"`
-	AzureResourceGroupTags []string `long:"azure-resourcegroup-tags"  env:"AZURE_RESOURCEGROUP_TAGS"  env-delim:" "  description:"Azure ResourceGroup tags"                         default:"owner"`
+	AzureResourceGroupTags []string `long:"azure-resourcegroup-tag"   env:"AZURE_RESOURCEGROUP_TAG"   env-delim:" "  description:"Azure ResourceGroup tags"                         default:"owner"`
 
 	// portscan settings
 	Portscan  bool    `          long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
