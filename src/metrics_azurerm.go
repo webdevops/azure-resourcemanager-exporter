@@ -292,7 +292,10 @@ func collectAzurePublicIp(context context.Context, subscriptionId string, callba
 	}
 
 	for _, val := range list.Values() {
+		location := *val.Location
 		ipAddress := ""
+		ipAllocationMethod := string(val.PublicIPAllocationMethod)
+		ipAdressVersion := string(val.PublicIPAddressVersion)
 		gaugeValue := float64(1)
 
 		if val.IPAddress != nil {
@@ -314,10 +317,10 @@ func collectAzurePublicIp(context context.Context, subscriptionId string, callba
 			prometheusPublicIp.With(prometheus.Labels{
 				"subscriptionID":     subscriptionId,
 				"resourceGroup":      resourceGroup,
-				"location":           *val.Location,
+				"location":           location,
 				"ipAddress":          ipAddress,
-				"ipAllocationMethod": string(val.PublicIPAllocationMethod),
-				"ipAdressVersion":    string(val.PublicIPAddressVersion),
+				"ipAllocationMethod": ipAllocationMethod,
+				"ipAdressVersion":    ipAdressVersion,
 			}).Set(gaugeValue)
 		}
 	}
@@ -337,13 +340,18 @@ func collectAzureComputeUsage(context context.Context, subscriptionId string, ca
 		}
 
 		for _, val := range list.Values() {
-			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "compute", "quota": *val.Name.Value}
-			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "compute", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
+			quotaName := *val.Name.Value
+			quotaNameLocalized := *val.Name.LocalizedValue
+			currentValue := float64(*val.CurrentValue)
+			limitValue := float64(*val.Limit)
+
+			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "compute", "quota": quotaName}
+			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "compute", "quota": quotaName, "quotaName": quotaNameLocalized}
 
 			callback <- func() {
 				prometheusQuota.With(infoLabels).Set(1)
-				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
-				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+				prometheusQuotaCurrent.With(labels).Set(currentValue)
+				prometheusQuotaLimit.With(labels).Set(limitValue)
 			}
 		}
 	}
@@ -361,13 +369,18 @@ func collectAzureNetworkUsage(context context.Context, subscriptionId string, ca
 		}
 
 		for _, val := range list.Values() {
-			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": *val.Name.Value}
-			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
+			quotaName := *val.Name.Value
+			quotaNameLocalized := *val.Name.LocalizedValue
+			currentValue := float64(*val.CurrentValue)
+			limitValue := float64(*val.Limit)
+
+			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": quotaName}
+			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": quotaName, "quotaName": quotaNameLocalized}
 
 			callback <- func() {
 				prometheusQuota.With(infoLabels).Set(1)
-				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
-				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+				prometheusQuotaCurrent.With(labels).Set(currentValue)
+				prometheusQuotaLimit.With(labels).Set(limitValue)
 			}
 		}
 	}
@@ -385,13 +398,18 @@ func collectAzureStorageUsage(context context.Context, subscriptionId string, ca
 		}
 
 		for _, val := range *list.Value {
-			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": *val.Name.Value}
-			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": *val.Name.Value, "quotaName": *val.Name.LocalizedValue}
+			quotaName := *val.Name.Value
+			quotaNameLocalized := *val.Name.LocalizedValue
+			currentValue := float64(*val.CurrentValue)
+			limitValue := float64(*val.Limit)
+
+			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": quotaName}
+			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": quotaName, "quotaName": quotaNameLocalized}
 
 			callback <- func() {
 				prometheusQuota.With(infoLabels).Set(1)
-				prometheusQuotaCurrent.With(labels).Set(float64(*val.CurrentValue))
-				prometheusQuotaLimit.With(labels).Set(float64(*val.Limit))
+				prometheusQuotaCurrent.With(labels).Set(currentValue)
+				prometheusQuotaLimit.With(labels).Set(limitValue)
 			}
 		}
 	}
