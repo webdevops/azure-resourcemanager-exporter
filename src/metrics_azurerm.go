@@ -130,7 +130,7 @@ func runMetricsCollectionAzureRm() {
 		go func(subscriptionId string) {
 			defer wg.Done()
 			collectAzureSubscription(context, subscriptionId, callbackChannel)
-			Logger.Verbose("%v: finished Azure Subscription collection", subscriptionId)
+			Logger.Verbose("subscription[%v]: finished Azure Subscription collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
 		// ResourceGroups
@@ -138,7 +138,7 @@ func runMetricsCollectionAzureRm() {
 		go func(subscriptionId string) {
 			defer wg.Done()
 			collectAzureResourceGroup(context, subscriptionId, callbackChannel)
-			Logger.Verbose("%v: finished Azure ResourceGroup collection", subscriptionId)
+			Logger.Verbose("subscription[%v]: finished Azure ResourceGroup collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
 		// Public IPs
@@ -146,7 +146,7 @@ func runMetricsCollectionAzureRm() {
 		go func(subscriptionId string) {
 			defer wg.Done()
 			publicIpChannel <- collectAzurePublicIp(context, subscriptionId, callbackChannel)
-			Logger.Verbose("%v: finished Azure PublicIP collection", subscriptionId)
+			Logger.Verbose("subscription[%v]: finished Azure PublicIP collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
 		// Compute usage
@@ -154,7 +154,7 @@ func runMetricsCollectionAzureRm() {
 		go func(subscriptionId string) {
 			defer wg.Done()
 			collectAzureComputeUsage(context, subscriptionId, callbackChannel)
-			Logger.Verbose("%v: finished Azure ComputerUsage collection", subscriptionId)
+			Logger.Verbose("subscription[%v]: finished Azure ComputerUsage collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
 		// Network usage
@@ -165,7 +165,7 @@ func runMetricsCollectionAzureRm() {
 			// https://github.com/Azure/azure-sdk-for-go/issues/2340
 			// https://github.com/Azure/azure-rest-api-specs/issues/1624
 			//collectAzureNetworkUsage(context, subscriptionId, callbackChannel)
-			Logger.Verbose("%v: finished Azure NetworkUsage collection (DISABLED -> AZURE BUG)", subscriptionId)
+			Logger.Verbose("subscription[%v]: finished Azure NetworkUsage collection (DISABLED -> AZURE BUG)", subscriptionId)
 		}(*subscription.SubscriptionID)
 
 		// Storage usage
@@ -173,7 +173,7 @@ func runMetricsCollectionAzureRm() {
 		go func(subscriptionId string) {
 			defer wg.Done()
 			collectAzureStorageUsage(context, subscriptionId, callbackChannel)
-			Logger.Verbose("%v: finished Azure StorageUsage collection", subscriptionId)
+			Logger.Verbose("subscription[%v]: finished Azure StorageUsage collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 	}
 
