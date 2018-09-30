@@ -17,7 +17,7 @@ import (
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.6.0"
+	Version = "0.7.0"
 	AZURE_RESOURCEGROUP_TAG_PREFIX = "tag_"
 )
 
@@ -43,7 +43,7 @@ var opts struct {
 
 	// server settings
 	ServerBind  string `         long:"bind"                          env:"SERVER_BIND"                              description:"Server address"                                   default:":8080"`
-	ScrapeTime  time.Duration `  long:"scrape-time"                   env:"SCRAPE_TIME"                              description:"Scrape time (time.duration)"                      default:"2m"`
+	ScrapeTime  time.Duration `  long:"scrape-time"                   env:"SCRAPE_TIME"                              description:"Scrape time (time.duration)"                      default:"5m"`
 
 	// azure settings
 	AzureSubscription []string ` long:"azure-subscription"            env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID"`
@@ -52,7 +52,7 @@ var opts struct {
 
 	// portscan settings
 	Portscan  bool    `          long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
-	PortscanTime  time.Duration `long:"portscan-time"                 env:"PORTSCAN_TIME"                            description:"Portscan time (time.duration)"                         default:"30m"`
+	PortscanTime  time.Duration `long:"portscan-time"                 env:"PORTSCAN_TIME"                            description:"Portscan time (time.duration)"                         default:"3h"`
 	PortscanPrallel  int    `    long:"portscan-parallel"             env:"PORTSCAN_PARALLEL"                        description:"Portscan parallel scans (parallel * threads = concurrent gofuncs)"  default:"2"`
 	PortscanThreads  int    `    long:"portscan-threads"              env:"PORTSCAN_THREADS"                         description:"Portscan threads (concurrent port scans per IP)"  default:"1000"`
 	PortscanTimeout  int    `    long:"portscan-timeout"              env:"PORTSCAN_TIMEOUT"                         description:"Portscan timeout (seconds)"                       default:"5"`

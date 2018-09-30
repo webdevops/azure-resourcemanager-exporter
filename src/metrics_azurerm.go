@@ -19,6 +19,8 @@ import (
 var (
 	prometheusSubscription *prometheus.GaugeVec
 	prometheusResourceGroup *prometheus.GaugeVec
+	prometheusVm *prometheus.GaugeVec
+	prometheusVmOs *prometheus.GaugeVec
 	prometheusPublicIp *prometheus.GaugeVec
 	prometheusApiQuota *prometheus.GaugeVec
 	prometheusQuota *prometheus.GaugeVec
@@ -47,6 +49,22 @@ func initMetricsAzureRm() {
 			[]string{"subscriptionID", "resourceGroup", "location"},
 			prefixSlice(AZURE_RESOURCEGROUP_TAG_PREFIX, opts.AzureResourceGroupTags)...
 		),
+	)
+
+	prometheusVm = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_vm_info",
+			Help: "Azure ResourceManager VMs",
+		},
+		[]string{"subscriptionID", "location", "resourceGroup", "vmID", "vmName", "vmType", "vmSize", "vmProvisioningState"},
+	)
+
+	prometheusVmOs = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_vm_os",
+			Help: "Azure ResourceManager VM OS",
+		},
+		[]string{"vmID", "imagePublisher", "imageSku", "imageOffer", "imageVersion"},
 	)
 
 	prometheusPublicIp = prometheus.NewGaugeVec(
@@ -92,6 +110,8 @@ func initMetricsAzureRm() {
 
 	prometheus.MustRegister(prometheusSubscription)
 	prometheus.MustRegister(prometheusResourceGroup)
+	prometheus.MustRegister(prometheusVm)
+	prometheus.MustRegister(prometheusVmOs)
 	prometheus.MustRegister(prometheusPublicIp)
 	prometheus.MustRegister(prometheusApiQuota)
 	prometheus.MustRegister(prometheusQuota)
@@ -139,6 +159,14 @@ func runMetricsCollectionAzureRm() {
 			defer wg.Done()
 			collectAzureResourceGroup(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure ResourceGroup collection", subscriptionId)
+		}(*subscription.SubscriptionID)
+
+		// VMs
+		wg.Add(1)
+		go func(subscriptionId string) {
+			defer wg.Done()
+			collectAzureVm(context, subscriptionId, callbackChannel)
+			Logger.Verbose("subscription[%v]: finished Azure VirtualMachine collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
 		// Public IPs
@@ -201,6 +229,7 @@ func runMetricsCollectionAzureRm() {
 		}
 
 		prometheusResourceGroup.Reset()
+		prometheusVm.Reset()
 		prometheusPublicIp.Reset()
 		for _, callback := range callbackList {
 			callback()
@@ -306,22 +335,17 @@ func collectAzurePublicIp(context context.Context, subscriptionId string, callba
 			gaugeValue = 0
 		}
 
-		resourceGroup := ""
-		rgSubMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(*val.ID)
-
-		if len(rgSubMatch) >= 1 {
-			resourceGroup = rgSubMatch[1]
+		infoLabels := prometheus.Labels{
+			"subscriptionID":     subscriptionId,
+			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
+			"location":           location,
+			"ipAddress":          ipAddress,
+			"ipAllocationMethod": ipAllocationMethod,
+			"ipAdressVersion":    ipAdressVersion,
 		}
 
 		callback <- func() {
-			prometheusPublicIp.With(prometheus.Labels{
-				"subscriptionID":     subscriptionId,
-				"resourceGroup":      resourceGroup,
-				"location":           location,
-				"ipAddress":          ipAddress,
-				"ipAllocationMethod": ipAllocationMethod,
-				"ipAdressVersion":    ipAdressVersion,
-			}).Set(gaugeValue)
+			prometheusPublicIp.With(infoLabels).Set(gaugeValue)
 		}
 	}
 
@@ -332,6 +356,7 @@ func collectAzurePublicIp(context context.Context, subscriptionId string, callba
 func collectAzureComputeUsage(context context.Context, subscriptionId string, callback chan<- func()) {
 	computeClient := compute.NewUsageClient(subscriptionId)
 	computeClient.Authorizer = AzureAuthorizer
+
 	for _, location := range opts.AzureLocation {
 		list, err := computeClient.List(context, location)
 
@@ -345,8 +370,20 @@ func collectAzureComputeUsage(context context.Context, subscriptionId string, ca
 			currentValue := float64(*val.CurrentValue)
 			limitValue := float64(*val.Limit)
 
-			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "compute", "quota": quotaName}
-			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "compute", "quota": quotaName, "quotaName": quotaNameLocalized}
+			labels := prometheus.Labels{
+				"subscriptionID": subscriptionId,
+				"location": location,
+				"scope": "compute",
+				"quota": quotaName,
+			}
+
+			infoLabels := prometheus.Labels{
+				"subscriptionID": subscriptionId,
+				"location": location,
+				"scope": "compute",
+				"quota": quotaName,
+				"quotaName": quotaNameLocalized,
+			}
 
 			callback <- func() {
 				prometheusQuota.With(infoLabels).Set(1)
@@ -361,6 +398,7 @@ func collectAzureComputeUsage(context context.Context, subscriptionId string, ca
 func collectAzureNetworkUsage(context context.Context, subscriptionId string, callback chan<- func()) {
 	networkClient := network.NewUsagesClient(subscriptionId)
 	networkClient.Authorizer = AzureAuthorizer
+
 	for _, location := range opts.AzureLocation {
 		list, err := networkClient.List(context, location)
 
@@ -374,8 +412,20 @@ func collectAzureNetworkUsage(context context.Context, subscriptionId string, ca
 			currentValue := float64(*val.CurrentValue)
 			limitValue := float64(*val.Limit)
 
-			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": quotaName}
-			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": quotaName, "quotaName": quotaNameLocalized}
+			labels := prometheus.Labels{
+				"subscriptionID": subscriptionId,
+				"location": location,
+				"scope": "storage",
+				"quota": quotaName,
+			}
+
+			infoLabels := prometheus.Labels{
+				"subscriptionID": subscriptionId,
+				"location": location,
+				"scope": "storage",
+				"quota": quotaName,
+				"quotaName": quotaNameLocalized,
+			}
 
 			callback <- func() {
 				prometheusQuota.With(infoLabels).Set(1)
@@ -390,6 +440,7 @@ func collectAzureNetworkUsage(context context.Context, subscriptionId string, ca
 func collectAzureStorageUsage(context context.Context, subscriptionId string, callback chan<- func()) {
 	storageClient := storage.NewUsageClient(subscriptionId)
 	storageClient.Authorizer = AzureAuthorizer
+
 	for _, location := range opts.AzureLocation {
 		list, err := storageClient.List(context)
 
@@ -403,14 +454,70 @@ func collectAzureStorageUsage(context context.Context, subscriptionId string, ca
 			currentValue := float64(*val.CurrentValue)
 			limitValue := float64(*val.Limit)
 
-			labels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": quotaName}
-			infoLabels := prometheus.Labels{"subscriptionID": subscriptionId, "location": location, "scope": "storage", "quota": quotaName, "quotaName": quotaNameLocalized}
+			labels := prometheus.Labels{
+				"subscriptionID": subscriptionId,
+				"location": location,
+				"scope": "storage",
+				"quota": quotaName,
+			}
+
+			infoLabels := prometheus.Labels{
+				"subscriptionID": subscriptionId,
+				"location": location,
+				"scope": "storage",
+				"quota": quotaName,
+				"quotaName": quotaNameLocalized,
+			}
 
 			callback <- func() {
 				prometheusQuota.With(infoLabels).Set(1)
 				prometheusQuotaCurrent.With(labels).Set(currentValue)
 				prometheusQuotaLimit.With(labels).Set(limitValue)
 			}
+		}
+	}
+}
+
+func collectAzureVm(context context.Context, subscriptionId string, callback chan<- func()) {
+	computeClient := compute.NewVirtualMachinesClient(subscriptionId)
+	computeClient.Authorizer = AzureAuthorizer
+
+	list, err := computeClient.ListAllComplete(context)
+
+	if err != nil {
+		panic(err)
+	}
+
+
+	for list.NotDone() {
+		val := list.Value()
+
+		infoLabels := prometheus.Labels{
+			"subscriptionID": subscriptionId,
+			"location": *val.Location,
+			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
+			"vmID": *val.VMID,
+			"vmName": *val.Name,
+			"vmType": *val.Type,
+			"vmSize": string(val.VirtualMachineProperties.HardwareProfile.VMSize),
+			"vmProvisioningState": *val.ProvisioningState,
+		}
+
+		osLabels := prometheus.Labels{
+			"vmID": *val.VMID,
+			"imagePublisher": *val.StorageProfile.ImageReference.Publisher,
+			"imageSku": *val.StorageProfile.ImageReference.Sku,
+			"imageOffer": *val.StorageProfile.ImageReference.Offer,
+			"imageVersion": *val.StorageProfile.ImageReference.Version,
+		}
+
+		callback <- func() {
+			prometheusVm.With(infoLabels).Set(1)
+			prometheusVmOs.With(osLabels).Set(1)
+		}
+
+		if list.Next() != nil {
+			break
 		}
 	}
 }
