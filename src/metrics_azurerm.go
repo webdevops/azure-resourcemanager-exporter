@@ -1,12 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"sync"
-	"time"
-	"regexp"
-	"strconv"
 	"context"
+	"fmt"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
@@ -14,6 +10,9 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/prometheus/client_golang/prometheus"
+	"strconv"
+	"sync"
+	"time"
 )
 
 var (
@@ -26,8 +25,6 @@ var (
 	prometheusQuota *prometheus.GaugeVec
 	prometheusQuotaCurrent *prometheus.GaugeVec
 	prometheusQuotaLimit *prometheus.GaugeVec
-
-	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
 )
 
 // Create and setup metrics and collection

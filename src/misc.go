@@ -1,5 +1,13 @@
 package main
 
+import (
+	"regexp"
+)
+
+var (
+	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
+)
+
 func prefixSlice(prefix string, valueMap []string) (ret []string) {
 	for _, value := range valueMap {
 		ret = append(ret, prefix + value)
