@@ -99,18 +99,22 @@ func startMetricsCollectionPortscanner() {
 	firstStart := true
 	go func() {
 		for {
+			sleepDuration := opts.PortscanTime
 			if portscanner.Enabled && len(portscanner.PublicIps) > 0 {
 				portscanner.Start()
-				time.Sleep(opts.PortscanTime)
 			} else {
 				if firstStart {
 					// short delayed first time start
-					time.Sleep(time.Duration(10))
+					sleepDuration = time.Duration(30 * time.Second)
+					firstStart = false
 				} else {
-					// longer delayed restart
-					time.Sleep(opts.ScrapeTime + 5)
+					// wait for next scrape time
+					sleepDuration = opts.ScrapeTime
 				}
 			}
+
+			Logger.Messsage("portscanner: sleeping %v", sleepDuration.String())
+			time.Sleep(sleepDuration)
 		}
 	}()
 }
