@@ -1,8 +1,8 @@
 package main
 
 import (
-	"time"
 	"github.com/prometheus/client_golang/prometheus"
+	"time"
 )
 
 var (
@@ -39,12 +39,12 @@ func initMetricsPortscanner() {
 
 
 	portscanner.Callbacks.FinishScan = func(c *Portscanner) {
-		Logger.Messsage("Finished portscan for %v IPs", len(portscanner.PublicIps))
+		Logger.Messsage("portscan: finished for %v IPs", len(portscanner.PublicIps))
 	}
 
 	portscanner.Callbacks.StartupScan = func(c *Portscanner) {
 		Logger.Messsage(
-			"Starting portscan for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
+			"portscan: starting for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
 			len(c.PublicIps),
 			opts.PortscanPrallel,
 			opts.PortscanThreads,
@@ -56,7 +56,7 @@ func initMetricsPortscanner() {
 	}
 
 	portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {
-		Logger.Messsage("Start port scanning for %v", ipAddress)
+		Logger.Messsage("portscan[%v]: start port scanning", ipAddress)
 
 		// set the ipAdress to be scanned
 		prometheusPublicIpPortscanStatus.With(prometheus.Labels{

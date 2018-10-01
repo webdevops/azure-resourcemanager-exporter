@@ -123,6 +123,8 @@ func startMetricsCollectionAzureRm() {
 			go func() {
 				runMetricsCollectionAzureRm()
 			}()
+
+			Logger.Messsage("run: sleeping %v", opts.ScrapeTime.String())
 			time.Sleep(opts.ScrapeTime)
 		}
 	}()
@@ -138,7 +140,7 @@ func runMetricsCollectionAzureRm() {
 
 	for _, subscription := range AzureSubscriptions {
 		Logger.Messsage(
-			"Starting metrics update for Azure Subscription %v",
+			"subscription[%v]: starting metrics collection",
 			*subscription.SubscriptionID,
 		)
 
