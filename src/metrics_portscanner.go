@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"os"
 	"time"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -40,6 +41,11 @@ func initMetricsPortscanner() {
 
 	portscanner.Callbacks.FinishScan = func(c *Portscanner) {
 		Logger.Messsage("portscan: finished for %v IPs", len(portscanner.PublicIps))
+
+		if opts.CachePath != "" {
+			Logger.Messsage("portscan: saved to cache")
+			portscanner.CacheSave(opts.CachePath)
+		}
 	}
 
 	portscanner.Callbacks.StartupScan = func(c *Portscanner) {
@@ -92,25 +98,35 @@ func initMetricsPortscanner() {
 	portscanner.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {
 		prometheusPublicIpPortscanPort.With(result.Labels).Set(result.Value)
 	}
+
+	if opts.CachePath != "" {
+		if _, err := os.Stat(opts.CachePath); !os.IsNotExist(err) {
+			Logger.Messsage("portscan: load from cache")
+			portscanner.CacheLoad(opts.CachePath)
+		}
+	}
 }
 
 // Start backgrounded metrics collection
 func startMetricsCollectionPortscanner() {
-	firstStart := true
+	var sleepDuration time.Duration
+
 	go func() {
 		for {
-			sleepDuration := opts.PortscanTime
+			sleepDuration = opts.PortscanTime
+
+			// wait for list of IPs
+			if !portscanner.Enabled {
+				sleepDuration = time.Duration(5 * time.Second)
+				Logger.Messsage("portscanner: sleeping %v", sleepDuration.String())
+				time.Sleep(sleepDuration)
+				continue
+			}
+
 			if portscanner.Enabled && len(portscanner.PublicIps) > 0 {
 				portscanner.Start()
 			} else {
-				if firstStart {
-					// short delayed first time start
-					sleepDuration = time.Duration(30 * time.Second)
-					firstStart = false
-				} else {
-					// wait for next scrape time
-					sleepDuration = opts.ScrapeTime
-				}
+				sleepDuration = opts.ScrapeTime
 			}
 
 			Logger.Messsage("portscanner: sleeping %v", sleepDuration.String())

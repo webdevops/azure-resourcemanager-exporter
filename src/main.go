@@ -8,6 +8,7 @@ import (
 	"errors"
 	"context"
 	"net/http"
+	"path/filepath"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
@@ -17,7 +18,7 @@ import (
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.7.1"
+	Version = "0.7.2"
 	AZURE_RESOURCEGROUP_TAG_PREFIX = "tag_"
 )
 
@@ -58,6 +59,9 @@ var opts struct {
 	PortscanTimeout  int    `    long:"portscan-timeout"              env:"PORTSCAN_TIMEOUT"                         description:"Portscan timeout (seconds)"                       default:"5"`
 	PortscanPortRange []string  `long:"portscan-range"                env:"PORTSCAN_RANGE"            env-delim:" "  description:"Portscan port range (first-last)"                 default:"1-65535"`
 	portscanPortRange []Portrange
+
+	// caching
+	CachePath string `           long:"cache-path"                    env:"CACHE_PATH"                               description:"Cache path"`
 }
 
 func main() {
@@ -110,6 +114,16 @@ func initArgparser() {
 			fmt.Println()
 			argparser.WriteHelp(os.Stdout)
 			os.Exit(1)
+		}
+	}
+
+	if opts.CachePath != "" {
+		cacheDirectory := filepath.Dir(opts.CachePath)
+		if _, err := os.Stat(cacheDirectory); os.IsNotExist(err) {
+			err := os.Mkdir(cacheDirectory, 0755)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 }

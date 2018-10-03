@@ -1,12 +1,15 @@
 package main
 
 import (
+	"os"
 	"sync"
 	"time"
 	"strconv"
-	"github.com/remeh/sizedwaitgroup"
+	"io/ioutil"
+	"encoding/json"
 	scanner "github.com/anvie/port-scanner"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/remeh/sizedwaitgroup"
 )
 
 type PortscannerResult struct {
@@ -18,8 +21,8 @@ type PortscannerResult struct {
 type Portscanner struct {
 	List map[string][]PortscannerResult
 	PublicIps map[string]string
-	Enabled bool
-	mux sync.Mutex
+	Enabled bool `json:"-"`
+	mux sync.Mutex `json:"-"`
 
 	Callbacks struct {
 		StartupScan func(c *Portscanner)
@@ -28,7 +31,7 @@ type Portscanner struct {
 		FinishScanIpAdress func(c *Portscanner, ipAddress string, elapsed float64)
 		ResultCleanup func(c *Portscanner)
 		ResultPush func(c *Portscanner, result PortscannerResult)
-	}
+	} `json:"-"`
 }
 
 func (c *Portscanner) Init() {
@@ -36,16 +39,50 @@ func (c *Portscanner) Init() {
 	c.List = map[string][]PortscannerResult{}
 	c.PublicIps = map[string]string{}
 
-	portscanner.Callbacks.StartupScan = func(c *Portscanner) {}
-	portscanner.Callbacks.FinishScan = func(c *Portscanner) {}
-	portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {}
-	portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string, elapsed float64) {}
-	portscanner.Callbacks.ResultCleanup = func(c *Portscanner) {}
-	portscanner.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {}
+	c.Callbacks.StartupScan = func(c *Portscanner) {}
+	c.Callbacks.FinishScan = func(c *Portscanner) {}
+	c.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {}
+	c.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string, elapsed float64) {}
+	c.Callbacks.ResultCleanup = func(c *Portscanner) {}
+	c.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {}
 }
 
 func (c *Portscanner) Enable() {
 	c.Enabled = true
+}
+
+func (c *Portscanner) CacheLoad(path string) {
+	c.mux.Lock()
+
+	file, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	jsonContent, _ := ioutil.ReadAll(file)
+	err = json.Unmarshal(jsonContent, &c)
+	if err != nil {
+		ErrorLogger.Error("Failed to load portscanner cache", err)
+	}
+
+	c.mux.Unlock()
+
+	// cleanup and update prometheus again
+	c.Cleanup()
+	c.Publish()
+}
+
+func (c *Portscanner) CacheSave(path string) {
+	c.mux.Lock()
+
+	jsonData, _ := json.Marshal(c)
+	err := ioutil.WriteFile(path, jsonData, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	c.mux.Unlock()
 }
 
 func (c *Portscanner) SetIps(ipAddresses []string) {
@@ -98,7 +135,7 @@ func (c *Portscanner) Publish() {
 func (c *Portscanner) pushResults() {
 	for _, results := range c.List {
 		for _, result := range results {
-			portscanner.Callbacks.ResultPush(c, result)
+			c.Callbacks.ResultPush(c, result)
 		}
 	}
 }
@@ -109,11 +146,11 @@ func (c *Portscanner) Start() {
 	c.Callbacks.StartupScan(c)
 
 	// cleanup and update prometheus again
-	portscanner.Cleanup()
-	portscanner.Publish()
+	c.Cleanup()
+	c.Publish()
 
 	swg := sizedwaitgroup.New(opts.PortscanPrallel)
-	for _, ipAddress := range portscanner.PublicIps {
+	for _, ipAddress := range c.PublicIps {
 		swg.Add()
 		go func(ipAddress string, portscanTimeout time.Duration) {
 			defer swg.Done()
@@ -124,7 +161,7 @@ func (c *Portscanner) Start() {
 
 			c.Callbacks.FinishScanIpAdress(c, ipAddress, elapsed)
 			
-			portscanner.addResults(ipAddress, results)
+			c.addResults(ipAddress, results)
 		}(ipAddress, portscanTimeout)
 	}
 
@@ -132,8 +169,8 @@ func (c *Portscanner) Start() {
 	swg.Wait()
 
 	// cleanup and update prometheus again
-	portscanner.Cleanup()
-	portscanner.Publish()
+	c.Cleanup()
+	c.Publish()
 
 	c.Callbacks.FinishScan(c)
 }
