@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerregistry/mgmt/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
@@ -25,6 +26,9 @@ var (
 	prometheusQuota *prometheus.GaugeVec
 	prometheusQuotaCurrent *prometheus.GaugeVec
 	prometheusQuotaLimit *prometheus.GaugeVec
+	prometheusContainerRegistry *prometheus.GaugeVec
+	prometheusContainerRegistryQuotaCurrent *prometheus.GaugeVec
+	prometheusContainerRegistryQuotaLimit *prometheus.GaugeVec
 )
 
 // Create and setup metrics and collection
@@ -104,6 +108,29 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "location", "scope", "quota"},
 	)
 
+	prometheusContainerRegistry = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerregistry_info",
+			Help: "Azure ContainerRegistry limit",
+		},
+		[]string{"subscriptionID", "location", "registryName", "resourceGroup", "adminUserEnabled", "skuName", "skuTier"},
+	)
+
+	prometheusContainerRegistryQuotaCurrent = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerregistry_quota_current",
+			Help: "Azure ContainerRegistry quota current",
+		},
+		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
+	)
+
+	prometheusContainerRegistryQuotaLimit = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerregistry_quota_limit",
+			Help: "Azure ContainerRegistry quota limit",
+		},
+		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
+	)
 
 	prometheus.MustRegister(prometheusSubscription)
 	prometheus.MustRegister(prometheusResourceGroup)
@@ -114,6 +141,9 @@ func initMetricsAzureRm() {
 	prometheus.MustRegister(prometheusQuota)
 	prometheus.MustRegister(prometheusQuotaCurrent)
 	prometheus.MustRegister(prometheusQuotaLimit)
+	prometheus.MustRegister(prometheusContainerRegistry)
+	prometheus.MustRegister(prometheusContainerRegistryQuotaCurrent)
+	prometheus.MustRegister(prometheusContainerRegistryQuotaLimit)
 }
 
 // Start backgrounded metrics collection
@@ -201,6 +231,14 @@ func runMetricsCollectionAzureRm() {
 			defer wg.Done()
 			collectAzureStorageUsage(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure StorageUsage collection", subscriptionId)
+		}(*subscription.SubscriptionID)
+
+		// ContainerRegistries usage
+		wg.Add(1)
+		go func(subscriptionId string) {
+			defer wg.Done()
+			collectAzureContainerRegistries(context, subscriptionId, callbackChannel)
+			Logger.Verbose("subscription[%v]: finished Azure ContainerRegistries collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 	}
 
@@ -520,6 +558,68 @@ func collectAzureVm(context context.Context, subscriptionId string, callback cha
 		}
 	}
 }
+
+
+func collectAzureContainerRegistries(context context.Context, subscriptionId string, callback chan<- func()) {
+	acrClient := containerregistry.NewRegistriesClient(subscriptionId)
+	acrClient.Authorizer = AzureAuthorizer
+
+	list, err := acrClient.ListComplete(context)
+
+	if err != nil {
+		panic(err)
+	}
+
+
+	for list.NotDone() {
+		val := list.Value()
+
+		arcUsage, err := acrClient.ListUsages(context, extractResourceGroupFromAzureId(*val.ID), *val.Name)
+
+		if err != nil {
+			panic(err)
+		}
+
+		skuName := ""
+		skuTier := ""
+
+		if val.Sku != nil {
+			skuName = string(val.Sku.Name)
+			skuTier = string(val.Sku.Tier)
+		}
+
+		infoLabels := prometheus.Labels{
+			"subscriptionID": subscriptionId,
+			"location": *val.Location,
+			"registryName": *val.Name,
+			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
+			"adminUserEnabled": boolToString(*val.AdminUserEnabled),
+			"skuName": skuName,
+			"skuTier": skuTier,
+		}
+
+		callback <- func() {
+			prometheusContainerRegistry.With(infoLabels).Set(1)
+
+			for _, usage := range *arcUsage.Value {
+				quotaLabels := prometheus.Labels{
+					"subscriptionID": subscriptionId,
+					"registryName": *val.Name,
+					"quotaUnit": string(usage.Unit),
+					"quotaName": *usage.Name,
+				}
+
+				prometheusContainerRegistryQuotaCurrent.With(quotaLabels).Set(float64(*usage.CurrentValue))
+				prometheusContainerRegistryQuotaLimit.With(quotaLabels).Set(float64(*usage.Limit))
+			}
+		}
+
+		if list.Next() != nil {
+			break
+		}
+	}
+}
+
 
 // read header and set prometheus api quota (if found)
 func probeProcessHeader(response autorest.Response, header string, labels prometheus.Labels, callback chan<- func()) {

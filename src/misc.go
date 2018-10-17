@@ -24,3 +24,17 @@ func extractResourceGroupFromAzureId (azureId string) (resourceGroup string) {
 
 	return
 }
+
+func boolToString(b bool) string {
+	if b {
+		return "1"
+	}
+	return "0"
+}
+
+func boolToFloat64(b bool) float64 {
+	if b {
+		return 1
+	}
+	return 0
+}

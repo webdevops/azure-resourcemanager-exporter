@@ -31,14 +31,17 @@ for Azure API authentication (using ENV vars) see https://github.com/Azure/azure
 Metrics
 -------
 
-| Metric                              | Description                                                                           |
-|-------------------------------------|---------------------------------------------------------------------------------------|
-| `azurerm_subscription_info`         | Azure Subscription details (ID, name, ...)                                            |
-| `azurerm_resourcegroup_info`        | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
-| `azurerm_publicip_info`             | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
-| `azurerm_ratelimit`                 | Azure API ratelimit (left calls)                                                      |
-| `azurerm_quota`                     | Azure RM quota details (readable name, scope, ...)                                    |
-| `azurerm_quota_current`             | Azure RM quota current (current value)                                                |
-| `azurerm_quota_limit`               | Azure RM quota limit (maximum limited value)                                          |
-| `azurerm_publicip_portscan_status`  | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
-| `azurerm_publicip_portscan_port`    | List of opend ports per IP                                                            |
+| Metric                                    | Description                                                                           |
+|-------------------------------------------|---------------------------------------------------------------------------------------|
+| `azurerm_subscription_info`               | Azure Subscription details (ID, name, ...)                                            |
+| `azurerm_resourcegroup_info`              | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
+| `azurerm_publicip_info`                   | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
+| `azurerm_ratelimit`                       | Azure API ratelimit (left calls)                                                      |
+| `azurerm_quota`                           | Azure RM quota details (readable name, scope, ...)                                    |
+| `azurerm_quota_current`                   | Azure RM quota current (current value)                                                |
+| `azurerm_quota_limit`                     | Azure RM quota limit (maximum limited value)                                          |
+| `azurerm_publicip_portscan_status`        | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
+| `azurerm_publicip_portscan_port`          | List of opend ports per IP                                                            |
+| `azurerm_containerregistry_info`          | List of Container registries                                                          |
+| `azurerm_containerregistry_quota_current` | Quota usage of Container registries                                                          |
+| `azurerm_containerregistry_quota_limit`   | Quota limit of Container registries                                                          |
