@@ -38,7 +38,7 @@ func initMetricsAzureRm() {
 			Name: "azurerm_subscription_info",
 			Help: "Azure ResourceManager subscription",
 		},
-		[]string{"subscriptionID", "subscriptionName", "spendingLimit", "quotaID", "locationPlacementID"},
+		[]string{"resourceID", "subscriptionID", "subscriptionName", "spendingLimit", "quotaID", "locationPlacementID"},
 	)
 
 	prometheusResourceGroup = prometheus.NewGaugeVec(
@@ -47,8 +47,8 @@ func initMetricsAzureRm() {
 			Help: "Azure ResourceManager resourcegroups",
 		},
 		append(
-			[]string{"subscriptionID", "resourceGroup", "location"},
-			prefixSlice(AZURE_RESOURCEGROUP_TAG_PREFIX, opts.AzureResourceGroupTags)...
+			[]string{"resourceID", "subscriptionID", "resourceGroup", "location"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
 
@@ -57,7 +57,10 @@ func initMetricsAzureRm() {
 			Name: "azurerm_vm_info",
 			Help: "Azure ResourceManager VMs",
 		},
-		[]string{"subscriptionID", "location", "resourceGroup", "vmID", "vmName", "vmType", "vmSize", "vmProvisioningState"},
+		append(
+			[]string{"resourceID", "subscriptionID", "location", "resourceGroup", "vmID", "vmName", "vmType", "vmSize", "vmProvisioningState"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+		),
 	)
 
 	prometheusVmOs = prometheus.NewGaugeVec(
@@ -73,7 +76,10 @@ func initMetricsAzureRm() {
 			Name: "azurerm_publicip_info",
 			Help: "Azure ResourceManager public ip",
 		},
-		[]string{"subscriptionID", "resourceGroup", "location", "ipAddress", "ipAllocationMethod", "ipAdressVersion"},
+		append(
+			[]string{"resourceID", "subscriptionID", "resourceGroup", "location", "ipAddress", "ipAllocationMethod", "ipAdressVersion"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+		),
 	)
 
 	prometheusApiQuota = prometheus.NewGaugeVec(
@@ -113,7 +119,10 @@ func initMetricsAzureRm() {
 			Name: "azurerm_containerregistry_info",
 			Help: "Azure ContainerRegistry limit",
 		},
-		[]string{"subscriptionID", "location", "registryName", "resourceGroup", "adminUserEnabled", "skuName", "skuTier"},
+		append(
+			[]string{"resourceID", "subscriptionID", "location", "registryName", "resourceGroup", "adminUserEnabled", "skuName", "skuTier"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+		),
 	)
 
 	prometheusContainerRegistryQuotaCurrent = prometheus.NewGaugeVec(
@@ -294,6 +303,7 @@ func collectAzureSubscription(context context.Context, subscriptionId string, ca
 	callback <- func() {
 		prometheusSubscription.With(
 			prometheus.Labels{
+				"resourceID": *sub.ID,
 				"subscriptionID":      *sub.SubscriptionID,
 				"subscriptionName":    *sub.DisplayName,
 				"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
@@ -314,6 +324,20 @@ func collectAzureSubscription(context context.Context, subscriptionId string, ca
 	probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-entities-read"}, callback)
 }
 
+func addAzureResourceTags(tags map[string]*string, labels prometheus.Labels) (prometheus.Labels) {
+	for _, rgTag := range opts.AzureResourceTags {
+		rgTabLabel := AZURE_RESOURCE_TAG_PREFIX + rgTag
+
+		if _, ok := tags[rgTag]; ok {
+			labels[rgTabLabel] = *tags[rgTag]
+		} else {
+			labels[rgTabLabel] = ""
+		}
+	}
+
+	return labels
+}
+
 // Collect Azure ResourceGroup metrics
 func collectAzureResourceGroup(context context.Context, subscriptionId string, callback chan<- func()) {
 	resourceGroupClient := resources.NewGroupsClient(subscriptionId)
@@ -325,24 +349,16 @@ func collectAzureResourceGroup(context context.Context, subscriptionId string, c
 	}
 
 	for _, item := range *resourceGroupResult.Response().Value {
-		rgLabels := prometheus.Labels{
+		infoLabels := prometheus.Labels{
+			"resourceID": *item.ID,
 			"subscriptionID": subscriptionId,
 			"resourceGroup": *item.Name,
 			"location": *item.Location,
 		}
-
-		for _, rgTag := range opts.AzureResourceGroupTags {
-			rgTabLabel := AZURE_RESOURCEGROUP_TAG_PREFIX + rgTag
-
-			if _, ok := item.Tags[rgTag]; ok {
-				rgLabels[rgTabLabel] = *item.Tags[rgTag]
-			} else {
-				rgLabels[rgTabLabel] = ""
-			}
-		}
+		infoLabels = addAzureResourceTags(item.Tags, infoLabels)
 
 		callback <- func() {
-			prometheusResourceGroup.With(rgLabels).Set(1)
+			prometheusResourceGroup.With(infoLabels).Set(1)
 		}
 	}
 }
@@ -373,6 +389,7 @@ func collectAzurePublicIp(context context.Context, subscriptionId string, callba
 		}
 
 		infoLabels := prometheus.Labels{
+			"resourceID": *val.ID,
 			"subscriptionID":     subscriptionId,
 			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
 			"location":           location,
@@ -380,6 +397,8 @@ func collectAzurePublicIp(context context.Context, subscriptionId string, callba
 			"ipAllocationMethod": ipAllocationMethod,
 			"ipAdressVersion":    ipAdressVersion,
 		}
+		infoLabels = addAzureResourceTags(val.Tags, infoLabels)
+
 
 		callback <- func() {
 			prometheusPublicIp.With(infoLabels).Set(gaugeValue)
@@ -530,6 +549,7 @@ func collectAzureVm(context context.Context, subscriptionId string, callback cha
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
+			"resourceID": *val.ID,
 			"subscriptionID": subscriptionId,
 			"location": *val.Location,
 			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
@@ -539,6 +559,7 @@ func collectAzureVm(context context.Context, subscriptionId string, callback cha
 			"vmSize": string(val.VirtualMachineProperties.HardwareProfile.VMSize),
 			"vmProvisioningState": *val.ProvisioningState,
 		}
+		infoLabels = addAzureResourceTags(val.Tags, infoLabels)
 
 		osLabels := prometheus.Labels{
 			"vmID": *val.VMID,
@@ -589,6 +610,7 @@ func collectAzureContainerRegistries(context context.Context, subscriptionId str
 		}
 
 		infoLabels := prometheus.Labels{
+			"resourceID": *val.ID,
 			"subscriptionID": subscriptionId,
 			"location": *val.Location,
 			"registryName": *val.Name,
@@ -597,6 +619,7 @@ func collectAzureContainerRegistries(context context.Context, subscriptionId str
 			"skuName": skuName,
 			"skuTier": skuTier,
 		}
+		infoLabels = addAzureResourceTags(val.Tags, infoLabels)
 
 		callback <- func() {
 			prometheusContainerRegistry.With(infoLabels).Set(1)
