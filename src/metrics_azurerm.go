@@ -577,7 +577,7 @@ func collectAzureContainerRegistries(context context.Context, subscriptionId str
 		arcUsage, err := acrClient.ListUsages(context, extractResourceGroupFromAzureId(*val.ID), *val.Name)
 
 		if err != nil {
-			panic(err)
+			ErrorLogger.Error(fmt.Sprintf("subscription[%v]: unable to fetch ACR usage for %v", subscriptionId, *val.Name), err)
 		}
 
 		skuName := ""
@@ -601,16 +601,18 @@ func collectAzureContainerRegistries(context context.Context, subscriptionId str
 		callback <- func() {
 			prometheusContainerRegistry.With(infoLabels).Set(1)
 
-			for _, usage := range *arcUsage.Value {
-				quotaLabels := prometheus.Labels{
-					"subscriptionID": subscriptionId,
-					"registryName": *val.Name,
-					"quotaUnit": string(usage.Unit),
-					"quotaName": *usage.Name,
-				}
+			if arcUsage.Value != nil {
+				for _, usage := range *arcUsage.Value {
+					quotaLabels := prometheus.Labels{
+						"subscriptionID": subscriptionId,
+						"registryName": *val.Name,
+						"quotaUnit": string(usage.Unit),
+						"quotaName": *usage.Name,
+					}
 
-				prometheusContainerRegistryQuotaCurrent.With(quotaLabels).Set(float64(*usage.CurrentValue))
-				prometheusContainerRegistryQuotaLimit.With(quotaLabels).Set(float64(*usage.Limit))
+					prometheusContainerRegistryQuotaCurrent.With(quotaLabels).Set(float64(*usage.CurrentValue))
+					prometheusContainerRegistryQuotaLimit.With(quotaLabels).Set(float64(*usage.Limit))
+				}
 			}
 		}
 
