@@ -18,7 +18,7 @@ Normally no configuration is needed but can be customized using environment vari
 | `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
 | `SCRAPE_TIME`                     | `5m`                        | Time (time.Duration) between Azure API collections                |
 | `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
-| `AZURE_RESOURCEGROUP_TAG`         | `owner`                     | Tags which should be included                                     |
+| `AZURE_RESOURCE_TAG`              | `owner`                     | Tags which should be included                                     |
 | `PORTSCAN`                        | `0`                         | Enables portscanner for public IPs (experimental)                 |
 | `PORTSCAN_RANGE`                  | `1-65535`                   | Port range to scan (single port or range, mutliple ranges possible -> space as seperator)  |
 | `PORTSCAN_TIME`                   | `3h`                        | Time (time.Duration) between portscanner runs                     |
