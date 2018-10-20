@@ -274,9 +274,18 @@ func runMetricsCollectionAzureRm() {
 			callbackList = append(callbackList, callback)
 		}
 
+		prometheusSubscription.Reset()
 		prometheusResourceGroup.Reset()
 		prometheusVm.Reset()
+		prometheusVmOs.Reset()
 		prometheusPublicIp.Reset()
+		prometheusApiQuota.Reset()
+		prometheusQuota.Reset()
+		prometheusQuotaCurrent.Reset()
+		prometheusQuotaLimit.Reset()
+		prometheusContainerRegistry.Reset()
+		prometheusContainerRegistryQuotaCurrent.Reset()
+		prometheusContainerRegistryQuotaLimit.Reset()
 		for _, callback := range callbackList {
 			callback()
 		}
