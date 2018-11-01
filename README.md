@@ -43,5 +43,7 @@ Metrics
 | `azurerm_publicip_portscan_status`        | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
 | `azurerm_publicip_portscan_port`          | List of opend ports per IP                                                            |
 | `azurerm_containerregistry_info`          | List of Container registries                                                          |
-| `azurerm_containerregistry_quota_current` | Quota usage of Container registries                                                          |
-| `azurerm_containerregistry_quota_limit`   | Quota limit of Container registries                                                          |
+| `azurerm_containerregistry_quota_current` | Quota usage of Container registries                                                   |
+| `azurerm_containerregistry_quota_limit`   | Quota limit of Container registries                                                   |
+| `azurerm_securitycenter_compliance`       | Azure SecurityCenter compliance status                                                |
+| `azurerm_advisor_recommendation`          | Azure Adisor recommendations (eg. security findings)                                  |

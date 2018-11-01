@@ -1,19 +1,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"time"
+	"sync"
+	"context"
+	"strconv"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/advisor/mgmt/advisor"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerregistry/mgmt/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
+	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/security/mgmt/security"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/prometheus/client_golang/prometheus"
-	"strconv"
-	"sync"
-	"time"
 )
 
 var (
@@ -29,6 +31,10 @@ var (
 	prometheusContainerRegistry *prometheus.GaugeVec
 	prometheusContainerRegistryQuotaCurrent *prometheus.GaugeVec
 	prometheusContainerRegistryQuotaLimit *prometheus.GaugeVec
+
+	// compliance
+	prometheusSecuritycenterCompliance *prometheus.GaugeVec
+	prometheusAdvisorRecommendations *prometheus.GaugeVec
 )
 
 // Create and setup metrics and collection
@@ -141,6 +147,22 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
 	)
 
+	prometheusSecuritycenterCompliance = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_securitycenter_compliance",
+			Help: "Azure Audit SecurityCenter compliance status",
+		},
+		[]string{"subscriptionID", "assessmentType"},
+	)
+
+	prometheusAdvisorRecommendations = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_advisor_recommendation",
+			Help: "Azure Audit Advisor recommendation",
+		},
+		[]string{"subscriptionID", "category", "resourceType", "resourceName", "resourceGroup", "impact", "risk"},
+	)
+
 	prometheus.MustRegister(prometheusSubscription)
 	prometheus.MustRegister(prometheusResourceGroup)
 	prometheus.MustRegister(prometheusVm)
@@ -153,6 +175,8 @@ func initMetricsAzureRm() {
 	prometheus.MustRegister(prometheusContainerRegistry)
 	prometheus.MustRegister(prometheusContainerRegistryQuotaCurrent)
 	prometheus.MustRegister(prometheusContainerRegistryQuotaLimit)
+	prometheus.MustRegister(prometheusSecuritycenterCompliance)
+	prometheus.MustRegister(prometheusAdvisorRecommendations)
 }
 
 // Start backgrounded metrics collection
@@ -249,6 +273,24 @@ func runMetricsCollectionAzureRm() {
 			collectAzureContainerRegistries(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure ContainerRegistries collection", subscriptionId)
 		}(*subscription.SubscriptionID)
+
+		// SecurityCompliance
+		for _, location := range opts.AzureLocation {
+			wg.Add(1)
+			go func(subscriptionId, location string) {
+				defer wg.Done()
+				collectAzureSecurityCompliance(context, subscriptionId, location, callbackChannel)
+				Logger.Verbose("subscription[%v]: finished Azure SecurityCompliance collection (%v)", subscriptionId, location)
+			}(*subscription.SubscriptionID, location)
+		}
+
+		// AdvisorRecommendations
+		wg.Add(1)
+		go func(subscriptionId string) {
+			defer wg.Done()
+			collectAzureAdvisorRecommendations(context, subscriptionId, callbackChannel)
+			Logger.Verbose("subscription[%v]: finished Azure AdvisorRecommendations collection", subscriptionId)
+		}(*subscription.SubscriptionID)
 	}
 
 	// process publicIP list and pass it to portscanner
@@ -286,6 +328,8 @@ func runMetricsCollectionAzureRm() {
 		prometheusContainerRegistry.Reset()
 		prometheusContainerRegistryQuotaCurrent.Reset()
 		prometheusContainerRegistryQuotaLimit.Reset()
+		prometheusSecuritycenterCompliance.Reset()
+		prometheusAdvisorRecommendations.Reset()
 		for _, callback := range callbackList {
 			callback()
 		}
@@ -666,6 +710,64 @@ func probeProcessHeader(response autorest.Response, header string, labels promet
 			}
 		} else {
 			ErrorLogger.Error(fmt.Sprintf("Failed to parse value '%v':", val), err)
+		}
+	}
+}
+
+func collectAzureSecurityCompliance(context context.Context, subscriptionId, location string, callback chan<- func()) {
+	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", subscriptionId)
+	complianceClient := security.NewCompliancesClient(subscriptionResourceId, location)
+	complianceClient.Authorizer = AzureAuthorizer
+
+	complienceResult, err := complianceClient.Get(context, subscriptionResourceId, time.Now().Format("2006-01-02Z"))
+	if err != nil {
+		ErrorLogger.Error(fmt.Sprintf("subscription[%v]", subscriptionId), err)
+		return
+	}
+
+	if complienceResult.AssessmentResult != nil {
+		for _, result := range *complienceResult.AssessmentResult {
+			segmentType := ""
+			if result.SegmentType != nil {
+				segmentType = *result.SegmentType
+			}
+
+			infoLabels := prometheus.Labels{
+				"subscriptionID": subscriptionId,
+				"assessmentType": segmentType,
+			}
+			infoValue := *result.Percentage
+
+			callback <- func() {
+				prometheusSecuritycenterCompliance.With(infoLabels).Set(infoValue)
+			}
+		}
+	}
+}
+
+func collectAzureAdvisorRecommendations(context context.Context, subscriptionId string, callback chan<- func()) {
+	advisorRecommendationsClient := advisor.NewRecommendationsClient(subscriptionId)
+	advisorRecommendationsClient.Authorizer = AzureAuthorizer
+
+	recommendationResult, err := advisorRecommendationsClient.ListComplete(context, "", nil, "")
+	if err != nil {
+		panic(err)
+	}
+
+	for _, item := range *recommendationResult.Response().Value {
+
+		infoLabels := prometheus.Labels{
+			"subscriptionID": subscriptionId,
+			"category":       string(item.RecommendationProperties.Category),
+			"resourceType":   *item.RecommendationProperties.ImpactedField,
+			"resourceName":   *item.RecommendationProperties.ImpactedValue,
+			"resourceGroup":  extractResourceGroupFromAzureId(*item.ID),
+			"impact":         string(item.Impact),
+			"risk":           string(item.Risk),
+		}
+
+		callback <- func() {
+			prometheusAdvisorRecommendations.With(infoLabels).Set(1)
 		}
 	}
 }
