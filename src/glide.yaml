@@ -2,11 +2,14 @@ package: azure-resourcemanager-exporter/src
 import:
 - package: github.com/Azure/azure-sdk-for-go
   subpackages:
+  - profiles/latest/advisor/mgmt/advisor
   - profiles/latest/compute/mgmt/compute
+  - profiles/latest/containerregistry/mgmt/containerregistry
   - profiles/latest/network/mgmt/network
   - profiles/latest/resources/mgmt/resources
   - profiles/latest/resources/mgmt/subscriptions
   - profiles/latest/storage/mgmt/storage
+  - profiles/preview/preview/security/mgmt/security
 - package: github.com/Azure/go-autorest
   subpackages:
   - autorest

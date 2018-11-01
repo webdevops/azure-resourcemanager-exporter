@@ -251,11 +251,8 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			// disabled due to
-			// https://github.com/Azure/azure-sdk-for-go/issues/2340
-			// https://github.com/Azure/azure-rest-api-specs/issues/1624
-			//collectAzureNetworkUsage(context, subscriptionId, callbackChannel)
-			Logger.Verbose("subscription[%v]: finished Azure NetworkUsage collection (DISABLED -> AZURE BUG)", subscriptionId)
+			collectAzureNetworkUsage(context, subscriptionId, callbackChannel)
+			Logger.Verbose("subscription[%v]: finished Azure NetworkUsage collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
 		// Storage usage
@@ -524,14 +521,14 @@ func collectAzureNetworkUsage(context context.Context, subscriptionId string, ca
 			labels := prometheus.Labels{
 				"subscriptionID": subscriptionId,
 				"location": location,
-				"scope": "storage",
+				"scope": "network",
 				"quota": quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
 				"subscriptionID": subscriptionId,
 				"location": location,
-				"scope": "storage",
+				"scope": "network",
 				"quota": quotaName,
 				"quotaName": quotaNameLocalized,
 			}
