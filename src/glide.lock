@@ -1,5 +1,5 @@
-hash: d60b027f58b4247c265138e74589e3caa625b034f4239eee106950f18365c4ae
-updated: 2018-11-01T20:27:54.307691+01:00
+hash: 53ee3f772c4f697e9aeb79cf3df7ac1ce5ff1fae0a7568a8cfe1b851eaa492cb
+updated: 2018-11-02T08:36:53.739075+01:00
 imports:
 - name: contrib.go.opencensus.io/exporter/ocagent
   version: b8ece14a43f0cda76036504e4a4fd7fa27ce1869
@@ -47,7 +47,7 @@ imports:
   subpackages:
   - quantile
 - name: github.com/census-instrumentation/opencensus-proto
-  version: 61f8bc77ecef4a3c820b3e3069f8345f8e9611c6
+  version: fc93f641b09cb3f7fc15fd17e420ad65d99fc4fc
   subpackages:
   - gen-go/agent/common/v1
   - gen-go/agent/trace/v1
@@ -136,7 +136,7 @@ imports:
   subpackages:
   - semaphore
 - name: golang.org/x/sys
-  version: 95c6576299259db960f6c5b9b69ea52422860fce
+  version: 1c9583448a9c3aa0f9a6a5241bf73c0bd8aafded
   subpackages:
   - unix
 - name: golang.org/x/text
@@ -147,7 +147,7 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/api
-  version: 799fe93f827439cfd251917066a18691dc6a7fc1
+  version: 45a606955d1cf544236717b0ba3a7beca40b0b37
   subpackages:
   - support/bundler
 - name: google.golang.org/genproto
@@ -155,7 +155,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 61c3ec866d362e760077a7741ae50a7588167ef6
+  version: 59a2cfbdf9272f6334fe4856b6e7c8d212845b3d
   subpackages:
   - balancer
   - balancer/base

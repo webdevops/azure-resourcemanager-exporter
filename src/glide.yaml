@@ -1,6 +1,7 @@
 package: azure-resourcemanager-exporter/src
 import:
 - package: github.com/Azure/azure-sdk-for-go
+  version: master
   subpackages:
   - profiles/latest/advisor/mgmt/advisor
   - profiles/latest/compute/mgmt/compute
@@ -11,13 +12,18 @@ import:
   - profiles/latest/storage/mgmt/storage
   - profiles/preview/preview/security/mgmt/security
 - package: github.com/Azure/go-autorest
+  version: master
   subpackages:
   - autorest
   - autorest/azure/auth
 - package: github.com/anvie/port-scanner
+  version: master
 - package: github.com/jessevdk/go-flags
+  version: master
 - package: github.com/prometheus/client_golang
+  version: master
   subpackages:
   - prometheus
   - prometheus/promhttp
 - package: github.com/remeh/sizedwaitgroup
+  version: master
