@@ -6,20 +6,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var (
-	prometheusPublicIpPortscanStatus *prometheus.GaugeVec
-	prometheusPublicIpPortscanUpdated *prometheus.GaugeVec
-	prometheusPublicIpPortscanPort *prometheus.GaugeVec
-
-	portscanner *Portscanner
-)
-
 // Create and setup metrics and collection
-func initMetricsPortscanner() {
-	portscanner = &Portscanner{}
-	portscanner.Init()
+func (m *MetricCollectorAzureRm) initPortscanner() {
+	m.portscanner = &Portscanner{}
+	m.portscanner.Init()
 
-	prometheusPublicIpPortscanStatus = prometheus.NewGaugeVec(
+	m.prometheus.publicIpPortscanStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_publicip_portscan_status",
 			Help: "Azure ResourceManager public ip portscan status",
@@ -27,7 +19,7 @@ func initMetricsPortscanner() {
 		[]string{"ipAddress", "type"},
 	)
 
-	prometheusPublicIpPortscanPort = prometheus.NewGaugeVec(
+	m.prometheus.publicIpPortscanPort = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_publicip_portscan_port",
 			Help: "Azure ResourceManager public ip port",
@@ -35,20 +27,19 @@ func initMetricsPortscanner() {
 		[]string{"ipAddress", "protocol", "port", "description"},
 	)
 
-	prometheus.MustRegister(prometheusPublicIpPortscanStatus)
-	prometheus.MustRegister(prometheusPublicIpPortscanPort)
+	prometheus.MustRegister(m.prometheus.publicIpPortscanStatus)
+	prometheus.MustRegister(m.prometheus.publicIpPortscanPort)
 
-
-	portscanner.Callbacks.FinishScan = func(c *Portscanner) {
-		Logger.Messsage("portscan: finished for %v IPs", len(portscanner.PublicIps))
+	m.portscanner.Callbacks.FinishScan = func(c *Portscanner) {
+		Logger.Messsage("portscan: finished for %v IPs", len(m.portscanner.PublicIps))
 
 		if opts.CachePath != "" {
 			Logger.Messsage("portscan: saved to cache")
-			portscanner.CacheSave(opts.CachePath)
+			m.portscanner.CacheSave(opts.CachePath)
 		}
 	}
 
-	portscanner.Callbacks.StartupScan = func(c *Portscanner) {
+	m.portscanner.Callbacks.StartupScan = func(c *Portscanner) {
 		Logger.Messsage(
 			"portscan: starting for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
 			len(c.PublicIps),
@@ -58,57 +49,57 @@ func initMetricsPortscanner() {
 			opts.portscanPortRange,
 		)
 
-		prometheusPublicIpPortscanStatus.Reset()
+		m.prometheus.publicIpPortscanStatus.Reset()
 	}
 
-	portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {
+	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {
 		Logger.Messsage("portscan[%v]: start port scanning", ipAddress)
 
 		// set the ipAdress to be scanned
-		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
+		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type": "finished",
 		}).Set(0)
 	}
 
-	portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string, elapsed float64) {
+	m.portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string, elapsed float64) {
 		// set ipAddess to be finsihed
-		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
+		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type": "finished",
 		}).Set(1)
 
 		// set the elapsed time
-		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
+		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type": "elapsed",
 		}).Set(elapsed)
 
 		// set update time
-		prometheusPublicIpPortscanStatus.With(prometheus.Labels{
+		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type": "updated",
 		}).SetToCurrentTime()
 	}
 
-	portscanner.Callbacks.ResultCleanup = func(c *Portscanner) {
-		prometheusPublicIpPortscanPort.Reset()
+	m.portscanner.Callbacks.ResultCleanup = func(c *Portscanner) {
+		m.prometheus.publicIpPortscanPort.Reset()
 	}
 
-	portscanner.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {
-		prometheusPublicIpPortscanPort.With(result.Labels).Set(result.Value)
+	m.portscanner.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {
+		m.prometheus.publicIpPortscanPort.With(result.Labels).Set(result.Value)
 	}
 
 	if opts.CachePath != "" {
 		if _, err := os.Stat(opts.CachePath); !os.IsNotExist(err) {
 			Logger.Messsage("portscan: load from cache")
-			portscanner.CacheLoad(opts.CachePath)
+			m.portscanner.CacheLoad(opts.CachePath)
 		}
 	}
 }
 
 // Start backgrounded metrics collection
-func startMetricsCollectionPortscanner() {
+func (m *MetricCollectorAzureRm) startPortscanner() {
 	var sleepDuration time.Duration
 
 	go func() {
@@ -116,15 +107,15 @@ func startMetricsCollectionPortscanner() {
 			sleepDuration = opts.PortscanTime
 
 			// wait for list of IPs
-			if !portscanner.Enabled {
+			if !m.portscanner.Enabled {
 				sleepDuration = time.Duration(5 * time.Second)
 				Logger.Messsage("portscanner: sleeping %v", sleepDuration.String())
 				time.Sleep(sleepDuration)
 				continue
 			}
 
-			if portscanner.Enabled && len(portscanner.PublicIps) > 0 {
-				portscanner.Start()
+			if m.portscanner.Enabled && len(m.portscanner.PublicIps) > 0 {
+				m.portscanner.Start()
 			} else {
 				sleepDuration = opts.ScrapeTime
 			}

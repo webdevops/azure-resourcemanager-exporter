@@ -30,6 +30,8 @@ var (
 	AzureAuthorizer    autorest.Authorizer
 	AzureSubscriptions []subscriptions.Subscription
 
+	MetricCollector    *MetricCollectorAzureRm
+
 	portrangeRegexp = regexp.MustCompile("^(?P<first>[0-9]+)(-(?P<last>[0-9]+))?$")
 )
 
@@ -81,8 +83,10 @@ func main() {
 
 	Logger.Messsage("Starting metrics collection")
 	Logger.Messsage("  scape time: %v", opts.ScrapeTime)
-	setupMetricsCollection()
-	startMetricsCollection()
+
+	MetricCollector = &MetricCollectorAzureRm{}
+	MetricCollector.Init(opts.Portscan)
+	MetricCollector.Start()
 
 	Logger.Messsage("Starting http server on %s", opts.ServerBind)
 	startHttpServer()
@@ -170,23 +174,6 @@ func initAzureConnection() {
 		}
 	}
 }
-
-func setupMetricsCollection() {
-	initMetricsAzureRm()
-
-	if opts.Portscan {
-		initMetricsPortscanner()
-	}
-}
-
-func startMetricsCollection() {
-	startMetricsCollectionAzureRm()
-
-	if opts.Portscan {
-		startMetricsCollectionPortscanner()
-	}
-}
-
 
 // start and handle prometheus handler
 func startHttpServer() {

@@ -18,28 +18,40 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var (
-	prometheusSubscription *prometheus.GaugeVec
-	prometheusResourceGroup *prometheus.GaugeVec
-	prometheusVm *prometheus.GaugeVec
-	prometheusVmOs *prometheus.GaugeVec
-	prometheusPublicIp *prometheus.GaugeVec
-	prometheusApiQuota *prometheus.GaugeVec
-	prometheusQuota *prometheus.GaugeVec
-	prometheusQuotaCurrent *prometheus.GaugeVec
-	prometheusQuotaLimit *prometheus.GaugeVec
-	prometheusContainerRegistry *prometheus.GaugeVec
-	prometheusContainerRegistryQuotaCurrent *prometheus.GaugeVec
-	prometheusContainerRegistryQuotaLimit *prometheus.GaugeVec
+type MetricCollectorAzureRm struct {
+	prometheus struct {
+		subscription *prometheus.GaugeVec
+		resourceGroup *prometheus.GaugeVec
+		vm *prometheus.GaugeVec
+		vmOs *prometheus.GaugeVec
+		publicIp *prometheus.GaugeVec
+		apiQuota *prometheus.GaugeVec
+		quota *prometheus.GaugeVec
+		quotaCurrent *prometheus.GaugeVec
+		quotaLimit *prometheus.GaugeVec
+		containerRegistry *prometheus.GaugeVec
+		containerRegistryQuotaCurrent *prometheus.GaugeVec
+		containerRegistryQuotaLimit *prometheus.GaugeVec
 
-	// compliance
-	prometheusSecuritycenterCompliance *prometheus.GaugeVec
-	prometheusAdvisorRecommendations *prometheus.GaugeVec
-)
+		// compliance
+		securitycenterCompliance *prometheus.GaugeVec
+		advisorRecommendations *prometheus.GaugeVec
+
+		// portscanner
+		publicIpPortscanStatus *prometheus.GaugeVec
+		publicIpPortscanUpdated *prometheus.GaugeVec
+		publicIpPortscanPort *prometheus.GaugeVec
+	}
+
+	portscanner *Portscanner
+	enablePortscanner bool
+}
 
 // Create and setup metrics and collection
-func initMetricsAzureRm() {
-	prometheusSubscription = prometheus.NewGaugeVec(
+func (m *MetricCollectorAzureRm) Init(enablePortscanner bool) {
+	m.enablePortscanner = enablePortscanner
+
+	m.prometheus.subscription = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_subscription_info",
 			Help: "Azure ResourceManager subscription",
@@ -47,7 +59,7 @@ func initMetricsAzureRm() {
 		[]string{"resourceID", "subscriptionID", "subscriptionName", "spendingLimit", "quotaID", "locationPlacementID"},
 	)
 
-	prometheusResourceGroup = prometheus.NewGaugeVec(
+	m.prometheus.resourceGroup = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_resourcegroup_info",
 			Help: "Azure ResourceManager resourcegroups",
@@ -58,7 +70,7 @@ func initMetricsAzureRm() {
 		),
 	)
 
-	prometheusVm = prometheus.NewGaugeVec(
+	m.prometheus.vm = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_vm_info",
 			Help: "Azure ResourceManager VMs",
@@ -69,7 +81,7 @@ func initMetricsAzureRm() {
 		),
 	)
 
-	prometheusVmOs = prometheus.NewGaugeVec(
+	m.prometheus.vmOs = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_vm_os",
 			Help: "Azure ResourceManager VM OS",
@@ -77,7 +89,7 @@ func initMetricsAzureRm() {
 		[]string{"vmID", "imagePublisher", "imageSku", "imageOffer", "imageVersion"},
 	)
 
-	prometheusPublicIp = prometheus.NewGaugeVec(
+	m.prometheus.publicIp = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_publicip_info",
 			Help: "Azure ResourceManager public ip",
@@ -88,7 +100,7 @@ func initMetricsAzureRm() {
 		),
 	)
 
-	prometheusApiQuota = prometheus.NewGaugeVec(
+	m.prometheus.apiQuota = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_ratelimit",
 			Help: "Azure ResourceManager ratelimit",
@@ -96,7 +108,7 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "scope", "type"},
 	)
 
-	prometheusQuota = prometheus.NewGaugeVec(
+	m.prometheus.quota = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_quota_info",
 			Help: "Azure ResourceManager quota info",
@@ -104,7 +116,7 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "location", "scope", "quota", "quotaName"},
 	)
 
-	prometheusQuotaCurrent = prometheus.NewGaugeVec(
+	m.prometheus.quotaCurrent = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_quota_current",
 			Help: "Azure ResourceManager quota current value",
@@ -112,7 +124,7 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "location", "scope", "quota"},
 	)
 
-	prometheusQuotaLimit = prometheus.NewGaugeVec(
+	m.prometheus.quotaLimit = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_quota_limit",
 			Help: "Azure ResourceManager quota limit",
@@ -120,7 +132,7 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "location", "scope", "quota"},
 	)
 
-	prometheusContainerRegistry = prometheus.NewGaugeVec(
+	m.prometheus.containerRegistry = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_containerregistry_info",
 			Help: "Azure ContainerRegistry limit",
@@ -131,7 +143,7 @@ func initMetricsAzureRm() {
 		),
 	)
 
-	prometheusContainerRegistryQuotaCurrent = prometheus.NewGaugeVec(
+	m.prometheus.containerRegistryQuotaCurrent = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_containerregistry_quota_current",
 			Help: "Azure ContainerRegistry quota current",
@@ -139,7 +151,7 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
 	)
 
-	prometheusContainerRegistryQuotaLimit = prometheus.NewGaugeVec(
+	m.prometheus.containerRegistryQuotaLimit = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_containerregistry_quota_limit",
 			Help: "Azure ContainerRegistry quota limit",
@@ -147,7 +159,7 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
 	)
 
-	prometheusSecuritycenterCompliance = prometheus.NewGaugeVec(
+	m.prometheus.securitycenterCompliance = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_securitycenter_compliance",
 			Help: "Azure Audit SecurityCenter compliance status",
@@ -155,7 +167,7 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "assessmentType"},
 	)
 
-	prometheusAdvisorRecommendations = prometheus.NewGaugeVec(
+	m.prometheus.advisorRecommendations = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_advisor_recommendation",
 			Help: "Azure Audit Advisor recommendation",
@@ -163,38 +175,46 @@ func initMetricsAzureRm() {
 		[]string{"subscriptionID", "category", "resourceType", "resourceName", "resourceGroup", "impact", "risk"},
 	)
 
-	prometheus.MustRegister(prometheusSubscription)
-	prometheus.MustRegister(prometheusResourceGroup)
-	prometheus.MustRegister(prometheusVm)
-	prometheus.MustRegister(prometheusVmOs)
-	prometheus.MustRegister(prometheusPublicIp)
-	prometheus.MustRegister(prometheusApiQuota)
-	prometheus.MustRegister(prometheusQuota)
-	prometheus.MustRegister(prometheusQuotaCurrent)
-	prometheus.MustRegister(prometheusQuotaLimit)
-	prometheus.MustRegister(prometheusContainerRegistry)
-	prometheus.MustRegister(prometheusContainerRegistryQuotaCurrent)
-	prometheus.MustRegister(prometheusContainerRegistryQuotaLimit)
-	prometheus.MustRegister(prometheusSecuritycenterCompliance)
-	prometheus.MustRegister(prometheusAdvisorRecommendations)
+	prometheus.MustRegister(m.prometheus.subscription)
+	prometheus.MustRegister(m.prometheus.resourceGroup)
+	prometheus.MustRegister(m.prometheus.vm)
+	prometheus.MustRegister(m.prometheus.vmOs)
+	prometheus.MustRegister(m.prometheus.publicIp)
+	prometheus.MustRegister(m.prometheus.apiQuota)
+	prometheus.MustRegister(m.prometheus.quota)
+	prometheus.MustRegister(m.prometheus.quotaCurrent)
+	prometheus.MustRegister(m.prometheus.quotaLimit)
+	prometheus.MustRegister(m.prometheus.containerRegistry)
+	prometheus.MustRegister(m.prometheus.containerRegistryQuotaCurrent)
+	prometheus.MustRegister(m.prometheus.containerRegistryQuotaLimit)
+	prometheus.MustRegister(m.prometheus.securitycenterCompliance)
+	prometheus.MustRegister(m.prometheus.advisorRecommendations)
+
+	if m.enablePortscanner {
+		m.initPortscanner()
+	}
 }
 
 // Start backgrounded metrics collection
-func startMetricsCollectionAzureRm() {
+func (m *MetricCollectorAzureRm) Start() {
 	go func() {
 		for {
 			go func() {
-				runMetricsCollectionAzureRm()
+				m.collect()
 			}()
 
 			Logger.Messsage("run: sleeping %v", opts.ScrapeTime.String())
 			time.Sleep(opts.ScrapeTime)
 		}
 	}()
+
+	if m.enablePortscanner {
+		m.startPortscanner()
+	}
 }
 
 // Metrics run
-func runMetricsCollectionAzureRm() {
+func (m *MetricCollectorAzureRm) collect() {
 	var wg sync.WaitGroup
 	context := context.Background()
 
@@ -211,7 +231,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			collectAzureSubscription(context, subscriptionId, callbackChannel)
+			m.collectAzureSubscription(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure Subscription collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
@@ -219,7 +239,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			collectAzureResourceGroup(context, subscriptionId, callbackChannel)
+			m.collectAzureResourceGroup(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure ResourceGroup collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
@@ -227,7 +247,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			collectAzureVm(context, subscriptionId, callbackChannel)
+			m.collectAzureVm(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure VirtualMachine collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
@@ -235,7 +255,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			publicIpChannel <- collectAzurePublicIp(context, subscriptionId, callbackChannel)
+			publicIpChannel <- m.collectAzurePublicIp(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure PublicIP collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
@@ -243,7 +263,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			collectAzureComputeUsage(context, subscriptionId, callbackChannel)
+			m.collectAzureComputeUsage(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure ComputerUsage collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
@@ -251,7 +271,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			collectAzureNetworkUsage(context, subscriptionId, callbackChannel)
+			m.collectAzureNetworkUsage(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure NetworkUsage collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
@@ -259,7 +279,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			collectAzureStorageUsage(context, subscriptionId, callbackChannel)
+			m.collectAzureStorageUsage(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure StorageUsage collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
@@ -267,7 +287,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			collectAzureContainerRegistries(context, subscriptionId, callbackChannel)
+			m.collectAzureContainerRegistries(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure ContainerRegistries collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
@@ -276,7 +296,7 @@ func runMetricsCollectionAzureRm() {
 			wg.Add(1)
 			go func(subscriptionId, location string) {
 				defer wg.Done()
-				collectAzureSecurityCompliance(context, subscriptionId, location, callbackChannel)
+				m.collectAzureSecurityCompliance(context, subscriptionId, location, callbackChannel)
 				Logger.Verbose("subscription[%v]: finished Azure SecurityCompliance collection (%v)", subscriptionId, location)
 			}(*subscription.SubscriptionID, location)
 		}
@@ -285,7 +305,7 @@ func runMetricsCollectionAzureRm() {
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
-			collectAzureAdvisorRecommendations(context, subscriptionId, callbackChannel)
+			m.collectAzureAdvisorRecommendations(context, subscriptionId, callbackChannel)
 			Logger.Verbose("subscription[%v]: finished Azure AdvisorRecommendations collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 	}
@@ -298,10 +318,10 @@ func runMetricsCollectionAzureRm() {
 		}
 
 		// update portscanner public ips
-		if portscanner != nil {
-			portscanner.SetIps(publicIpList)
-			portscanner.Cleanup()
-			portscanner.Enable()
+		if m.portscanner != nil {
+			m.portscanner.SetIps(publicIpList)
+			m.portscanner.Cleanup()
+			m.portscanner.Enable()
 		}
 		Logger.Messsage("run: collected %v public IPs", len(publicIpList))
 	}()
@@ -313,20 +333,20 @@ func runMetricsCollectionAzureRm() {
 			callbackList = append(callbackList, callback)
 		}
 
-		prometheusSubscription.Reset()
-		prometheusResourceGroup.Reset()
-		prometheusVm.Reset()
-		prometheusVmOs.Reset()
-		prometheusPublicIp.Reset()
-		prometheusApiQuota.Reset()
-		prometheusQuota.Reset()
-		prometheusQuotaCurrent.Reset()
-		prometheusQuotaLimit.Reset()
-		prometheusContainerRegistry.Reset()
-		prometheusContainerRegistryQuotaCurrent.Reset()
-		prometheusContainerRegistryQuotaLimit.Reset()
-		prometheusSecuritycenterCompliance.Reset()
-		prometheusAdvisorRecommendations.Reset()
+		m.prometheus.subscription.Reset()
+		m.prometheus.resourceGroup.Reset()
+		m.prometheus.vm.Reset()
+		m.prometheus.vmOs.Reset()
+		m.prometheus.publicIp.Reset()
+		m.prometheus.apiQuota.Reset()
+		m.prometheus.quota.Reset()
+		m.prometheus.quotaCurrent.Reset()
+		m.prometheus.quotaLimit.Reset()
+		m.prometheus.containerRegistry.Reset()
+		m.prometheus.containerRegistryQuotaCurrent.Reset()
+		m.prometheus.containerRegistryQuotaLimit.Reset()
+		m.prometheus.securitycenterCompliance.Reset()
+		m.prometheus.advisorRecommendations.Reset()
 		for _, callback := range callbackList {
 			callback()
 		}
@@ -341,7 +361,7 @@ func runMetricsCollectionAzureRm() {
 }
 
 // Collect Azure Subscription metrics
-func collectAzureSubscription(context context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureSubscription(context context.Context, subscriptionId string, callback chan<- func()) {
 	subscriptionClient := subscriptions.NewClient()
 	subscriptionClient.Authorizer = AzureAuthorizer
 
@@ -351,7 +371,7 @@ func collectAzureSubscription(context context.Context, subscriptionId string, ca
 	}
 
 	callback <- func() {
-		prometheusSubscription.With(
+		m.prometheus.subscription.With(
 			prometheus.Labels{
 				"resourceID": *sub.ID,
 				"subscriptionID":      *sub.SubscriptionID,
@@ -364,17 +384,17 @@ func collectAzureSubscription(context context.Context, subscriptionId string, ca
 	}
 
 	// subscription rate limits
-	probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "read"}, callback)
-	probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-requests"}, callback)
-	probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-entities-read"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "read"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-requests"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-entities-read"}, callback)
 
 	// tenant rate limits
-	probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "read"}, callback)
-	probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-requests"}, callback)
-	probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-entities-read"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "read"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-requests"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-entities-read"}, callback)
 }
 
-func addAzureResourceTags(tags map[string]*string, labels prometheus.Labels) (prometheus.Labels) {
+func (m *MetricCollectorAzureRm) addAzureResourceTags(tags map[string]*string, labels prometheus.Labels) (prometheus.Labels) {
 	for _, rgTag := range opts.AzureResourceTags {
 		rgTabLabel := AZURE_RESOURCE_TAG_PREFIX + rgTag
 
@@ -389,7 +409,7 @@ func addAzureResourceTags(tags map[string]*string, labels prometheus.Labels) (pr
 }
 
 // Collect Azure ResourceGroup metrics
-func collectAzureResourceGroup(context context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureResourceGroup(context context.Context, subscriptionId string, callback chan<- func()) {
 	resourceGroupClient := resources.NewGroupsClient(subscriptionId)
 	resourceGroupClient.Authorizer = AzureAuthorizer
 
@@ -405,16 +425,16 @@ func collectAzureResourceGroup(context context.Context, subscriptionId string, c
 			"resourceGroup": *item.Name,
 			"location": *item.Location,
 		}
-		infoLabels = addAzureResourceTags(item.Tags, infoLabels)
+		infoLabels = m.addAzureResourceTags(item.Tags, infoLabels)
 
 		callback <- func() {
-			prometheusResourceGroup.With(infoLabels).Set(1)
+			m.prometheus.resourceGroup.With(infoLabels).Set(1)
 		}
 	}
 }
 
 // Collect Azure PublicIP metrics
-func collectAzurePublicIp(context context.Context, subscriptionId string, callback chan<- func()) (ipAddressList []string) {
+func (m *MetricCollectorAzureRm) collectAzurePublicIp(context context.Context, subscriptionId string, callback chan<- func()) (ipAddressList []string) {
 	netPublicIpClient := network.NewPublicIPAddressesClient(subscriptionId)
 	netPublicIpClient.Authorizer = AzureAuthorizer
 
@@ -447,11 +467,11 @@ func collectAzurePublicIp(context context.Context, subscriptionId string, callba
 			"ipAllocationMethod": ipAllocationMethod,
 			"ipAdressVersion":    ipAdressVersion,
 		}
-		infoLabels = addAzureResourceTags(val.Tags, infoLabels)
+		infoLabels = m.addAzureResourceTags(val.Tags, infoLabels)
 
 
 		callback <- func() {
-			prometheusPublicIp.With(infoLabels).Set(gaugeValue)
+			m.prometheus.publicIp.With(infoLabels).Set(gaugeValue)
 		}
 	}
 
@@ -459,7 +479,7 @@ func collectAzurePublicIp(context context.Context, subscriptionId string, callba
 }
 
 // Collect Azure ComputeUsage metrics
-func collectAzureComputeUsage(context context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureComputeUsage(context context.Context, subscriptionId string, callback chan<- func()) {
 	computeClient := compute.NewUsageClient(subscriptionId)
 	computeClient.Authorizer = AzureAuthorizer
 
@@ -492,16 +512,16 @@ func collectAzureComputeUsage(context context.Context, subscriptionId string, ca
 			}
 
 			callback <- func() {
-				prometheusQuota.With(infoLabels).Set(1)
-				prometheusQuotaCurrent.With(labels).Set(currentValue)
-				prometheusQuotaLimit.With(labels).Set(limitValue)
+				m.prometheus.quota.With(infoLabels).Set(1)
+				m.prometheus.quotaCurrent.With(labels).Set(currentValue)
+				m.prometheus.quotaLimit.With(labels).Set(limitValue)
 			}
 		}
 	}
 }
 
 // Collect Azure NetworkUsage metrics
-func collectAzureNetworkUsage(context context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureNetworkUsage(context context.Context, subscriptionId string, callback chan<- func()) {
 	networkClient := network.NewUsagesClient(subscriptionId)
 	networkClient.Authorizer = AzureAuthorizer
 
@@ -534,16 +554,16 @@ func collectAzureNetworkUsage(context context.Context, subscriptionId string, ca
 			}
 
 			callback <- func() {
-				prometheusQuota.With(infoLabels).Set(1)
-				prometheusQuotaCurrent.With(labels).Set(currentValue)
-				prometheusQuotaLimit.With(labels).Set(limitValue)
+				m.prometheus.quota.With(infoLabels).Set(1)
+				m.prometheus.quotaCurrent.With(labels).Set(currentValue)
+				m.prometheus.quotaLimit.With(labels).Set(limitValue)
 			}
 		}
 	}
 }
 
 // Collect Azure StorageUsage metrics
-func collectAzureStorageUsage(context context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureStorageUsage(context context.Context, subscriptionId string, callback chan<- func()) {
 	storageClient := storage.NewUsageClient(subscriptionId)
 	storageClient.Authorizer = AzureAuthorizer
 
@@ -576,15 +596,15 @@ func collectAzureStorageUsage(context context.Context, subscriptionId string, ca
 			}
 
 			callback <- func() {
-				prometheusQuota.With(infoLabels).Set(1)
-				prometheusQuotaCurrent.With(labels).Set(currentValue)
-				prometheusQuotaLimit.With(labels).Set(limitValue)
+				m.prometheus.quota.With(infoLabels).Set(1)
+				m.prometheus.quotaCurrent.With(labels).Set(currentValue)
+				m.prometheus.quotaLimit.With(labels).Set(limitValue)
 			}
 		}
 	}
 }
 
-func collectAzureVm(context context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureVm(context context.Context, subscriptionId string, callback chan<- func()) {
 	computeClient := compute.NewVirtualMachinesClient(subscriptionId)
 	computeClient.Authorizer = AzureAuthorizer
 
@@ -609,7 +629,7 @@ func collectAzureVm(context context.Context, subscriptionId string, callback cha
 			"vmSize": string(val.VirtualMachineProperties.HardwareProfile.VMSize),
 			"vmProvisioningState": *val.ProvisioningState,
 		}
-		infoLabels = addAzureResourceTags(val.Tags, infoLabels)
+		infoLabels = m.addAzureResourceTags(val.Tags, infoLabels)
 
 		osLabels := prometheus.Labels{
 			"vmID": *val.VMID,
@@ -620,8 +640,8 @@ func collectAzureVm(context context.Context, subscriptionId string, callback cha
 		}
 
 		callback <- func() {
-			prometheusVm.With(infoLabels).Set(1)
-			prometheusVmOs.With(osLabels).Set(1)
+			m.prometheus.vm.With(infoLabels).Set(1)
+			m.prometheus.vmOs.With(osLabels).Set(1)
 		}
 
 		if list.Next() != nil {
@@ -631,7 +651,7 @@ func collectAzureVm(context context.Context, subscriptionId string, callback cha
 }
 
 
-func collectAzureContainerRegistries(context context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureContainerRegistries(context context.Context, subscriptionId string, callback chan<- func()) {
 	acrClient := containerregistry.NewRegistriesClient(subscriptionId)
 	acrClient.Authorizer = AzureAuthorizer
 
@@ -669,10 +689,10 @@ func collectAzureContainerRegistries(context context.Context, subscriptionId str
 			"skuName": skuName,
 			"skuTier": skuTier,
 		}
-		infoLabels = addAzureResourceTags(val.Tags, infoLabels)
+		infoLabels = m.addAzureResourceTags(val.Tags, infoLabels)
 
 		callback <- func() {
-			prometheusContainerRegistry.With(infoLabels).Set(1)
+			m.prometheus.containerRegistry.With(infoLabels).Set(1)
 
 			if arcUsage.Value != nil {
 				for _, usage := range *arcUsage.Value {
@@ -683,8 +703,8 @@ func collectAzureContainerRegistries(context context.Context, subscriptionId str
 						"quotaName": *usage.Name,
 					}
 
-					prometheusContainerRegistryQuotaCurrent.With(quotaLabels).Set(float64(*usage.CurrentValue))
-					prometheusContainerRegistryQuotaLimit.With(quotaLabels).Set(float64(*usage.Limit))
+					m.prometheus.containerRegistryQuotaCurrent.With(quotaLabels).Set(float64(*usage.CurrentValue))
+					m.prometheus.containerRegistryQuotaLimit.With(quotaLabels).Set(float64(*usage.Limit))
 				}
 			}
 		}
@@ -697,13 +717,13 @@ func collectAzureContainerRegistries(context context.Context, subscriptionId str
 
 
 // read header and set prometheus api quota (if found)
-func probeProcessHeader(response autorest.Response, header string, labels prometheus.Labels, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) probeProcessHeader(response autorest.Response, header string, labels prometheus.Labels, callback chan<- func()) {
 	if val := response.Header.Get(header); val != "" {
 		valFloat, err := strconv.ParseFloat(val, 64)
 
 		if err == nil {
 			callback <- func() {
-				prometheusApiQuota.With(labels).Set(valFloat)
+				m.prometheus.apiQuota.With(labels).Set(valFloat)
 			}
 		} else {
 			ErrorLogger.Error(fmt.Sprintf("Failed to parse value '%v':", val), err)
@@ -711,7 +731,7 @@ func probeProcessHeader(response autorest.Response, header string, labels promet
 	}
 }
 
-func collectAzureSecurityCompliance(context context.Context, subscriptionId, location string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureSecurityCompliance(context context.Context, subscriptionId, location string, callback chan<- func()) {
 	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", subscriptionId)
 	complianceClient := security.NewCompliancesClient(subscriptionResourceId, location)
 	complianceClient.Authorizer = AzureAuthorizer
@@ -736,13 +756,13 @@ func collectAzureSecurityCompliance(context context.Context, subscriptionId, loc
 			infoValue := *result.Percentage
 
 			callback <- func() {
-				prometheusSecuritycenterCompliance.With(infoLabels).Set(infoValue)
+				m.prometheus.securitycenterCompliance.With(infoLabels).Set(infoValue)
 			}
 		}
 	}
 }
 
-func collectAzureAdvisorRecommendations(context context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricCollectorAzureRm) collectAzureAdvisorRecommendations(context context.Context, subscriptionId string, callback chan<- func()) {
 	advisorRecommendationsClient := advisor.NewRecommendationsClient(subscriptionId)
 	advisorRecommendationsClient.Authorizer = AzureAuthorizer
 
@@ -764,7 +784,7 @@ func collectAzureAdvisorRecommendations(context context.Context, subscriptionId 
 		}
 
 		callback <- func() {
-			prometheusAdvisorRecommendations.With(infoLabels).Set(1)
+			m.prometheus.advisorRecommendations.With(infoLabels).Set(1)
 		}
 	}
 }
