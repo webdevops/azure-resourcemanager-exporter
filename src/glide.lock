@@ -1,5 +1,5 @@
-hash: 53ee3f772c4f697e9aeb79cf3df7ac1ce5ff1fae0a7568a8cfe1b851eaa492cb
-updated: 2018-11-02T08:36:53.739075+01:00
+hash: ae3d21ef8964afe4478b2ec23c3cc32ae6f4ad339c79866c2115c27952bf5655
+updated: 2018-11-15T22:41:21.157088+01:00
 imports:
 - name: contrib.go.opencensus.io/exporter/ocagent
   version: b8ece14a43f0cda76036504e4a4fd7fa27ce1869
@@ -9,7 +9,7 @@ imports:
   - predictors
   - predictors/webserver
 - name: github.com/Azure/azure-sdk-for-go
-  version: ca4654c50e30248fa542c1f0dd07fbde21d9b9a2
+  version: 9699bdefa481d47c5c7638a1cc05d87ce53601fd
   subpackages:
   - profiles/latest/advisor/mgmt/advisor
   - profiles/latest/compute/mgmt/compute
@@ -18,9 +18,11 @@ imports:
   - profiles/latest/resources/mgmt/resources
   - profiles/latest/resources/mgmt/subscriptions
   - profiles/latest/storage/mgmt/storage
+  - profiles/preview/containerinstance/mgmt/containerinstance
   - profiles/preview/preview/security/mgmt/security
   - services/advisor/mgmt/2017-04-19/advisor
   - services/compute/mgmt/2018-04-01/compute
+  - services/containerinstance/mgmt/2018-10-01/containerinstance
   - services/containerregistry/mgmt/2017-10-01/containerregistry
   - services/network/mgmt/2018-01-01/network
   - services/preview/security/mgmt/2017-08-01-preview/security
@@ -29,7 +31,7 @@ imports:
   - services/storage/mgmt/2017-10-01/storage
   - version
 - name: github.com/Azure/go-autorest
-  version: 4e5fffdf007df29ed0862f9e01fafabf4396e851
+  version: 528b76fd0ebec0682f3e3da7c808cd472b999615
   subpackages:
   - autorest
   - autorest/adal
@@ -47,10 +49,11 @@ imports:
   subpackages:
   - quantile
 - name: github.com/census-instrumentation/opencensus-proto
-  version: fc93f641b09cb3f7fc15fd17e420ad65d99fc4fc
+  version: b11a67434194733b34c11f206938263fa16ad1cf
   subpackages:
   - gen-go/agent/common/v1
   - gen-go/agent/trace/v1
+  - gen-go/resource/v1
   - gen-go/trace/v1
 - name: github.com/dgrijalva/jwt-go
   version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
@@ -74,7 +77,7 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: ae18d6b8b3205b561c79e8e5f69bff09736185f4
 - name: github.com/prometheus/client_golang
-  version: f30f428035633da15d00d3dfefb0128c5e569ef4
+  version: c4c1f3461e40e5c6a4f570f5b00415cf5eacbd79
   subpackages:
   - prometheus
   - prometheus/internal
@@ -84,7 +87,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 7e9e6cabbd393fc208072eedef99188d0ce788b6
+  version: 41aa239b4cce3c56ab88fc366ae8b0a6423fa239
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -100,7 +103,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: b2ce2384e17bbe0c6d34077efa39dbab3e09123b
 - name: go.opencensus.io
-  version: 4f7fcb478fc0e34627b4da801e1502ee05a87127
+  version: 91a0276ece6ad4cbdc4b46116f88d2b47a5f58e5
   subpackages:
   - exemplar
   - internal
@@ -132,7 +135,7 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/sync
-  version: 1d60e4601c6fd243af51cc01ddf169918a5407ca
+  version: 42b317875d0fa942474b76e1b46a6060d720ae6e
   subpackages:
   - semaphore
 - name: golang.org/x/sys
@@ -147,15 +150,15 @@ imports:
   - unicode/bidi
   - unicode/norm
 - name: google.golang.org/api
-  version: 45a606955d1cf544236717b0ba3a7beca40b0b37
+  version: 83a9d304b1e613fc253e1e2710778642fe81af53
   subpackages:
   - support/bundler
 - name: google.golang.org/genproto
-  version: c830210a61dfaa790e1920f8d0470fc27bc2efbe
+  version: b5d43981345bdb2c233eb4bf3277847b48c6fdc6
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 59a2cfbdf9272f6334fe4856b6e7c8d212845b3d
+  version: ef2b8e2f53fcd6654d12966394462f84e0f04066
   subpackages:
   - balancer
   - balancer/base
@@ -164,6 +167,7 @@ imports:
   - codes
   - connectivity
   - credentials
+  - credentials/internal
   - encoding
   - encoding/proto
   - grpclog
@@ -173,6 +177,8 @@ imports:
   - internal/channelz
   - internal/envconfig
   - internal/grpcrand
+  - internal/grpcsync
+  - internal/syscall
   - internal/transport
   - keepalive
   - metadata

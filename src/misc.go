@@ -2,6 +2,7 @@ package main
 
 import (
 	"regexp"
+	"strconv"
 )
 
 var (
@@ -37,4 +38,8 @@ func boolToFloat64(b bool) float64 {
 		return 1
 	}
 	return 0
+}
+
+func int64ToString(v int64) string {
+	return strconv.FormatInt(v, 10)
 }

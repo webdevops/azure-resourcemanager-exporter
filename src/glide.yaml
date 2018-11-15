@@ -6,6 +6,7 @@ import:
   - profiles/latest/advisor/mgmt/advisor
   - profiles/latest/compute/mgmt/compute
   - profiles/latest/containerregistry/mgmt/containerregistry
+  - profiles/preview/containerinstance/mgmt/containerinstance
   - profiles/latest/network/mgmt/network
   - profiles/latest/resources/mgmt/resources
   - profiles/latest/resources/mgmt/subscriptions
