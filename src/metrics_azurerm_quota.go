@@ -8,6 +8,36 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+func (m *MetricCollectorAzureRm) initQuota() {
+	m.prometheus.quota = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_quota_info",
+			Help: "Azure ResourceManager quota info",
+		},
+		[]string{"subscriptionID", "location", "scope", "quota", "quotaName"},
+	)
+
+	m.prometheus.quotaCurrent = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_quota_current",
+			Help: "Azure ResourceManager quota current value",
+		},
+		[]string{"subscriptionID", "location", "scope", "quota"},
+	)
+
+	m.prometheus.quotaLimit = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_quota_limit",
+			Help: "Azure ResourceManager quota limit",
+		},
+		[]string{"subscriptionID", "location", "scope", "quota"},
+	)
+
+	prometheus.MustRegister(m.prometheus.quota)
+	prometheus.MustRegister(m.prometheus.quotaCurrent)
+	prometheus.MustRegister(m.prometheus.quotaLimit)
+}
+
 
 // Collect Azure ComputeUsage metrics
 func (m *MetricCollectorAzureRm) collectAzureComputeUsage(ctx context.Context, subscriptionId string, callback chan<- func()) {

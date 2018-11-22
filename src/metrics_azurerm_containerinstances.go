@@ -6,6 +6,48 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+func (m *MetricCollectorAzureRm) initContainerInstances() {
+	m.prometheus.containerInstance = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerinstance_info",
+			Help: "Azure ContainerInstance limit",
+		},
+		append(
+			[]string{"resourceID", "subscriptionID", "location", "instanceName", "resourceGroup", "osType", "ipAdress"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+		),
+	)
+
+	m.prometheus.containerInstanceContainer = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerinstance_container",
+			Help: "Azure ContainerInstance container",
+		},
+		[]string{"resourceID", "containerName", "containerImage", "livenessProbe", "readinessProbe"},
+	)
+
+	m.prometheus.containerInstanceContainerResource = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerinstance_container_resource",
+			Help: "Azure ContainerInstance container resource",
+		},
+		[]string{"resourceID", "containerName", "type", "resource"},
+	)
+
+	m.prometheus.containerInstanceContainerPort = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerinstance_container_port",
+			Help: "Azure ContainerInstance container port",
+		},
+		[]string{"resourceID", "containerName", "protocol"},
+	)
+
+	prometheus.MustRegister(m.prometheus.containerInstance)
+	prometheus.MustRegister(m.prometheus.containerInstanceContainer)
+	prometheus.MustRegister(m.prometheus.containerInstanceContainerResource)
+	prometheus.MustRegister(m.prometheus.containerInstanceContainerPort)
+}
+
 func (m *MetricCollectorAzureRm) collectAzureContainerInstances(ctx context.Context, subscriptionId string, callback chan<- func()) {
 	client := containerinstance.NewContainerGroupsClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
@@ -34,6 +76,7 @@ func (m *MetricCollectorAzureRm) collectAzureContainerInstances(ctx context.Cont
 			"ipAdress": *val.IPAddress.IP,
 		}
 		infoLabels = m.addAzureResourceTags(infoLabels, val.Tags)
+		infoMetric.Add(infoLabels, 1)
 
 		if val.Containers != nil {
 			for _, container := range *val.Containers {

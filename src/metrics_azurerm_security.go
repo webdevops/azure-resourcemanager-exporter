@@ -9,6 +9,27 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+func (m *MetricCollectorAzureRm) initSecurity() {
+	m.prometheus.securitycenterCompliance = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_securitycenter_compliance",
+			Help: "Azure Audit SecurityCenter compliance status",
+		},
+		[]string{"subscriptionID", "assessmentType"},
+	)
+
+	m.prometheus.advisorRecommendations = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_advisor_recommendation",
+			Help: "Azure Audit Advisor recommendation",
+		},
+		[]string{"subscriptionID", "category", "resourceType", "resourceName", "resourceGroup", "impact", "risk"},
+	)
+
+	prometheus.MustRegister(m.prometheus.securitycenterCompliance)
+	prometheus.MustRegister(m.prometheus.advisorRecommendations)
+}
+
 func (m *MetricCollectorAzureRm) collectAzureSecurityCompliance(ctx context.Context, subscriptionId, location string, callback chan<- func()) {
 	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", subscriptionId)
 	client := security.NewCompliancesClient(subscriptionResourceId, location)

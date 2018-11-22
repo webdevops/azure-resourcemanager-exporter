@@ -7,6 +7,39 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+func (m *MetricCollectorAzureRm) initContainerRegistries() {
+	m.prometheus.containerRegistry = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerregistry_info",
+			Help: "Azure ContainerRegistry limit",
+		},
+		append(
+			[]string{"resourceID", "subscriptionID", "location", "registryName", "resourceGroup", "adminUserEnabled", "skuName", "skuTier"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+		),
+	)
+
+	m.prometheus.containerRegistryQuotaCurrent = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerregistry_quota_current",
+			Help: "Azure ContainerRegistry quota current",
+		},
+		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
+	)
+
+	m.prometheus.containerRegistryQuotaLimit = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_containerregistry_quota_limit",
+			Help: "Azure ContainerRegistry quota limit",
+		},
+		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
+	)
+
+	prometheus.MustRegister(m.prometheus.containerRegistry)
+	prometheus.MustRegister(m.prometheus.containerRegistryQuotaCurrent)
+	prometheus.MustRegister(m.prometheus.containerRegistryQuotaLimit)
+}
+
 func (m *MetricCollectorAzureRm) collectAzureContainerRegistries(ctx context.Context, subscriptionId string, callback chan<- func()) {
 	client := containerregistry.NewRegistriesClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer

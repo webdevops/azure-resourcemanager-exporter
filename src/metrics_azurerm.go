@@ -55,183 +55,12 @@ type MetricCollectorAzureRm struct {
 func (m *MetricCollectorAzureRm) Init(enablePortscanner bool) {
 	m.enablePortscanner = enablePortscanner
 
-	m.prometheus.subscription = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_subscription_info",
-			Help: "Azure ResourceManager subscription",
-		},
-		[]string{"resourceID", "subscriptionID", "subscriptionName", "spendingLimit", "quotaID", "locationPlacementID"},
-	)
-
-	m.prometheus.resourceGroup = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_resourcegroup_info",
-			Help: "Azure ResourceManager resourcegroups",
-		},
-		append(
-			[]string{"resourceID", "subscriptionID", "resourceGroup", "location"},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
-		),
-	)
-
-	m.prometheus.vm = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_vm_info",
-			Help: "Azure ResourceManager VMs",
-		},
-		append(
-			[]string{"resourceID", "subscriptionID", "location", "resourceGroup", "vmID", "vmName", "vmType", "vmSize", "vmProvisioningState"},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
-		),
-	)
-
-	m.prometheus.vmOs = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_vm_os",
-			Help: "Azure ResourceManager VM OS",
-		},
-		[]string{"vmID", "imagePublisher", "imageSku", "imageOffer", "imageVersion"},
-	)
-
-	m.prometheus.publicIp = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_publicip_info",
-			Help: "Azure ResourceManager public ip",
-		},
-		append(
-			[]string{"resourceID", "subscriptionID", "resourceGroup", "location", "ipAddress", "ipAllocationMethod", "ipAdressVersion"},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
-		),
-	)
-
-	m.prometheus.apiQuota = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_ratelimit",
-			Help: "Azure ResourceManager ratelimit",
-		},
-		[]string{"subscriptionID", "scope", "type"},
-	)
-
-	m.prometheus.quota = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_quota_info",
-			Help: "Azure ResourceManager quota info",
-		},
-		[]string{"subscriptionID", "location", "scope", "quota", "quotaName"},
-	)
-
-	m.prometheus.quotaCurrent = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_quota_current",
-			Help: "Azure ResourceManager quota current value",
-		},
-		[]string{"subscriptionID", "location", "scope", "quota"},
-	)
-
-	m.prometheus.quotaLimit = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_quota_limit",
-			Help: "Azure ResourceManager quota limit",
-		},
-		[]string{"subscriptionID", "location", "scope", "quota"},
-	)
-
-	m.prometheus.containerRegistry = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_containerregistry_info",
-			Help: "Azure ContainerRegistry limit",
-		},
-		append(
-			[]string{"resourceID", "subscriptionID", "location", "registryName", "resourceGroup", "adminUserEnabled", "skuName", "skuTier"},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
-		),
-	)
-
-	m.prometheus.containerInstance = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_containerinstance_info",
-			Help: "Azure ContainerInstance limit",
-		},
-		append(
-			[]string{"resourceID", "subscriptionID", "location", "instanceName", "resourceGroup", "osType", "ipAdress"},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
-		),
-	)
-
-	m.prometheus.containerInstanceContainer = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_containerinstance_container",
-			Help: "Azure ContainerInstance container",
-		},
-		[]string{"resourceID", "containerName", "containerImage", "livenessProbe", "readinessProbe"},
-	)
-
-	m.prometheus.containerInstanceContainerResource = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_containerinstance_container_resource",
-			Help: "Azure ContainerInstance container resource",
-		},
-		[]string{"resourceID", "containerName", "type", "resource"},
-	)
-
-	m.prometheus.containerInstanceContainerPort = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_containerinstance_container_port",
-			Help: "Azure ContainerInstance container port",
-		},
-		[]string{"resourceID", "containerName", "protocol"},
-	)
-
-	m.prometheus.containerRegistryQuotaCurrent = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_containerregistry_quota_current",
-			Help: "Azure ContainerRegistry quota current",
-		},
-		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
-	)
-
-	m.prometheus.containerRegistryQuotaLimit = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_containerregistry_quota_limit",
-			Help: "Azure ContainerRegistry quota limit",
-		},
-		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
-	)
-
-	m.prometheus.securitycenterCompliance = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_securitycenter_compliance",
-			Help: "Azure Audit SecurityCenter compliance status",
-		},
-		[]string{"subscriptionID", "assessmentType"},
-	)
-
-	m.prometheus.advisorRecommendations = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_advisor_recommendation",
-			Help: "Azure Audit Advisor recommendation",
-		},
-		[]string{"subscriptionID", "category", "resourceType", "resourceName", "resourceGroup", "impact", "risk"},
-	)
-
-	prometheus.MustRegister(m.prometheus.subscription)
-	prometheus.MustRegister(m.prometheus.resourceGroup)
-	prometheus.MustRegister(m.prometheus.vm)
-	prometheus.MustRegister(m.prometheus.vmOs)
-	prometheus.MustRegister(m.prometheus.publicIp)
-	prometheus.MustRegister(m.prometheus.apiQuota)
-	prometheus.MustRegister(m.prometheus.quota)
-	prometheus.MustRegister(m.prometheus.quotaCurrent)
-	prometheus.MustRegister(m.prometheus.quotaLimit)
-	prometheus.MustRegister(m.prometheus.containerRegistry)
-	prometheus.MustRegister(m.prometheus.containerRegistryQuotaCurrent)
-	prometheus.MustRegister(m.prometheus.containerRegistryQuotaLimit)
-	prometheus.MustRegister(m.prometheus.containerInstance)
-	prometheus.MustRegister(m.prometheus.containerInstanceContainer)
-	prometheus.MustRegister(m.prometheus.containerInstanceContainerResource)
-	prometheus.MustRegister(m.prometheus.containerInstanceContainerPort)
-	prometheus.MustRegister(m.prometheus.securitycenterCompliance)
-	prometheus.MustRegister(m.prometheus.advisorRecommendations)
+	m.initGeneral()
+	m.initQuota()
+	m.initVm()
+	m.initContainerRegistries()
+	m.initContainerInstances()
+	m.initSecurity()
 
 	if m.enablePortscanner {
 		m.initPortscanner()
@@ -326,7 +155,7 @@ func (m *MetricCollectorAzureRm) collect() {
 			Logger.Verbose("subscription[%v]: finished Azure StorageUsage collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
-		// ContainerRegistries usage
+		// ContainerRegistries
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()
@@ -334,7 +163,7 @@ func (m *MetricCollectorAzureRm) collect() {
 			Logger.Verbose("subscription[%v]: finished Azure ContainerRegistries collection", subscriptionId)
 		}(*subscription.SubscriptionID)
 
-		// ContainerInstances usage
+		// ContainerInstances
 		wg.Add(1)
 		go func(subscriptionId string) {
 			defer wg.Done()

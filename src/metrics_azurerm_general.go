@@ -10,6 +10,40 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+func (m *MetricCollectorAzureRm) initGeneral() {
+	m.prometheus.subscription = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_subscription_info",
+			Help: "Azure ResourceManager subscription",
+		},
+		[]string{"resourceID", "subscriptionID", "subscriptionName", "spendingLimit", "quotaID", "locationPlacementID"},
+	)
+
+	m.prometheus.resourceGroup = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_resourcegroup_info",
+			Help: "Azure ResourceManager resourcegroups",
+		},
+		append(
+			[]string{"resourceID", "subscriptionID", "resourceGroup", "location"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+		),
+	)
+
+	m.prometheus.apiQuota = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_ratelimit",
+			Help: "Azure ResourceManager ratelimit",
+		},
+		[]string{"subscriptionID", "scope", "type"},
+	)
+
+	prometheus.MustRegister(m.prometheus.subscription)
+	prometheus.MustRegister(m.prometheus.resourceGroup)
+	prometheus.MustRegister(m.prometheus.apiQuota)
+}
+
+
 // Collect Azure Subscription metrics
 func (m *MetricCollectorAzureRm) collectAzureSubscription(ctx context.Context, subscriptionId string, callback chan<- func()) {
 	client := subscriptions.NewClient()

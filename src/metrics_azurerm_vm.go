@@ -7,6 +7,42 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+func (m *MetricCollectorAzureRm) initVm() {
+	m.prometheus.vm = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_vm_info",
+			Help: "Azure ResourceManager VMs",
+		},
+		append(
+			[]string{"resourceID", "subscriptionID", "location", "resourceGroup", "vmID", "vmName", "vmType", "vmSize", "vmProvisioningState"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+		),
+	)
+
+	m.prometheus.vmOs = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_vm_os",
+			Help: "Azure ResourceManager VM OS",
+		},
+		[]string{"vmID", "imagePublisher", "imageSku", "imageOffer", "imageVersion"},
+	)
+
+	m.prometheus.publicIp = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_publicip_info",
+			Help: "Azure ResourceManager public ip",
+		},
+		append(
+			[]string{"resourceID", "subscriptionID", "resourceGroup", "location", "ipAddress", "ipAllocationMethod", "ipAdressVersion"},
+			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+		),
+	)
+
+	prometheus.MustRegister(m.prometheus.vm)
+	prometheus.MustRegister(m.prometheus.vmOs)
+	prometheus.MustRegister(m.prometheus.publicIp)
+}
+
 // Collect Azure PublicIP metrics
 func (m *MetricCollectorAzureRm) collectAzurePublicIp(ctx context.Context, subscriptionId string, callback chan<- func()) (ipAddressList []string) {
 	client := network.NewPublicIPAddressesClient(subscriptionId)
