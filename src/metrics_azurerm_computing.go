@@ -2,12 +2,23 @@ package main
 
 import (
 	"context"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func (m *MetricCollectorAzureRm) initVm() {
+type MetricsCollectorAzureRmComputing struct {
+	MetricCollectorGeneralInterface
+	
+	prometheus struct {
+		vm *prometheus.GaugeVec
+		vmOs *prometheus.GaugeVec
+		publicIp *prometheus.GaugeVec
+	}
+}
+
+func (m *MetricsCollectorAzureRmComputing) Setup() {
 	m.prometheus.vm = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_vm_info",
@@ -43,9 +54,20 @@ func (m *MetricCollectorAzureRm) initVm() {
 	prometheus.MustRegister(m.prometheus.publicIp)
 }
 
+func (m *MetricsCollectorAzureRmComputing) Reset() {
+	m.prometheus.vm.Reset()
+	m.prometheus.vmOs.Reset()
+	m.prometheus.publicIp.Reset()
+}
+
+func (m *MetricsCollectorAzureRmComputing) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureVm(ctx, callback, subscription)
+	m.collectAzurePublicIp(ctx, callback, subscription)
+}
+
 // Collect Azure PublicIP metrics
-func (m *MetricCollectorAzureRm) collectAzurePublicIp(ctx context.Context, subscriptionId string, callback chan<- func()) (ipAddressList []string) {
-	client := network.NewPublicIPAddressesClient(subscriptionId)
+func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) (ipAddressList []string) {
+	client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListAll(ctx)
@@ -53,7 +75,7 @@ func (m *MetricCollectorAzureRm) collectAzurePublicIp(ctx context.Context, subsc
 		panic(err)
 	}
 
-	infoMetric := prometheusMetricsList{}
+	infoMetric := MetricCollectorList{}
 
 	for _, val:= range list.Values() {
 		location := *val.Location
@@ -72,14 +94,14 @@ func (m *MetricCollectorAzureRm) collectAzurePublicIp(ctx context.Context, subsc
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID":     subscriptionId,
+			"subscriptionID":     *subscription.SubscriptionID,
 			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
 			"location":           location,
 			"ipAddress":          ipAddress,
 			"ipAllocationMethod": ipAllocationMethod,
 			"ipAdressVersion":    ipAdressVersion,
 		}
-		infoLabels = m.addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
 
 		infoMetric.Add(infoLabels, gaugeValue)
 	}
@@ -92,8 +114,8 @@ func (m *MetricCollectorAzureRm) collectAzurePublicIp(ctx context.Context, subsc
 }
 
 
-func (m *MetricCollectorAzureRm) collectAzureVm(ctx context.Context, subscriptionId string, callback chan<- func()) {
-	client := compute.NewVirtualMachinesClient(subscriptionId)
+func (m *MetricsCollectorAzureRmComputing) collectAzureVm(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+	client := compute.NewVirtualMachinesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListAllComplete(ctx)
@@ -102,15 +124,15 @@ func (m *MetricCollectorAzureRm) collectAzureVm(ctx context.Context, subscriptio
 		panic(err)
 	}
 
-	infoMetric := prometheusMetricsList{}
-	osMetric := prometheusMetricsList{}
+	infoMetric := MetricCollectorList{}
+	osMetric := MetricCollectorList{}
 
 	for list.NotDone() {
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID": subscriptionId,
+			"subscriptionID": *subscription.SubscriptionID,
 			"location": *val.Location,
 			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
 			"vmID": *val.VMID,
@@ -119,7 +141,7 @@ func (m *MetricCollectorAzureRm) collectAzureVm(ctx context.Context, subscriptio
 			"vmSize": string(val.VirtualMachineProperties.HardwareProfile.VMSize),
 			"vmProvisioningState": *val.ProvisioningState,
 		}
-		infoLabels = m.addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
 
 		osLabels := prometheus.Labels{
 			"vmID": *val.VMID,

@@ -1,13 +1,26 @@
 package main
 
 import (
-	"os"
-	"time"
+	"context"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	"os"
 )
 
-// Create and setup metrics and collection
-func (m *MetricCollectorAzureRm) initPortscanner() {
+type MetricsCollectorPortscanner struct {
+	MetricCollectorCustomInterface
+
+	portscanner *Portscanner
+
+	prometheus struct {
+		publicIpPortscanStatus *prometheus.GaugeVec
+		publicIpPortscanUpdated *prometheus.GaugeVec
+		publicIpPortscanPort *prometheus.GaugeVec
+	}
+}
+
+func (m *MetricsCollectorPortscanner) Setup() {
 	m.portscanner = &Portscanner{}
 	m.portscanner.Init()
 
@@ -98,30 +111,37 @@ func (m *MetricCollectorAzureRm) initPortscanner() {
 	}
 }
 
-// Start backgrounded metrics collection
-func (m *MetricCollectorAzureRm) startPortscanner() {
-	var sleepDuration time.Duration
+func (m *MetricsCollectorPortscanner) Collect(ctx context.Context, subscriptions []subscriptions.Subscription) {
+	ipAdressList := m.fetchPublicIpAdresses(ctx, subscriptions)
 
-	go func() {
-		for {
-			sleepDuration = opts.PortscanTime
+	m.portscanner.SetIps(ipAdressList)
 
-			// wait for list of IPs
-			if !m.portscanner.Enabled {
-				sleepDuration = time.Duration(5 * time.Second)
-				Logger.Messsage("portscanner: sleeping %v", sleepDuration.String())
-				time.Sleep(sleepDuration)
-				continue
-			}
+	if len(ipAdressList) > 0 {
+		m.portscanner.Start()
+	}
+}
 
-			if m.portscanner.Enabled && len(m.portscanner.PublicIps) > 0 {
-				m.portscanner.Start()
-			} else {
-				sleepDuration = opts.ScrapeTime
-			}
+func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context, subscriptions []subscriptions.Subscription) (ipAddressList []string) {
+	Logger.Messsage(
+		"portscan: collecting public ips",
+	)
 
-			Logger.Messsage("portscanner: sleeping %v", sleepDuration.String())
-			time.Sleep(sleepDuration)
+	for _, subscription := range subscriptions {
+
+		client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)
+		client.Authorizer = AzureAuthorizer
+
+		list, err := client.ListAll(ctx)
+		if err != nil {
+			panic(err)
 		}
-	}()
+
+		for _, val:= range list.Values() {
+			if val.IPAddress != nil {
+				ipAddressList = append(ipAddressList, *val.IPAddress)
+			}
+		}
+	}
+
+	return ipAddressList
 }

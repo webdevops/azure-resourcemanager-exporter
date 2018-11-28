@@ -5,7 +5,7 @@ Azure ResourceManager Exporter
 [![Docker](https://img.shields.io/badge/docker-webdevops%2Fazure--resourcemanager--exporter-blue.svg?longCache=true&style=flat&logo=docker)](https://hub.docker.com/r/webdevops/azure-resourcemanager-exporter/)
 [![Docker Build Status](https://img.shields.io/docker/build/webdevops/azure-resourcemanager-exporter.svg)](https://hub.docker.com/r/webdevops/azure-resourcemanager-exporter/)
 
-Prometheus exporter for Azure API ratelimit (currently read only) and quota usage. It also exports Public IPs and opend ports (portscanner).
+Prometheus exporter for Azure Resources and informations.
 
 Configuration
 -------------
@@ -16,7 +16,13 @@ Normally no configuration is needed but can be customized using environment vari
 |-----------------------------------|-----------------------------|-------------------------------------------------------------------|
 | `AZURE_SUBSCRIPTION_ID`           | `empty`                     | Azure Subscription IDs (empty for auto lookup)                    |
 | `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
-| `SCRAPE_TIME`                     | `5m`                        | Time (time.Duration) between Azure API collections                |
+| `SCRAPE_TIME`                     | `5m`                        | Default scrape time (time.Duration) between Azure API collections |
+| `SCRAPE_TIME_GENERAL`             | -> SCRAPE_TIME              | Scrape time for General metrics                                   |
+| `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
+| `SCRAPE_TIME_CONTAINERREGISTRY`   | -> SCRAPE_TIME              | Scrape time for ContainerRegistry metrics                         |
+| `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics                         |
+| `SCRAPE_TIME_SECURITY`            | -> SCRAPE_TIME              | Scrape time for Security metrics                                  |
+| `SCRAPE_TIME_HEALTH`              | -> SCRAPE_TIME              | Scrape time for Health metrics                                    |
 | `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
 | `AZURE_RESOURCE_TAG`              | `owner`                     | Tags which should be included                                     |
 | `PORTSCAN`                        | `0`                         | Enables portscanner for public IPs (experimental)                 |
@@ -31,23 +37,26 @@ for Azure API authentication (using ENV vars) see https://github.com/Azure/azure
 Metrics
 -------
 
-| Metric                                         | Description                                                                           |
-|------------------------------------------------|---------------------------------------------------------------------------------------|
-| `azurerm_subscription_info`                    | Azure Subscription details (ID, name, ...)                                            |
-| `azurerm_resourcegroup_info`                   | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
-| `azurerm_publicip_info`                        | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
-| `azurerm_ratelimit`                            | Azure API ratelimit (left calls)                                                      |
-| `azurerm_quota`                                | Azure RM quota details (readable name, scope, ...)                                    |
-| `azurerm_quota_current`                        | Azure RM quota current (current value)                                                |
-| `azurerm_quota_limit`                          | Azure RM quota limit (maximum limited value)                                          |
-| `azurerm_publicip_portscan_status`             | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
-| `azurerm_publicip_portscan_port`               | List of opend ports per IP                                                            |
-| `azurerm_containerregistry_info`               | List of Container registries                                                          |
-| `azurerm_containerregistry_quota_current`      | Quota usage of Container registries                                                   |
-| `azurerm_containerregistry_quota_limit`        | Quota limit of Container registries                                                   |
-| `azurerm_containerinstance_info`               | List of Container instances                                                           |
-| `azurerm_containerinstance_container`          | List of containers of container instances (container groups)                          |
-| `azurerm_containerinstance_container_resource` | Container resource (request / limit) per container                                    |
-| `azurerm_containerinstance_container_port`     | Container ports per container                                                         |
-| `azurerm_securitycenter_compliance`            | Azure SecurityCenter compliance status                                                |
-| `azurerm_advisor_recommendation`               | Azure Adisor recommendations (eg. security findings)                                  |
+| Metric                                         | Collector         | Description                                                                           |
+|------------------------------------------------|-------------------|---------------------------------------------------------------------------------------|
+| `azurerm_subscription_info`                    | General           | Azure Subscription details (ID, name, ...)                                            |
+| `azurerm_resourcegroup_info`                   | General           | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
+| `azurerm_ratelimit`                            | General           | Azure API ratelimit (left calls)                                                      |
+| `azurerm_quota`                                | Quota             | Azure RM quota details (readable name, scope, ...)                                    |
+| `azurerm_quota_current`                        | Quota             | Azure RM quota current (current value)                                                |
+| `azurerm_quota_limit`                          | Quota             | Azure RM quota limit (maximum limited value)                                          |
+| `azurerm_vm_info`                              | Computing         | Azure VM informations                                                                 |
+| `azurerm_vm_os`                                | Computing         | Azure VM base image informations                                                      |
+| `azurerm_publicip_info`                        | Computing         | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
+| `azurerm_publicip_portscan_status`             | Computing         | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
+| `azurerm_publicip_portscan_port`               | Portscan          | List of opend ports per IP                                                            |
+| `azurerm_containerregistry_info`               | ContainerRegistry | List of Container registries                                                          |
+| `azurerm_containerregistry_quota_current`      | ContainerRegistry | Quota usage of Container registries                                                   |
+| `azurerm_containerregistry_quota_limit`        | ContainerRegistry | Quota limit of Container registries                                                   |
+| `azurerm_containerinstance_info`               | ContainerInstance | List of Container instances                                                           |
+| `azurerm_containerinstance_container`          | ContainerInstance | List of containers of container instances (container groups)                          |
+| `azurerm_containerinstance_container_resource` | ContainerInstance | Container resource (request / limit) per container                                    |
+| `azurerm_containerinstance_container_port`     | ContainerInstance | Container ports per container                                                         |
+| `azurerm_securitycenter_compliance`            | Security          | Azure SecurityCenter compliance status                                                |
+| `azurerm_advisor_recommendation`               | Security          | Azure Adisor recommendations (eg. security findings)                                  |
+| `azurerm_resourcehealth_info`                  | Health            | Azure ResourceHealth informations                                                     |
