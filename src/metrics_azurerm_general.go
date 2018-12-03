@@ -1,16 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 	"strconv"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
-func (m *MetricCollectorAzureRm) initGeneral() {
+type MetricsCollectorAzureRmGeneral struct {
+	CollectorProcessorGeneral
+
+	prometheus struct {
+		subscription *prometheus.GaugeVec
+		resourceGroup *prometheus.GaugeVec
+		apiQuota *prometheus.GaugeVec
+	}
+}
+
+func (m *MetricsCollectorAzureRmGeneral) Setup(collector *CollectorGeneral) {
+	m.CollectorReference = collector
+
 	m.prometheus.subscription = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_subscription_info",
@@ -43,18 +55,28 @@ func (m *MetricCollectorAzureRm) initGeneral() {
 	prometheus.MustRegister(m.prometheus.apiQuota)
 }
 
+func (m *MetricsCollectorAzureRmGeneral) Reset() {
+	m.prometheus.subscription.Reset()
+	m.prometheus.resourceGroup.Reset()
+	m.prometheus.apiQuota.Reset()
+}
+
+func (m *MetricsCollectorAzureRmGeneral) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureSubscription(ctx, callback, subscription)
+	m.collectAzureResourceGroup(ctx, callback, subscription)
+}
 
 // Collect Azure Subscription metrics
-func (m *MetricCollectorAzureRm) collectAzureSubscription(ctx context.Context, subscriptionId string, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := subscriptions.NewClient()
 	client.Authorizer = AzureAuthorizer
 
-	sub, err := client.Get(ctx, subscriptionId)
+	sub, err := client.Get(ctx, *subscription.SubscriptionID)
 	if err != nil {
 		panic(err)
 	}
 
-	subscriptionMetric := prometheusMetricRow{
+	subscriptionMetric := MetricCollectorRow{
 		labels: prometheus.Labels{
 			"resourceID": *sub.ID,
 			"subscriptionID":      *sub.SubscriptionID,
@@ -67,14 +89,14 @@ func (m *MetricCollectorAzureRm) collectAzureSubscription(ctx context.Context, s
 	}
 
 	// subscription rate limits
-	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "read"}, callback)
-	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-requests"}, callback)
-	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-entities-read"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "read"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-requests"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "resource-entities-read"}, callback)
 
 	// tenant rate limits
-	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "read"}, callback)
-	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-requests"}, callback)
-	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-entities-read"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "read"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-requests"}, callback)
+	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-entities-read"}, callback)
 
 	callback <- func() {
 		m.prometheus.subscription.With(subscriptionMetric.labels).Set(subscriptionMetric.value)
@@ -83,8 +105,8 @@ func (m *MetricCollectorAzureRm) collectAzureSubscription(ctx context.Context, s
 
 
 // Collect Azure ResourceGroup metrics
-func (m *MetricCollectorAzureRm) collectAzureResourceGroup(ctx context.Context, subscriptionId string, callback chan<- func()) {
-	client := resources.NewGroupsClient(subscriptionId)
+func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+	client := resources.NewGroupsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	resourceGroupResult, err := client.ListComplete(ctx, "", nil)
@@ -92,12 +114,12 @@ func (m *MetricCollectorAzureRm) collectAzureResourceGroup(ctx context.Context, 
 		panic(err)
 	}
 
-	infoMetric := prometheusMetricsList{}
+	infoMetric := MetricCollectorList{}
 
 	for _, item := range *resourceGroupResult.Response().Value {
-		infoLabels := m.addAzureResourceTags(prometheus.Labels{
+		infoLabels := addAzureResourceTags(prometheus.Labels{
 			"resourceID": *item.ID,
-			"subscriptionID": subscriptionId,
+			"subscriptionID": *subscription.SubscriptionID,
 			"resourceGroup": *item.Name,
 			"location": *item.Location,
 		}, item.Tags)
@@ -110,9 +132,8 @@ func (m *MetricCollectorAzureRm) collectAzureResourceGroup(ctx context.Context, 
 	}
 }
 
-
 // read header and set prometheus api quota (if found)
-func (m *MetricCollectorAzureRm) probeProcessHeader(response autorest.Response, header string, labels prometheus.Labels, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmGeneral) probeProcessHeader(response autorest.Response, header string, labels prometheus.Labels, callback chan<- func()) {
 	if val := response.Header.Get(header); val != "" {
 		valFloat, err := strconv.ParseFloat(val, 64)
 

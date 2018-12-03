@@ -2,11 +2,25 @@ package main
 
 import (
 	"context"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func (m *MetricCollectorAzureRm) initContainerInstances() {
+type MetricsCollectorAzureRmContainerInstances struct {
+	CollectorProcessorGeneral
+
+	prometheus struct {
+		containerInstance *prometheus.GaugeVec
+		containerInstanceContainer *prometheus.GaugeVec
+		containerInstanceContainerResource *prometheus.GaugeVec
+		containerInstanceContainerPort *prometheus.GaugeVec
+	}
+}
+
+func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGeneral) {
+	m.CollectorReference = collector
+
 	m.prometheus.containerInstance = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_containerinstance_info",
@@ -48,8 +62,15 @@ func (m *MetricCollectorAzureRm) initContainerInstances() {
 	prometheus.MustRegister(m.prometheus.containerInstanceContainerPort)
 }
 
-func (m *MetricCollectorAzureRm) collectAzureContainerInstances(ctx context.Context, subscriptionId string, callback chan<- func()) {
-	client := containerinstance.NewContainerGroupsClient(subscriptionId)
+func (m *MetricsCollectorAzureRmContainerInstances) Reset() {
+	m.prometheus.containerInstance.Reset()
+	m.prometheus.containerInstanceContainer.Reset()
+	m.prometheus.containerInstanceContainerResource.Reset()
+	m.prometheus.containerInstanceContainerPort.Reset()
+}
+
+func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+	client := containerinstance.NewContainerGroupsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx)
@@ -58,24 +79,24 @@ func (m *MetricCollectorAzureRm) collectAzureContainerInstances(ctx context.Cont
 		panic(err)
 	}
 
-	infoMetric := prometheusMetricsList{}
-	containerMetric := prometheusMetricsList{}
-	containerResourceMetric := prometheusMetricsList{}
-	containerPortMetric := prometheusMetricsList{}
+	infoMetric := MetricCollectorList{}
+	containerMetric := MetricCollectorList{}
+	containerResourceMetric := MetricCollectorList{}
+	containerPortMetric := MetricCollectorList{}
 
 	for list.NotDone() {
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID": subscriptionId,
+			"subscriptionID": *subscription.SubscriptionID,
 			"location": *val.Location,
 			"instanceName": *val.Name,
 			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
 			"osType": string(val.OsType),
 			"ipAdress": *val.IPAddress.IP,
 		}
-		infoLabels = m.addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
 		infoMetric.Add(infoLabels, 1)
 
 		if val.Containers != nil {

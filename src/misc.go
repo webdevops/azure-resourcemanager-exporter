@@ -1,8 +1,10 @@
 package main
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -46,4 +48,28 @@ func int32ToString(v int32) string {
 
 func int64ToString(v int64) string {
 	return strconv.FormatInt(v, 10)
+}
+
+func stringsTrimSuffixCI(str, suffix string) (string) {
+
+	if strings.HasSuffix(strings.ToLower(str), strings.ToLower(suffix)) {
+		str = str[0:len(str)-len(suffix)]
+	}
+
+	return str
+}
+
+
+func addAzureResourceTags(labels prometheus.Labels, tags map[string]*string) (prometheus.Labels) {
+	for _, rgTag := range opts.AzureResourceTags {
+		rgTabLabel := AZURE_RESOURCE_TAG_PREFIX + rgTag
+
+		if _, ok := tags[rgTag]; ok {
+			labels[rgTabLabel] = *tags[rgTag]
+		} else {
+			labels[rgTabLabel] = ""
+		}
+	}
+
+	return labels
 }
