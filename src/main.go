@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"fmt"
 	"time"
@@ -18,13 +19,14 @@ import (
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.11.0"
+	Version = "0.12.0"
 	AZURE_RESOURCE_TAG_PREFIX = "tag_"
 )
 
 var (
 	argparser          *flags.Parser
 	args               []string
+	Verbose            bool
 	Logger             *DaemonLogger
 	ErrorLogger        *DaemonLogger
 	AzureAuthorizer    autorest.Authorizer
@@ -50,7 +52,9 @@ var opts struct {
 
 	// scrape times
 	ScrapeTime  time.Duration `                 long:"scrape-time"                    env:"SCRAPE_TIME"                    description:"Default scrape time (time.duration)"                      default:"5m"`
+	ScrapeTimeExporter  *time.Duration `        long:"scrape-time-exporter"           env:"SCRAPE_TIME_EXPORTER"           description:"Scrape time for exporter metrics (time.duration)"         default:"10s"`
 	ScrapeTimeGeneral  *time.Duration `         long:"scrape-time-general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
+	ScrapeTimeResource *time.Duration `         long:"scrape-time-resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`
 	ScrapeTimeQuota *time.Duration `            long:"scrape-time-quota"              env:"SCRAPE_TIME_QUOTA"              description:"Scrape time for quota metrics  (time.duration)"`
 	ScrapeTimeContainerRegistry *time.Duration `long:"scrape-time-containerregistry"  env:"SCRAPE_TIME_CONTAINERREGISTRY"  description:"Scrape time for ContainerRegistry metrics (time.duration)"`
 	ScrapeTimeContainerInstance *time.Duration `long:"scrape-time-containerinstance"  env:"SCRAPE_TIME_CONTAINERINSTANCE"  description:"Scrape time for ContainerInstance metrics (time.duration)"`
@@ -81,33 +85,36 @@ var opts struct {
 func main() {
 	initArgparser()
 
-	Logger = CreateDaemonLogger(0)
-	ErrorLogger = CreateDaemonErrorLogger(0)
+	// set verbosity
+	Verbose = len(opts.Verbose) >= 1
+
+	Logger = NewLogger(log.Lshortfile, Verbose)
+	defer Logger.Close()
 
 	// set verbosity
 	Verbose = len(opts.Verbose) >= 1
 
-	Logger.Messsage("Init Azure ResourceManager exporter v%s (written by %v)", Version, Author)
+	Logger.Infof("Init Azure ResourceManager exporter v%s (written by %v)", Version, Author)
 
-	Logger.Messsage("Init Azure connection")
+	Logger.Infof("Init Azure connection")
 	initAzureConnection()
 
-	Logger.Messsage("Starting metrics collection")
-	Logger.Messsage("  scape time General: %v", opts.ScrapeTimeGeneral)
-	Logger.Messsage("  scape time Quota: %v", opts.ScrapeTimeQuota)
-	Logger.Messsage("  scape time ContainerRegistry: %v", opts.ScrapeTimeContainerRegistry)
-	Logger.Messsage("  scape time ContainerInstance: %v", opts.ScrapeTimeContainerInstance)
-	Logger.Messsage("  scape time Database: %v", opts.ScrapeTimeDatabase)
-	Logger.Messsage("  scape time Security: %v", opts.ScrapeTimeSecurity)
-	Logger.Messsage("  scape time ResourceHealth: %v", opts.ScrapeTimeResourceHealth)
+	Logger.Infof("Starting metrics collection")
+	Logger.Infof("  scape time General: %v", opts.ScrapeTimeGeneral)
+	Logger.Infof("  scape time Quota: %v", opts.ScrapeTimeQuota)
+	Logger.Infof("  scape time ContainerRegistry: %v", opts.ScrapeTimeContainerRegistry)
+	Logger.Infof("  scape time ContainerInstance: %v", opts.ScrapeTimeContainerInstance)
+	Logger.Infof("  scape time Database: %v", opts.ScrapeTimeDatabase)
+	Logger.Infof("  scape time Security: %v", opts.ScrapeTimeSecurity)
+	Logger.Infof("  scape time ResourceHealth: %v", opts.ScrapeTimeResourceHealth)
 
 	if opts.Portscan {
-		Logger.Messsage("  scape time Portscan: %v", opts.PortscanTime)
+		Logger.Infof("  scape time Portscan: %v", opts.PortscanTime)
 	}
 
 	initMetricCollector()
 
-	Logger.Messsage("Starting http server on %s", opts.ServerBind)
+	Logger.Infof("Starting http server on %s", opts.ServerBind)
 	startHttpServer()
 }
 
@@ -133,7 +140,7 @@ func initArgparser() {
 		// parse --portscan-range
 		err := argparserParsePortrange()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v%v\n", LoggerLogPrefixError, err.Error())
+			fmt.Fprintf(os.Stderr, "%v%v\n", "[ERROR] ", err.Error())
 			fmt.Println()
 			argparser.WriteHelp(os.Stdout)
 			os.Exit(1)
@@ -158,6 +165,10 @@ func initArgparser() {
 	// scrape time
 	if opts.ScrapeTimeGeneral == nil {
 		opts.ScrapeTimeGeneral = &opts.ScrapeTime
+	}
+
+	if opts.ScrapeTimeResource == nil {
+		opts.ScrapeTimeResource = &opts.ScrapeTime
 	}
 
 	if opts.ScrapeTimeQuota == nil {
@@ -236,7 +247,15 @@ func initMetricCollector() {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmGeneral{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeGeneral)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
+	}
+
+	collectorName = "Resource"
+	if opts.ScrapeTimeResource.Seconds() > 0 {
+		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmResources{})
+		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeResource)
+	} else {
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
 
 	collectorName = "Quota"
@@ -244,7 +263,7 @@ func initMetricCollector() {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmQuota{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeQuota)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
 
 	collectorName = "Computing"
@@ -252,7 +271,7 @@ func initMetricCollector() {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmComputing{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeContainerRegistry)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
 
 	collectorName = "ContainerRegistry"
@@ -260,7 +279,7 @@ func initMetricCollector() {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmContainerRegistry{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeContainerRegistry)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
 
 	collectorName = "ContainerInstance"
@@ -268,7 +287,7 @@ func initMetricCollector() {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmContainerInstances{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeContainerInstance)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
 
 	collectorName = "Database"
@@ -276,7 +295,7 @@ func initMetricCollector() {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmDatabase{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeDatabase)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
 
 	collectorName = "Security"
@@ -284,7 +303,7 @@ func initMetricCollector() {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmSecurity{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeSecurity)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
 
 	collectorName = "Health"
@@ -292,7 +311,7 @@ func initMetricCollector() {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmHealth{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeResourceHealth)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
 
 	collectorName = "Portscan"
@@ -300,8 +319,18 @@ func initMetricCollector() {
 		collectorCustomList[collectorName] = NewCollectorCustom(collectorName, &MetricsCollectorPortscanner{})
 		collectorCustomList[collectorName].Run(opts.PortscanTime)
 	} else {
-		Logger.Messsage("collector[%s]: disabled", collectorName)
+		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
+
+	collectorName = "Exporter"
+	if opts.ScrapeTimeExporter.Seconds() > 0 {
+		collectorCustomList[collectorName] = NewCollectorCustom(collectorName, &MetricsCollectorExporter{})
+		collectorCustomList[collectorName].SetIsHidden(true)
+		collectorCustomList[collectorName].Run(*opts.ScrapeTimeExporter)
+	} else {
+		Logger.Infof("collector[%s]: disabled", collectorName)
+	}
+
 }
 
 // start and handle prometheus handler

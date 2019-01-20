@@ -28,7 +28,14 @@ func (m *MetricsCollectorAzureRmGeneral) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_subscription_info",
 			Help: "Azure ResourceManager subscription",
 		},
-		[]string{"resourceID", "subscriptionID", "subscriptionName", "spendingLimit", "quotaID", "locationPlacementID"},
+		[]string{
+			"resourceID",
+			"subscriptionID",
+			"subscriptionName",
+			"spendingLimit",
+			"quotaID",
+			"locationPlacementID",
+		},
 	)
 
 	m.prometheus.resourceGroup = prometheus.NewGaugeVec(
@@ -37,7 +44,12 @@ func (m *MetricsCollectorAzureRmGeneral) Setup(collector *CollectorGeneral) {
 			Help: "Azure ResourceManager resourcegroups",
 		},
 		append(
-			[]string{"resourceID", "subscriptionID", "resourceGroup", "location"},
+			[]string{
+				"resourceID",
+				"subscriptionID",
+				"resourceGroup",
+				"location",
+			},
 			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
@@ -47,7 +59,11 @@ func (m *MetricsCollectorAzureRmGeneral) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_ratelimit",
 			Help: "Azure ResourceManager ratelimit",
 		},
-		[]string{"subscriptionID", "scope", "type"},
+		[]string{
+			"subscriptionID",
+			"scope",
+			"type",
+		},
 	)
 
 	prometheus.MustRegister(m.prometheus.subscription)

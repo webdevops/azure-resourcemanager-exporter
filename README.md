@@ -18,6 +18,7 @@ Normally no configuration is needed but can be customized using environment vari
 | `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
 | `SCRAPE_TIME`                     | `5m`                        | Default scrape time (time.Duration) between Azure API collections |
 | `SCRAPE_TIME_GENERAL`             | -> SCRAPE_TIME              | Scrape time for General metrics                                   |
+| `SCRAPE_TIME_RESOURCE`            | -> SCRAPE_TIME              | Scrape time for Resource metrics                                  |
 | `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
 | `SCRAPE_TIME_CONTAINERREGISTRY`   | -> SCRAPE_TIME              | Scrape time for ContainerRegistry metrics                         |
 | `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics                         |
@@ -39,6 +40,7 @@ Metrics
 
 | Metric                                         | Collector         | Description                                                                           |
 |------------------------------------------------|-------------------|---------------------------------------------------------------------------------------|
+| `azurerm_stats`                                | Exporter          | General exporter stats                                                                |
 | `azurerm_subscription_info`                    | General           | Azure Subscription details (ID, name, ...)                                            |
 | `azurerm_resourcegroup_info`                   | General           | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
 | `azurerm_ratelimit`                            | General           | Azure API ratelimit (left calls)                                                      |
@@ -59,4 +61,5 @@ Metrics
 | `azurerm_containerinstance_container_port`     | ContainerInstance | Container ports per container                                                         |
 | `azurerm_securitycenter_compliance`            | Security          | Azure SecurityCenter compliance status                                                |
 | `azurerm_advisor_recommendation`               | Security          | Azure Adisor recommendations (eg. security findings)                                  |
-| `azurerm_resourcehealth_info`                  | Health            | Azure ResourceHealth informations                                                     |
+| `azurerm_resource_info`                        | Resource          | Azure Resource informations                                                           |
+| `azurerm_resource_health`                      | Health            | Azure Resource health informations                                                    |

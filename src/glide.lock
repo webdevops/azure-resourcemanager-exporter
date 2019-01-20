@@ -1,5 +1,5 @@
-hash: ae3d21ef8964afe4478b2ec23c3cc32ae6f4ad339c79866c2115c27952bf5655
-updated: 2018-11-15T22:41:21.157088+01:00
+hash: 8b9edf5e1c0ec6c95bfc7a7bf7b53a306964f16e3f8d3ed44c6ebc6be6faecc7
+updated: 2019-01-20T15:15:07.226254+01:00
 imports:
 - name: contrib.go.opencensus.io/exporter/ocagent
   version: b8ece14a43f0cda76036504e4a4fd7fa27ce1869
@@ -9,29 +9,36 @@ imports:
   - predictors
   - predictors/webserver
 - name: github.com/Azure/azure-sdk-for-go
-  version: 9699bdefa481d47c5c7638a1cc05d87ce53601fd
+  version: 392ea0b046cfb0cb05942ea92baf22af9ff7f9df
   subpackages:
   - profiles/latest/advisor/mgmt/advisor
   - profiles/latest/compute/mgmt/compute
   - profiles/latest/containerregistry/mgmt/containerregistry
+  - profiles/latest/mysql/mgmt/mysql
   - profiles/latest/network/mgmt/network
+  - profiles/latest/postgresql/mgmt/postgresql
+  - profiles/latest/resourcehealth/mgmt/resourcehealth
   - profiles/latest/resources/mgmt/resources
   - profiles/latest/resources/mgmt/subscriptions
+  - profiles/latest/sql/mgmt/sql
   - profiles/latest/storage/mgmt/storage
   - profiles/preview/containerinstance/mgmt/containerinstance
   - profiles/preview/preview/security/mgmt/security
   - services/advisor/mgmt/2017-04-19/advisor
-  - services/compute/mgmt/2018-04-01/compute
+  - services/compute/mgmt/2018-10-01/compute
   - services/containerinstance/mgmt/2018-10-01/containerinstance
-  - services/containerregistry/mgmt/2017-10-01/containerregistry
-  - services/network/mgmt/2018-01-01/network
+  - services/containerregistry/mgmt/2018-09-01/containerregistry
+  - services/mysql/mgmt/2017-12-01/mysql
+  - services/network/mgmt/2018-11-01/network
+  - services/postgresql/mgmt/2017-12-01/postgresql
   - services/preview/security/mgmt/2017-08-01-preview/security
+  - services/resourcehealth/mgmt/2017-07-01/resourcehealth
   - services/resources/mgmt/2016-06-01/subscriptions
-  - services/resources/mgmt/2018-02-01/resources
-  - services/storage/mgmt/2017-10-01/storage
+  - services/resources/mgmt/2018-05-01/resources
+  - services/storage/mgmt/2018-07-01/storage
   - version
 - name: github.com/Azure/go-autorest
-  version: 528b76fd0ebec0682f3e3da7c808cd472b999615
+  version: 16ac8fb5da89a244e30e83bc535dfb2c36fc5217
   subpackages:
   - autorest
   - autorest/adal
@@ -43,7 +50,6 @@ imports:
   - autorest/validation
   - logger
   - tracing
-  - version
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
   subpackages:
@@ -68,6 +74,8 @@ imports:
   - ptypes/duration
   - ptypes/timestamp
   - ptypes/wrappers
+- name: github.com/google/logger
+  version: 324a7c096a0d1041e2766b42187908af70e4f723
 - name: github.com/jessevdk/go-flags
   version: 5de817a9aa209ed35a164cb04aec82b7df1a47a6
 - name: github.com/matttproud/golang_protobuf_extensions
@@ -77,7 +85,7 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: ae18d6b8b3205b561c79e8e5f69bff09736185f4
 - name: github.com/prometheus/client_golang
-  version: c4c1f3461e40e5c6a4f570f5b00415cf5eacbd79
+  version: 26e258bb9c9a94c26d4a46ff302ec7e855b82e10
   subpackages:
   - prometheus
   - prometheus/internal
@@ -120,12 +128,12 @@ imports:
   - trace/propagation
   - trace/tracestate
 - name: golang.org/x/crypto
-  version: 49796115aa4b964c318aad4f3084fdb41e9aa067
+  version: de0752318171da717af4ce24d0a2e8626afaeb11
   subpackages:
   - pkcs12
   - pkcs12/internal/rc2
 - name: golang.org/x/net
-  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
+  version: 0ed95abb35c445290478a5348a7b38bb154135fd
   subpackages:
   - context
   - http2
@@ -139,9 +147,12 @@ imports:
   subpackages:
   - semaphore
 - name: golang.org/x/sys
-  version: 1c9583448a9c3aa0f9a6a5241bf73c0bd8aafded
+  version: 11f53e03133963fb11ae0588e08b5e0b85be8be5
   subpackages:
   - unix
+  - windows
+  - windows/registry
+  - windows/svc/eventlog
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
@@ -158,7 +169,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: ef2b8e2f53fcd6654d12966394462f84e0f04066
+  version: ec9c18c8c6dda21490f4840e9c9946d883fd3037
   subpackages:
   - balancer
   - balancer/base

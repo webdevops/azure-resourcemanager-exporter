@@ -1,42 +1,20 @@
-package main
+package old
 
 import (
-	"context"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerregistry/mgmt/containerregistry"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-type MetricsCollectorAzureRmContainerRegistry struct {
-	CollectorProcessorGeneral
-
-	prometheus struct {
-		containerRegistry *prometheus.GaugeVec
-		containerRegistryQuotaCurrent *prometheus.GaugeVec
-		containerRegistryQuotaLimit *prometheus.GaugeVec
-	}
-}
-
-func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
-
+func (m *MetricCollectorAzureRm) initContainerRegistries() {
 	m.prometheus.containerRegistry = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_containerregistry_info",
 			Help: "Azure ContainerRegistry limit",
 		},
 		append(
-			[]string{
-				"resourceID",
-				"subscriptionID",
-				"location",
-				"registryName",
-				"resourceGroup",
-				"adminUserEnabled",
-				"skuName",
-				"skuTier",
-			},
+			[]string{"resourceID", "subscriptionID", "location", "registryName", "resourceGroup", "adminUserEnabled", "skuName", "skuTier"},
 			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
@@ -46,12 +24,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 			Name: "azurerm_containerregistry_quota_current",
 			Help: "Azure ContainerRegistry quota current",
 		},
-		[]string{
-			"subscriptionID",
-			"registryName",
-			"quotaName",
-			"quotaUnit",
-		},
+		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
 	)
 
 	m.prometheus.containerRegistryQuotaLimit = prometheus.NewGaugeVec(
@@ -59,12 +32,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 			Name: "azurerm_containerregistry_quota_limit",
 			Help: "Azure ContainerRegistry quota limit",
 		},
-		[]string{
-			"subscriptionID",
-			"registryName",
-			"quotaName",
-			"quotaUnit",
-		},
+		[]string{"subscriptionID", "registryName", "quotaName", "quotaUnit"},
 	)
 
 	prometheus.MustRegister(m.prometheus.containerRegistry)
@@ -72,14 +40,8 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 	prometheus.MustRegister(m.prometheus.containerRegistryQuotaLimit)
 }
 
-func (m *MetricsCollectorAzureRmContainerRegistry) Reset() {
-	m.prometheus.containerRegistry.Reset()
-	m.prometheus.containerRegistryQuotaCurrent.Reset()
-	m.prometheus.containerRegistryQuotaLimit.Reset()
-}
-
-func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := containerregistry.NewRegistriesClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureContainerRegistries(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := containerregistry.NewRegistriesClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx)
@@ -88,9 +50,9 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	quotaCurrentMetric := MetricCollectorList{}
-	quotaLimitMetric := MetricCollectorList{}
+	infoMetric := prometheusMetricsList{}
+	quotaCurrentMetric := prometheusMetricsList{}
+	quotaLimitMetric := prometheusMetricsList{}
 
 	for list.NotDone() {
 		val := list.Value()
@@ -98,7 +60,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		arcUsage, err := client.ListUsages(ctx, extractResourceGroupFromAzureId(*val.ID), *val.Name)
 
 		if err != nil {
-			ErrorLogger.Error(fmt.Sprintf("subscription[%v]: unable to fetch ACR usage for %v", *subscription.SubscriptionID, *val.Name), err)
+			ErrorLogger.Error(fmt.Sprintf("subscription[%v]: unable to fetch ACR usage for %v", subscriptionId, *val.Name), err)
 		}
 
 		skuName := ""
@@ -111,7 +73,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
+			"subscriptionID": subscriptionId,
 			"location": *val.Location,
 			"registryName": *val.Name,
 			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
@@ -119,7 +81,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 			"skuName": skuName,
 			"skuTier": skuTier,
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = m.addAzureResourceTags(infoLabels, val.Tags)
 
 		infoMetric.Add(infoLabels, 1)
 
@@ -127,7 +89,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		if arcUsage.Value != nil {
 			for _, usage := range *arcUsage.Value {
 				quotaLabels := prometheus.Labels{
-					"subscriptionID": *subscription.SubscriptionID,
+					"subscriptionID": subscriptionId,
 					"registryName": *val.Name,
 					"quotaUnit": string(usage.Unit),
 					"quotaName": *usage.Name,

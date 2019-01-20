@@ -1,77 +1,38 @@
-package main
+package old
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/mysql/mgmt/mysql"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/postgresql/mgmt/postgresql"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type MetricsCollectorAzureRmDatabase struct {
-	CollectorProcessorGeneral
-
-	prometheus struct {
-		database *prometheus.GaugeVec
-		databaseStatus *prometheus.GaugeVec
-	}
-}
-
-func (m *MetricsCollectorAzureRmDatabase) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
-
+func (m *MetricCollectorAzureRm) initDatabase() {
 	m.prometheus.database = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_database_info",
+			Name: "azurerm_containerregistry_database_info",
 			Help: "Azure Database info",
 		},
 		append(
-			[]string{
-				"resourceID",
-				"subscriptionID",
-				"location",
-				"type",
-				"serverName",
-				"resourceGroup",
-				"version",
-				"skuName",
-				"skuTier",
-				"fqdn",
-				"sslEnforcement",
-				"geoRedundantBackup",
-			},
+			[]string{"resourceID", "subscriptionID", "location", "type", "serverName", "resourceGroup", "version", "skuName", "skuTier", "fqdn", "sslEnforcement", "geoRedundantBackup"},
 			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
 
 	m.prometheus.databaseStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_database_status",
+			Name: "azurerm_containerregistry_database_status",
 			Help: "Azure Database status informations",
 		},
-		[]string{
-			"resourceID",
-			"type",
-		},
+		[]string{"resourceID", "type"},
 	)
 
 	prometheus.MustRegister(m.prometheus.database)
 	prometheus.MustRegister(m.prometheus.databaseStatus)
 }
 
-func (m *MetricsCollectorAzureRmDatabase) Reset() {
-	m.prometheus.database.Reset()
-	m.prometheus.databaseStatus.Reset()
-}
-
-func (m *MetricsCollectorAzureRmDatabase) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureDatabasePostgresql(ctx, callback, subscription)
-}
-
-
-
-func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := postgresql.NewServersClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureDatabasePostgresql(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := postgresql.NewServersClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.List(ctx)
@@ -94,7 +55,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
+			"subscriptionID": subscriptionId,
 			"location": *val.Location,
 			"type": "postgresql",
 			"serverName": *val.Name,
@@ -126,8 +87,8 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 	}
 }
 
-func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := mysql.NewServersClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureDatabaseMysql(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := mysql.NewServersClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.List(ctx)
@@ -150,7 +111,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
+			"subscriptionID": subscriptionId,
 			"location": *val.Location,
 			"serverName": *val.Name,
 			"type": "mysql",

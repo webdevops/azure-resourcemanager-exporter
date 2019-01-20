@@ -8,15 +8,12 @@ import (
 )
 
 type CollectorGeneral struct {
+	CollectorBase
 	Processor CollectorProcessorGeneralInterface
-	Name string
-	ScrapeTime  *time.Duration
-	AzureSubscriptions []subscriptions.Subscription
-	AzureLocations []string
 }
 
 func (m *CollectorGeneral) Run(scrapeTime time.Duration) {
-	m.ScrapeTime = &scrapeTime
+	m.SetScrapeTime(scrapeTime)
 
 	m.Processor.Setup(m)
 	go func() {
@@ -24,8 +21,7 @@ func (m *CollectorGeneral) Run(scrapeTime time.Duration) {
 			go func() {
 				m.Collect()
 			}()
-			Logger.Verbose("collector[%s]: sleeping %v", m.Name, m.ScrapeTime.String())
-			time.Sleep(*m.ScrapeTime)
+			m.sleepUntilNextCollection()
 		}
 	}()
 }
@@ -38,10 +34,7 @@ func (m *CollectorGeneral) Collect() {
 
 	callbackChannel := make(chan func())
 
-	Logger.Messsage(
-		"collector[%s]: starting metrics collection",
-		m.Name,
-	)
+	m.collectionStart()
 
 	for _, subscription := range m.AzureSubscriptions {
 		wg.Add(1)
@@ -74,8 +67,6 @@ func (m *CollectorGeneral) Collect() {
 	close(callbackChannel)
 	wgCallback.Wait()
 
-	Logger.Verbose(
-		"collector[%s]: finished metrics collection",
-		m.Name,
-	)
+	m.collectionFinish()
 }
+

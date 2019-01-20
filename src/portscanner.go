@@ -189,7 +189,7 @@ func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (r
 		openedPorts := ps.GetOpenedPort(portrange.FirstPort, portrange.LastPort)
 
 		for _, port := range openedPorts {
-			Logger.Verbose("portscan[%v]: detected open port %v", ipAddress, port)
+			Logger.Verbosef("portscan[%v]: detected open port %v", ipAddress, port)
 			result = append(
 				result,
 				PortscannerResult{

@@ -1,47 +1,29 @@
-package main
+package old
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resourcehealth/mgmt/resourcehealth"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type MetricsCollectorAzureRmHealth struct {
-	CollectorProcessorGeneral
-
-	prometheus struct {
-		resourceHealth *prometheus.GaugeVec
-	}
-}
-
-func (m *MetricsCollectorAzureRmHealth) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
-
+func (m *MetricCollectorAzureRm) initResourceHealth() {
 	m.prometheus.resourceHealth = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_resource_health",
-			Help: "Azure Resource health info",
+			Name: "azurerm_resourcehealth_info",
+			Help: "Azure ResourceHealth info",
 		},
-		[]string{
-			"subscriptionID",
-			"resourceID",
-			"availabilityState",
-		},
+		[]string{"resourceID", "subscriptionID", "availabilityState"},
 	)
 
 	prometheus.MustRegister(m.prometheus.resourceHealth)
 }
 
-func (m *MetricsCollectorAzureRmHealth) Reset() {
-	m.prometheus.resourceHealth.Reset()
-}
-
-func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := resourcehealth.NewAvailabilityStatusesClient(*subscription.SubscriptionID)
+// Collect Azure ComputeUsage metrics
+func (m *MetricCollectorAzureRm) collectAzureResourceHealth(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := resourcehealth.NewAvailabilityStatusesClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
-	list, err := client.ListBySubscriptionIDComplete(ctx, *subscription.SubscriptionID, "")
+	list, err := client.ListBySubscriptionIDComplete(ctx, subscriptionId, "")
 
 	if err != nil {
 		panic(err)
@@ -50,7 +32,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, callback ch
 	availabilityStateValues := resourcehealth.PossibleAvailabilityStateValuesValues()
 
 
-	resourceHealthMetric := MetricCollectorList{}
+	resourceHealthMetric := prometheusMetricsList{}
 
 	for list.NotDone() {
 		val := list.Value()
@@ -63,9 +45,10 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, callback ch
 			resourceAvailabilityState = val.Properties.AvailabilityState
 		}
 
+
 		for _, availabilityState := range availabilityStateValues {
 			labels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
+				"subscriptionID": subscriptionId,
 				"resourceID": resourceId,
 				"availabilityState": string(availabilityState),
 			}

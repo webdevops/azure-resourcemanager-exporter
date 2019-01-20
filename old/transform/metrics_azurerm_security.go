@@ -1,36 +1,21 @@
-package main
+package old
 
 import (
-	"context"
 	"fmt"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"time"
+	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/advisor/mgmt/advisor"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/security/mgmt/security"
 	"github.com/prometheus/client_golang/prometheus"
-	"time"
 )
 
-type MetricsCollectorAzureRmSecurity struct {
-	CollectorProcessorGeneral
-
-	prometheus struct {
-		securitycenterCompliance *prometheus.GaugeVec
-		advisorRecommendations *prometheus.GaugeVec
-	}
-}
-
-func (m *MetricsCollectorAzureRmSecurity) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
-
+func (m *MetricCollectorAzureRm) initSecurity() {
 	m.prometheus.securitycenterCompliance = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_securitycenter_compliance",
 			Help: "Azure Audit SecurityCenter compliance status",
 		},
-		[]string{
-			"subscriptionID",
-			"assessmentType",
-		},
+		[]string{"subscriptionID", "assessmentType"},
 	)
 
 	m.prometheus.advisorRecommendations = prometheus.NewGaugeVec(
@@ -38,42 +23,21 @@ func (m *MetricsCollectorAzureRmSecurity) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_advisor_recommendation",
 			Help: "Azure Audit Advisor recommendation",
 		},
-		[]string{
-			"subscriptionID",
-			"category",
-			"resourceType",
-			"resourceName",
-			"resourceGroup",
-			"impact",
-			"risk",
-		},
+		[]string{"subscriptionID", "category", "resourceType", "resourceName", "resourceGroup", "impact", "risk"},
 	)
 
 	prometheus.MustRegister(m.prometheus.securitycenterCompliance)
 	prometheus.MustRegister(m.prometheus.advisorRecommendations)
 }
 
-func (m *MetricsCollectorAzureRmSecurity) Reset() {
-	m.prometheus.securitycenterCompliance.Reset()
-	m.prometheus.advisorRecommendations.Reset()
-}
-
-func (m *MetricsCollectorAzureRmSecurity) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureAdvisorRecommendations(ctx, callback, subscription)
-	for _, location := range m.CollectorReference.AzureLocations {
-		m.collectAzureSecurityCompliance(ctx, callback, subscription, location)
-	}
-}
-
-
-func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription, location string) {
-	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", *subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureSecurityCompliance(ctx context.Context, subscriptionId, location string, callback chan<- func()) {
+	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", subscriptionId)
 	client := security.NewCompliancesClient(subscriptionResourceId, location)
 	client.Authorizer = AzureAuthorizer
 
 	complienceResult, err := client.Get(ctx, subscriptionResourceId, time.Now().Format("2006-01-02Z"))
 	if err != nil {
-		ErrorLogger.Error(fmt.Sprintf("subscription[%v]", *subscription.SubscriptionID), err)
+		ErrorLogger.Error(fmt.Sprintf("subscription[%v]", subscriptionId), err)
 		return
 	}
 
@@ -87,7 +51,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 			}
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
+				"subscriptionID": subscriptionId,
 				"assessmentType": segmentType,
 			}
 			infoMetric.Add(infoLabels, *result.Percentage)
@@ -99,8 +63,8 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 	}
 }
 
-func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := advisor.NewRecommendationsClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureAdvisorRecommendations(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := advisor.NewRecommendationsClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	recommendationResult, err := client.ListComplete(ctx, "", nil, "")
@@ -113,7 +77,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 	for _, item := range *recommendationResult.Response().Value {
 
 		infoLabels := prometheus.Labels{
-			"subscriptionID": *subscription.SubscriptionID,
+			"subscriptionID": subscriptionId,
 			"category":       string(item.RecommendationProperties.Category),
 			"resourceType":   *item.RecommendationProperties.ImpactedField,
 			"resourceName":   *item.RecommendationProperties.ImpactedValue,

@@ -1,39 +1,20 @@
-package main
+package old
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type MetricsCollectorAzureRmQuota struct {
-	CollectorProcessorGeneral
-
-	prometheus struct {
-		quota *prometheus.GaugeVec
-		quotaCurrent *prometheus.GaugeVec
-		quotaLimit *prometheus.GaugeVec
-	}
-}
-
-func (m *MetricsCollectorAzureRmQuota) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
-
+func (m *MetricCollectorAzureRm) initQuota() {
 	m.prometheus.quota = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_quota_info",
 			Help: "Azure ResourceManager quota info",
 		},
-		[]string{
-			"subscriptionID",
-			"location",
-			"scope",
-			"quota",
-			"quotaName",
-		},
+		[]string{"subscriptionID", "location", "scope", "quota", "quotaName"},
 	)
 
 	m.prometheus.quotaCurrent = prometheus.NewGaugeVec(
@@ -41,12 +22,7 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_quota_current",
 			Help: "Azure ResourceManager quota current value",
 		},
-		[]string{
-			"subscriptionID",
-			"location",
-			"scope",
-			"quota",
-		},
+		[]string{"subscriptionID", "location", "scope", "quota"},
 	)
 
 	m.prometheus.quotaLimit = prometheus.NewGaugeVec(
@@ -54,12 +30,7 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_quota_limit",
 			Help: "Azure ResourceManager quota limit",
 		},
-		[]string{
-			"subscriptionID",
-			"location",
-			"scope",
-			"quota",
-		},
+		[]string{"subscriptionID", "location", "scope", "quota"},
 	)
 
 	prometheus.MustRegister(m.prometheus.quota)
@@ -67,28 +38,17 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *CollectorGeneral) {
 	prometheus.MustRegister(m.prometheus.quotaLimit)
 }
 
-func (m *MetricsCollectorAzureRmQuota) Reset() {
-	m.prometheus.quota.Reset()
-	m.prometheus.quotaCurrent.Reset()
-	m.prometheus.quotaLimit.Reset()
-}
-
-func (m *MetricsCollectorAzureRmQuota) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureComputeUsage(ctx, callback, subscription)
-	m.collectAzureNetworkUsage(ctx, callback, subscription)
-	m.collectAzureStorageUsage(ctx, callback, subscription)
-}
 
 // Collect Azure ComputeUsage metrics
-func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := compute.NewUsageClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureComputeUsage(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := compute.NewUsageClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	quotaMetric := MetricCollectorList{}
 	quotaCurrentMetric := MetricCollectorList{}
 	quotaLimitMetric := MetricCollectorList{}
 
-	for _, location := range m.CollectorReference.AzureLocations {
+	for _, location := range opts.AzureLocation {
 		list, err := client.List(ctx, location)
 
 		if err != nil {
@@ -102,14 +62,14 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 			limitValue := float64(*val.Limit)
 
 			labels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
+				"subscriptionID": subscriptionId,
 				"location": location,
 				"scope": "compute",
 				"quota": quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
+				"subscriptionID": subscriptionId,
 				"location": location,
 				"scope": "compute",
 				"quota": quotaName,
@@ -130,8 +90,8 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 }
 
 // Collect Azure NetworkUsage metrics
-func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := network.NewUsagesClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureNetworkUsage(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := network.NewUsagesClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	quotaMetric := MetricCollectorList{}
@@ -152,14 +112,14 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 			limitValue := float64(*val.Limit)
 
 			labels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
+				"subscriptionID": subscriptionId,
 				"location": location,
 				"scope": "network",
 				"quota": quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
+				"subscriptionID": subscriptionId,
 				"location": location,
 				"scope": "network",
 				"quota": quotaName,
@@ -180,8 +140,8 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 }
 
 // Collect Azure StorageUsage metrics
-func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := storage.NewUsagesClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureStorageUsage(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := storage.NewUsageClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	quotaMetric := MetricCollectorList{}
@@ -189,7 +149,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 	quotaLimitMetric := MetricCollectorList{}
 
 	for _, location := range opts.AzureLocation {
-		list, err := client.ListByLocation(ctx, location)
+		list, err := client.List(ctx)
 
 		if err != nil {
 			panic(err)
@@ -202,14 +162,14 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 			limitValue := float64(*val.Limit)
 
 			labels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
+				"subscriptionID": subscriptionId,
 				"location": location,
 				"scope": "storage",
 				"quota": quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
+				"subscriptionID": subscriptionId,
 				"location": location,
 				"scope": "storage",
 				"quota": quotaName,

@@ -1,43 +1,20 @@
-package main
+package old
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type MetricsCollectorAzureRmComputing struct {
-	CollectorProcessorGeneral
-
-	prometheus struct {
-		vm *prometheus.GaugeVec
-		vmOs *prometheus.GaugeVec
-		publicIp *prometheus.GaugeVec
-	}
-}
-
-func (m *MetricsCollectorAzureRmComputing) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
-
+func (m *MetricCollectorAzureRm) initVm() {
 	m.prometheus.vm = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_vm_info",
 			Help: "Azure ResourceManager VMs",
 		},
 		append(
-			[]string{
-				"resourceID",
-				"subscriptionID",
-				"location",
-				"resourceGroup",
-				"vmID",
-				"vmName",
-				"vmType",
-				"vmSize",
-				"vmProvisioningState",
-			},
+			[]string{"resourceID", "subscriptionID", "location", "resourceGroup", "vmID", "vmName", "vmType", "vmSize", "vmProvisioningState"},
 			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
@@ -47,13 +24,7 @@ func (m *MetricsCollectorAzureRmComputing) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_vm_os",
 			Help: "Azure ResourceManager VM OS",
 		},
-		[]string{
-			"vmID",
-			"imagePublisher",
-			"imageSku",
-			"imageOffer",
-			"imageVersion",
-		},
+		[]string{"vmID", "imagePublisher", "imageSku", "imageOffer", "imageVersion"},
 	)
 
 	m.prometheus.publicIp = prometheus.NewGaugeVec(
@@ -62,15 +33,7 @@ func (m *MetricsCollectorAzureRmComputing) Setup(collector *CollectorGeneral) {
 			Help: "Azure ResourceManager public ip",
 		},
 		append(
-			[]string{
-				"resourceID",
-				"subscriptionID",
-				"resourceGroup",
-				"location",
-				"ipAddress",
-				"ipAllocationMethod",
-				"ipAdressVersion",
-			},
+			[]string{"resourceID", "subscriptionID", "resourceGroup", "location", "ipAddress", "ipAllocationMethod", "ipAdressVersion"},
 			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
@@ -80,20 +43,9 @@ func (m *MetricsCollectorAzureRmComputing) Setup(collector *CollectorGeneral) {
 	prometheus.MustRegister(m.prometheus.publicIp)
 }
 
-func (m *MetricsCollectorAzureRmComputing) Reset() {
-	m.prometheus.vm.Reset()
-	m.prometheus.vmOs.Reset()
-	m.prometheus.publicIp.Reset()
-}
-
-func (m *MetricsCollectorAzureRmComputing) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureVm(ctx, callback, subscription)
-	m.collectAzurePublicIp(ctx, callback, subscription)
-}
-
 // Collect Azure PublicIP metrics
-func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) (ipAddressList []string) {
-	client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzurePublicIp(ctx context.Context, subscriptionId string, callback chan<- func()) (ipAddressList []string) {
+	client := network.NewPublicIPAddressesClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListAll(ctx)
@@ -120,7 +72,7 @@ func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Cont
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID":     *subscription.SubscriptionID,
+			"subscriptionID":     subscriptionId,
 			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
 			"location":           location,
 			"ipAddress":          ipAddress,
@@ -140,8 +92,8 @@ func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Cont
 }
 
 
-func (m *MetricsCollectorAzureRmComputing) collectAzureVm(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := compute.NewVirtualMachinesClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureVm(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := compute.NewVirtualMachinesClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListAllComplete(ctx)
@@ -158,7 +110,7 @@ func (m *MetricsCollectorAzureRmComputing) collectAzureVm(ctx context.Context, c
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
+			"subscriptionID": subscriptionId,
 			"location": *val.Location,
 			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
 			"vmID": *val.VMID,

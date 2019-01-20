@@ -16,9 +16,12 @@ type CollectorProcessorCustom struct {
 
 func NewCollectorCustom(name string, processor CollectorProcessorCustomInterface) (*CollectorCustom) {
 	collector := CollectorCustom{
-		Name: name,
-		AzureSubscriptions: AzureSubscriptions,
-		AzureLocations: opts.AzureLocation,
+		CollectorBase: CollectorBase{
+			Name: name,
+			AzureSubscriptions: AzureSubscriptions,
+			AzureLocations: opts.AzureLocation,
+		},
+
 		Processor: processor,
 	}
 

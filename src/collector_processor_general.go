@@ -18,9 +18,12 @@ type CollectorProcessorGeneral struct {
 
 func NewCollectorGeneral(name string, processor CollectorProcessorGeneralInterface) (*CollectorGeneral) {
 	collector := CollectorGeneral{
-		Name: name,
-		AzureSubscriptions: AzureSubscriptions,
-		AzureLocations: opts.AzureLocation,
+		CollectorBase: CollectorBase{
+			Name: name,
+			AzureSubscriptions: AzureSubscriptions,
+			AzureLocations: opts.AzureLocation,
+		},
+
 		Processor: processor,
 	}
 

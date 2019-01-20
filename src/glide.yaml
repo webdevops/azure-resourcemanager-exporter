@@ -31,3 +31,5 @@ import:
   - prometheus/promhttp
 - package: github.com/remeh/sizedwaitgroup
   version: master
+- package: github.com/google/logger
+  version: master

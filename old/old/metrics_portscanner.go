@@ -1,28 +1,13 @@
-package main
+package old
 
 import (
-	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	"github.com/prometheus/client_golang/prometheus"
 	"os"
+	"time"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-type MetricsCollectorPortscanner struct {
-	CollectorProcessorCustom
-
-	portscanner *Portscanner
-
-	prometheus struct {
-		publicIpPortscanStatus *prometheus.GaugeVec
-		publicIpPortscanUpdated *prometheus.GaugeVec
-		publicIpPortscanPort *prometheus.GaugeVec
-	}
-}
-
-func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
-	m.CollectorReference = collector
-
+// Create and setup metrics and collection
+func (m *MetricCollectorAzureRm) initPortscanner() {
 	m.portscanner = &Portscanner{}
 	m.portscanner.Init()
 
@@ -31,10 +16,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 			Name: "azurerm_publicip_portscan_status",
 			Help: "Azure ResourceManager public ip portscan status",
 		},
-		[]string{
-			"ipAddress",
-			"type",
-		},
+		[]string{"ipAddress", "type"},
 	)
 
 	m.prometheus.publicIpPortscanPort = prometheus.NewGaugeVec(
@@ -42,28 +24,23 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 			Name: "azurerm_publicip_portscan_port",
 			Help: "Azure ResourceManager public ip port",
 		},
-		[]string{
-			"ipAddress",
-			"protocol",
-			"port",
-			"description",
-		},
+		[]string{"ipAddress", "protocol", "port", "description"},
 	)
 
 	prometheus.MustRegister(m.prometheus.publicIpPortscanStatus)
 	prometheus.MustRegister(m.prometheus.publicIpPortscanPort)
 
 	m.portscanner.Callbacks.FinishScan = func(c *Portscanner) {
-		Logger.Infof("portscan: finished for %v IPs", len(m.portscanner.PublicIps))
+		Logger.Messsage("portscan: finished for %v IPs", len(m.portscanner.PublicIps))
 
 		if opts.CachePath != "" {
-			Logger.Infof("portscan: saved to cache")
+			Logger.Messsage("portscan: saved to cache")
 			m.portscanner.CacheSave(opts.CachePath)
 		}
 	}
 
 	m.portscanner.Callbacks.StartupScan = func(c *Portscanner) {
-		Logger.Infof(
+		Logger.Messsage(
 			"portscan: starting for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
 			len(c.PublicIps),
 			opts.PortscanPrallel,
@@ -76,7 +53,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 	}
 
 	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {
-		Logger.Infof("portscan[%v]: start port scanning", ipAddress)
+		Logger.Messsage("portscan[%v]: start port scanning", ipAddress)
 
 		// set the ipAdress to be scanned
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
@@ -115,43 +92,36 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 
 	if opts.CachePath != "" {
 		if _, err := os.Stat(opts.CachePath); !os.IsNotExist(err) {
-			Logger.Infof("portscan: load from cache")
+			Logger.Messsage("portscan: load from cache")
 			m.portscanner.CacheLoad(opts.CachePath)
 		}
 	}
 }
 
-func (m *MetricsCollectorPortscanner) Collect(ctx context.Context) {
-	ipAdressList := m.fetchPublicIpAdresses(ctx, m.CollectorReference.AzureSubscriptions)
+// Start backgrounded metrics collection
+func (m *MetricCollectorAzureRm) startPortscanner() {
+	var sleepDuration time.Duration
 
-	m.portscanner.SetIps(ipAdressList)
+	go func() {
+		for {
+			sleepDuration = opts.PortscanTime
 
-	if len(ipAdressList) > 0 {
-		m.portscanner.Start()
-	}
-}
-
-func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context, subscriptions []subscriptions.Subscription) (ipAddressList []string) {
-	Logger.Infof(
-		"portscan: collecting public ips",
-	)
-
-	for _, subscription := range subscriptions {
-
-		client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)
-		client.Authorizer = AzureAuthorizer
-
-		list, err := client.ListAll(ctx)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, val:= range list.Values() {
-			if val.IPAddress != nil {
-				ipAddressList = append(ipAddressList, *val.IPAddress)
+			// wait for list of IPs
+			if !m.portscanner.Enabled {
+				sleepDuration = time.Duration(5 * time.Second)
+				Logger.Messsage("portscanner: sleeping %v", sleepDuration.String())
+				time.Sleep(sleepDuration)
+				continue
 			}
-		}
-	}
 
-	return ipAddressList
+			if m.portscanner.Enabled && len(m.portscanner.PublicIps) > 0 {
+				m.portscanner.Start()
+			} else {
+				sleepDuration = opts.ScrapeTime
+			}
+
+			Logger.Messsage("portscanner: sleeping %v", sleepDuration.String())
+			time.Sleep(sleepDuration)
+		}
+	}()
 }

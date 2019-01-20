@@ -5,10 +5,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
 	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
+	providerFromResourceIdRegExp = regexp.MustCompile("/providers/([^/]*)")
 )
 
 func prefixSlice(prefix string, valueMap []string) (ret []string) {
@@ -19,10 +21,16 @@ func prefixSlice(prefix string, valueMap []string) (ret []string) {
 }
 
 func extractResourceGroupFromAzureId (azureId string) (resourceGroup string) {
-	rgSubMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(azureId)
+	if subMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
+		resourceGroup = subMatch[1]
+	}
 
-	if len(rgSubMatch) >= 1 {
-		resourceGroup = rgSubMatch[1]
+	return
+}
+
+func extractProviderFromAzureId (azureId string) (provider string) {
+	if subMatch := providerFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
+		provider = subMatch[1]
 	}
 
 	return
@@ -59,6 +67,9 @@ func stringsTrimSuffixCI(str, suffix string) (string) {
 	return str
 }
 
+func timeToFloat64(v time.Time) float64 {
+	return float64(v.Unix())
+}
 
 func addAzureResourceTags(labels prometheus.Labels, tags map[string]*string) (prometheus.Labels) {
 	for _, rgTag := range opts.AzureResourceTags {

@@ -1,41 +1,19 @@
-package main
+package old
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type MetricsCollectorAzureRmContainerInstances struct {
-	CollectorProcessorGeneral
-
-	prometheus struct {
-		containerInstance *prometheus.GaugeVec
-		containerInstanceContainer *prometheus.GaugeVec
-		containerInstanceContainerResource *prometheus.GaugeVec
-		containerInstanceContainerPort *prometheus.GaugeVec
-	}
-}
-
-func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
-
+func (m *MetricCollectorAzureRm) initContainerInstances() {
 	m.prometheus.containerInstance = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_containerinstance_info",
 			Help: "Azure ContainerInstance limit",
 		},
 		append(
-			[]string{
-				"resourceID",
-				"subscriptionID",
-				"location",
-				"instanceName",
-				"resourceGroup",
-				"osType",
-				"ipAdress",
-			},
+			[]string{"resourceID", "subscriptionID", "location", "instanceName", "resourceGroup", "osType", "ipAdress"},
 			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
@@ -45,13 +23,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 			Name: "azurerm_containerinstance_container",
 			Help: "Azure ContainerInstance container",
 		},
-		[]string{
-			"resourceID",
-			"containerName",
-			"containerImage",
-			"livenessProbe",
-			"readinessProbe",
-		},
+		[]string{"resourceID", "containerName", "containerImage", "livenessProbe", "readinessProbe"},
 	)
 
 	m.prometheus.containerInstanceContainerResource = prometheus.NewGaugeVec(
@@ -59,12 +31,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 			Name: "azurerm_containerinstance_container_resource",
 			Help: "Azure ContainerInstance container resource",
 		},
-		[]string{
-			"resourceID",
-			"containerName",
-			"type",
-			"resource",
-		},
+		[]string{"resourceID", "containerName", "type", "resource"},
 	)
 
 	m.prometheus.containerInstanceContainerPort = prometheus.NewGaugeVec(
@@ -72,11 +39,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 			Name: "azurerm_containerinstance_container_port",
 			Help: "Azure ContainerInstance container port",
 		},
-		[]string{
-			"resourceID",
-			"containerName",
-			"protocol",
-		},
+		[]string{"resourceID", "containerName", "protocol"},
 	)
 
 	prometheus.MustRegister(m.prometheus.containerInstance)
@@ -85,15 +48,8 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 	prometheus.MustRegister(m.prometheus.containerInstanceContainerPort)
 }
 
-func (m *MetricsCollectorAzureRmContainerInstances) Reset() {
-	m.prometheus.containerInstance.Reset()
-	m.prometheus.containerInstanceContainer.Reset()
-	m.prometheus.containerInstanceContainerResource.Reset()
-	m.prometheus.containerInstanceContainerPort.Reset()
-}
-
-func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := containerinstance.NewContainerGroupsClient(*subscription.SubscriptionID)
+func (m *MetricCollectorAzureRm) collectAzureContainerInstances(ctx context.Context, subscriptionId string, callback chan<- func()) {
+	client := containerinstance.NewContainerGroupsClient(subscriptionId)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx)
@@ -102,24 +58,24 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	containerMetric := MetricCollectorList{}
-	containerResourceMetric := MetricCollectorList{}
-	containerPortMetric := MetricCollectorList{}
+	infoMetric := prometheusMetricsList{}
+	containerMetric := prometheusMetricsList{}
+	containerResourceMetric := prometheusMetricsList{}
+	containerPortMetric := prometheusMetricsList{}
 
 	for list.NotDone() {
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
 			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
+			"subscriptionID": subscriptionId,
 			"location": *val.Location,
 			"instanceName": *val.Name,
 			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
 			"osType": string(val.OsType),
 			"ipAdress": *val.IPAddress.IP,
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = m.addAzureResourceTags(infoLabels, val.Tags)
 		infoMetric.Add(infoLabels, 1)
 
 		if val.Containers != nil {
