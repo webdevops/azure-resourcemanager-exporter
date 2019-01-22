@@ -73,7 +73,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 
 	complienceResult, err := client.Get(ctx, subscriptionResourceId, time.Now().Format("2006-01-02Z"))
 	if err != nil {
-		ErrorLogger.Error(fmt.Sprintf("subscription[%v]", *subscription.SubscriptionID), err)
+		Logger.Errorf("subscription[%v]: %v", *subscription.SubscriptionID, err)
 		return
 	}
 

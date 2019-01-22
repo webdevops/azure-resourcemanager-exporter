@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"strconv"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/prometheus/client_golang/prometheus"
+	"strconv"
 )
 
 type MetricsCollectorAzureRmGeneral struct {
@@ -158,7 +157,7 @@ func (m *MetricsCollectorAzureRmGeneral) probeProcessHeader(response autorest.Re
 				m.prometheus.apiQuota.With(labels).Set(valFloat)
 			}
 		} else {
-			ErrorLogger.Error(fmt.Sprintf("Failed to parse value '%v':", val), err)
+			Logger.Errorf("Failed to parse value '%v': %v", val, err)
 		}
 	}
 }

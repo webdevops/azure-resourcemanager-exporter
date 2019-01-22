@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerregistry/mgmt/containerregistry"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type MetricsCollectorAzureRmContainerRegistry struct {
@@ -98,7 +97,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		arcUsage, err := client.ListUsages(ctx, extractResourceGroupFromAzureId(*val.ID), *val.Name)
 
 		if err != nil {
-			ErrorLogger.Error(fmt.Sprintf("subscription[%v]: unable to fetch ACR usage for %v", *subscription.SubscriptionID, *val.Name), err)
+			Logger.Errorf("subscription[%v]: unable to fetch ACR usage for %v: %v", *subscription.SubscriptionID, *val.Name, err)
 		}
 
 		skuName := ""

@@ -28,7 +28,6 @@ var (
 	args               []string
 	Verbose            bool
 	Logger             *DaemonLogger
-	ErrorLogger        *DaemonLogger
 	AzureAuthorizer    autorest.Authorizer
 	AzureSubscriptions []subscriptions.Subscription
 
@@ -336,5 +335,5 @@ func initMetricCollector() {
 // start and handle prometheus handler
 func startHttpServer() {
 	http.Handle("/metrics", promhttp.Handler())
-	ErrorLogger.Fatal(http.ListenAndServe(opts.ServerBind, nil))
+	Logger.Fatal(http.ListenAndServe(opts.ServerBind, nil))
 }

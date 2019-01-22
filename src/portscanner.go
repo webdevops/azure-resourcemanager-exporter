@@ -63,7 +63,7 @@ func (c *Portscanner) CacheLoad(path string) {
 	jsonContent, _ := ioutil.ReadAll(file)
 	err = json.Unmarshal(jsonContent, &c)
 	if err != nil {
-		ErrorLogger.Error("Failed to load portscanner cache", err)
+		Logger.Errorf("Failed to load portscanner cache: %v", err)
 	}
 
 	c.mux.Unlock()
