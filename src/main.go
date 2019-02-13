@@ -1,25 +1,25 @@
 package main
 
 import (
-	"log"
-	"os"
-	"fmt"
-	"time"
-	"regexp"
-	"errors"
 	"context"
-	"net/http"
-	"path/filepath"
+	"errors"
+	"fmt"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"time"
 )
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.13.0"
+	Version = "0.13.1"
 	AZURE_RESOURCE_TAG_PREFIX = "tag_"
 )
 
