@@ -40,7 +40,7 @@ func (m *MetricsCollectorAzureRmDatabase) Setup(collector *CollectorGeneral) {
 				"sslEnforcement",
 				"geoRedundantBackup",
 			},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
 

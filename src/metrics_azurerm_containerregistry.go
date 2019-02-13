@@ -36,7 +36,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 				"skuName",
 				"skuTier",
 			},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
 

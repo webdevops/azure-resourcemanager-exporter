@@ -11,6 +11,7 @@ import (
 var (
 	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
 	providerFromResourceIdRegExp = regexp.MustCompile("/providers/([^/]*)")
+	azureTagNameToPrometheusNameRegExp = regexp.MustCompile("[^_a-zA-Z0-9]")
 )
 
 func prefixSlice(prefix string, valueMap []string) (ret []string) {
@@ -73,7 +74,7 @@ func timeToFloat64(v time.Time) float64 {
 
 func addAzureResourceTags(labels prometheus.Labels, tags map[string]*string) (prometheus.Labels) {
 	for _, rgTag := range opts.AzureResourceTags {
-		rgTabLabel := AZURE_RESOURCE_TAG_PREFIX + rgTag
+		rgTabLabel := azureTagNameToPrometheusTagName(AZURE_RESOURCE_TAG_PREFIX + rgTag)
 
 		if _, ok := tags[rgTag]; ok {
 			labels[rgTabLabel] = *tags[rgTag]
@@ -84,3 +85,15 @@ func addAzureResourceTags(labels prometheus.Labels, tags map[string]*string) (pr
 
 	return labels
 }
+
+func prefixSliceForPrometheusLabels(prefix string, valueMap []string) (ret []string) {
+	for _, value := range valueMap {
+		ret = append(ret, azureTagNameToPrometheusTagName(prefix + value))
+	}
+	return
+}
+
+func azureTagNameToPrometheusTagName(name string) (string) {
+	return azureTagNameToPrometheusNameRegExp.ReplaceAllLiteralString(name, "_")
+}
+

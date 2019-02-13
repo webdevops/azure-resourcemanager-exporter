@@ -30,7 +30,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 				"resourceGroup",
 				"provider",
 			},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
 

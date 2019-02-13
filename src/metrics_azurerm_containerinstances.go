@@ -36,7 +36,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 				"osType",
 				"ipAdress",
 			},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
 

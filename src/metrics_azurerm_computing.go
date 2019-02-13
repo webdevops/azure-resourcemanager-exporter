@@ -38,7 +38,7 @@ func (m *MetricsCollectorAzureRmComputing) Setup(collector *CollectorGeneral) {
 				"vmSize",
 				"vmProvisioningState",
 			},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
 
@@ -71,7 +71,7 @@ func (m *MetricsCollectorAzureRmComputing) Setup(collector *CollectorGeneral) {
 				"ipAllocationMethod",
 				"ipAdressVersion",
 			},
-			prefixSlice(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
 		),
 	)
 
