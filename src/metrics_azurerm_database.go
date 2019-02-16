@@ -117,7 +117,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
 			"type": "storage",
-		}, float64(*val.StorageProfile.StorageMB * 1048576))
+		}, float64(*val.StorageProfile.StorageMB) * 1048576)
 	}
 
 	callback <- func() {
@@ -173,7 +173,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
 			"type": "storage",
-		}, float64(*val.StorageProfile.StorageMB * 1048576))
+		}, float64(*val.StorageProfile.StorageMB) * 1048576)
 	}
 
 	callback <- func() {
