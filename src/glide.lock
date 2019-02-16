@@ -1,5 +1,5 @@
 hash: 8b9edf5e1c0ec6c95bfc7a7bf7b53a306964f16e3f8d3ed44c6ebc6be6faecc7
-updated: 2019-01-20T15:15:07.226254+01:00
+updated: 2019-02-16T16:22:43.543031+01:00
 imports:
 - name: contrib.go.opencensus.io/exporter/ocagent
   version: b8ece14a43f0cda76036504e4a4fd7fa27ce1869
@@ -9,7 +9,7 @@ imports:
   - predictors
   - predictors/webserver
 - name: github.com/Azure/azure-sdk-for-go
-  version: 392ea0b046cfb0cb05942ea92baf22af9ff7f9df
+  version: e924335e24341fbcd625b3241eaa7ec4b8bdbc34
   subpackages:
   - profiles/latest/advisor/mgmt/advisor
   - profiles/latest/compute/mgmt/compute
@@ -38,7 +38,7 @@ imports:
   - services/storage/mgmt/2018-07-01/storage
   - version
 - name: github.com/Azure/go-autorest
-  version: 16ac8fb5da89a244e30e83bc535dfb2c36fc5217
+  version: 71d02b67e17a3d80abf8db171f1ca80c39eb2e90
   subpackages:
   - autorest
   - autorest/adal
@@ -75,9 +75,9 @@ imports:
   - ptypes/timestamp
   - ptypes/wrappers
 - name: github.com/google/logger
-  version: 324a7c096a0d1041e2766b42187908af70e4f723
+  version: 7047ffcb7339f3f59be32de74a92217cb17cb40c
 - name: github.com/jessevdk/go-flags
-  version: 5de817a9aa209ed35a164cb04aec82b7df1a47a6
+  version: c0795c8afcf41dd1d786bebce68636c199b3bb45
 - name: github.com/matttproud/golang_protobuf_extensions
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
@@ -85,7 +85,7 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: ae18d6b8b3205b561c79e8e5f69bff09736185f4
 - name: github.com/prometheus/client_golang
-  version: 26e258bb9c9a94c26d4a46ff302ec7e855b82e10
+  version: 4c99dd66303a54cbf8559dd6110d5c30b1819e4c
   subpackages:
   - prometheus
   - prometheus/internal
@@ -147,7 +147,7 @@ imports:
   subpackages:
   - semaphore
 - name: golang.org/x/sys
-  version: 11f53e03133963fb11ae0588e08b5e0b85be8be5
+  version: d0b11bdaac8adb652bff00e49bcacf992835621a
   subpackages:
   - unix
   - windows
@@ -169,7 +169,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: ec9c18c8c6dda21490f4840e9c9946d883fd3037
+  version: 29c406a5bd0ed61c5752d00c6aabd9fa036ed328
   subpackages:
   - balancer
   - balancer/base
