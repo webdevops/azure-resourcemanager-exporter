@@ -19,6 +19,7 @@ Normally no configuration is needed but can be customized using environment vari
 | `SCRAPE_TIME`                     | `5m`                        | Default scrape time (time.Duration) between Azure API collections |
 | `SCRAPE_TIME_GENERAL`             | -> SCRAPE_TIME              | Scrape time for General metrics                                   |
 | `SCRAPE_TIME_RESOURCE`            | -> SCRAPE_TIME              | Scrape time for Resource metrics                                  |
+| `SCRAPE_TIME_STORAGE`             | -> SCRAPE_TIME              | Scrape time for Storage metrics                                   |
 | `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
 | `SCRAPE_TIME_CONTAINERREGISTRY`   | -> SCRAPE_TIME              | Scrape time for ContainerRegistry metrics                         |
 | `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics                         |
@@ -63,3 +64,7 @@ Metrics
 | `azurerm_advisor_recommendation`               | Security          | Azure Adisor recommendations (eg. security findings)                                  |
 | `azurerm_resource_info`                        | Resource          | Azure Resource informations                                                           |
 | `azurerm_resource_health`                      | Health            | Azure Resource health informations                                                    |
+| `azurerm_storageaccount_info`                  | Storage           | Azure StorageAccount informations                                                     |
+| `azurerm_manageddisk_info`                     | Storage           | Azure ManagedDisk informations                                                        |
+| `azurerm_manageddisk_size`                     | Storage           | Azure ManagedDisk size                                                                |
+| `azurerm_manageddisk_status`                   | Storage           | Azure ManagedDisk stats informations                                                  |
