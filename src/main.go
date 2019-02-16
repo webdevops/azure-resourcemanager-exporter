@@ -266,9 +266,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Computing"
-	if opts.ScrapeTimeContainerRegistry.Seconds() > 0 {
+	if opts.ScrapeTimeComputing.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmComputing{})
-		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeContainerRegistry)
+		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeComputing)
 	} else {
 		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
