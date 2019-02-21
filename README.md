@@ -26,8 +26,8 @@ Normally no configuration is needed but can be customized using environment vari
 | `SCRAPE_TIME_SECURITY`            | -> SCRAPE_TIME              | Scrape time for Security metrics                                  |
 | `SCRAPE_TIME_HEALTH`              | -> SCRAPE_TIME              | Scrape time for Health metrics                                    |
 | `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
-| `AZURE_RESOURCE_GROUP_TAG`        | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper, `title`)  |
-| `AZURE_RESOURCE_TAG`              | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper, `title`)  |
+| `AZURE_RESOURCE_GROUP_TAG`        | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
+| `AZURE_RESOURCE_TAG`              | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
 | `PORTSCAN`                        | `0`                         | Enables portscanner for public IPs (experimental)                 |
 | `PORTSCAN_RANGE`                  | `1-65535`                   | Port range to scan (single port or range, mutliple ranges possible -> space as seperator)  |
 | `PORTSCAN_TIME`                   | `3h`                        | Time (time.Duration) between portscanner runs                     |
