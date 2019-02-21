@@ -38,7 +38,7 @@ func (m *MetricsCollectorAzureRmComputing) Setup(collector *CollectorGeneral) {
 				"vmSize",
 				"vmProvisioningState",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -71,7 +71,7 @@ func (m *MetricsCollectorAzureRmComputing) Setup(collector *CollectorGeneral) {
 				"ipAllocationMethod",
 				"ipAdressVersion",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -127,7 +127,7 @@ func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Cont
 			"ipAllocationMethod": ipAllocationMethod,
 			"ipAdressVersion":    ipAdressVersion,
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 
 		infoMetric.Add(infoLabels, gaugeValue)
 	}
@@ -167,7 +167,7 @@ func (m *MetricsCollectorAzureRmComputing) collectAzureVm(ctx context.Context, c
 			"vmSize": string(val.VirtualMachineProperties.HardwareProfile.VMSize),
 			"vmProvisioningState": *val.ProvisioningState,
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 
 		osLabels := prometheus.Labels{
 			"vmID": *val.VMID,

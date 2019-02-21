@@ -40,7 +40,7 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 				"encrypted",
 				"provisioningState",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -60,7 +60,7 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 				"encrypted",
 				"provisioningState",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -132,7 +132,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 			"encrypted":          boolToString(val.Encryption.KeySource != ""),
 			"provisioningState":  string(val.ProvisioningState),
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 	}
 
@@ -174,7 +174,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 			}
 		}
 
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if val.DiskSizeGB != nil {

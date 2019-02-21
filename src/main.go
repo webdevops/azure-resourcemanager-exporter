@@ -67,7 +67,9 @@ var opts struct {
 	AzureSubscription []string ` long:"azure-subscription"            env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID"`
 	AzureLocation []string `     long:"azure-location"                env:"AZURE_LOCATION"            env-delim:" "  description:"Azure locations"                                  default:"westeurope" default:"northeurope"`
 	AzureResourceGroupTags []string `long:"azure-resourcegroup-tag"   env:"AZURE_RESOURCEGROUP_TAG"   env-delim:" "  description:"Azure ResourceGroup tags"                         default:"owner"`
+	azureResourceGroupTags AzureTagFilter
 	AzureResourceTags []string `long:"azure-resource-tag"             env:"AZURE_RESOURCE_TAG"        env-delim:" "  description:"Azure Resource tags"                              default:"owner"`
+	azureResourceTags AzureTagFilter
 
 	// portscan settings
 	Portscan  bool    `          long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
@@ -202,6 +204,9 @@ func initArgparser() {
 	if opts.ScrapeTimeResourceHealth == nil {
 		opts.ScrapeTimeResourceHealth = &opts.ScrapeTime
 	}
+
+	opts.azureResourceGroupTags = NewAzureTagFilter(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceGroupTags)
+	opts.azureResourceTags = NewAzureTagFilter(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)
 }
 
 // Init and build Azure authorzier

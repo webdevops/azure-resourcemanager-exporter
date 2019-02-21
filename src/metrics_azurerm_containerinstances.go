@@ -36,7 +36,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 				"osType",
 				"ipAdress",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -119,7 +119,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 			"osType": string(val.OsType),
 			"ipAdress": *val.IPAddress.IP,
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.Add(infoLabels, 1)
 
 		if val.Containers != nil {

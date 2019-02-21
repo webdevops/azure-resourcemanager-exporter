@@ -30,7 +30,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 				"resourceGroup",
 				"provider",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -62,7 +62,7 @@ func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, callback
 			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
 			"provider": extractProviderFromAzureId(*val.ID),
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		resourceMetric.AddInfo(infoLabels)
 
 		if list.NextWithContext(ctx) != nil {

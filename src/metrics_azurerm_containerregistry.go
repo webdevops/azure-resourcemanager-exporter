@@ -36,7 +36,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 				"skuName",
 				"skuTier",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -118,7 +118,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 			"skuName": skuName,
 			"skuTier": skuTier,
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 
 		infoMetric.Add(infoLabels, 1)
 

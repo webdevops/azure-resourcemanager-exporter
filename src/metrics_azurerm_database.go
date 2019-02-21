@@ -40,7 +40,7 @@ func (m *MetricsCollectorAzureRmDatabase) Setup(collector *CollectorGeneral) {
 				"sslEnforcement",
 				"geoRedundantBackup",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -106,7 +106,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 			"sslEnforcement": string(val.SslEnforcement),
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.Add(infoLabels, 1)
 
 		statusMetric.Add(prometheus.Labels{
@@ -162,7 +162,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 			"sslEnforcement": string(val.SslEnforcement),
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
-		infoLabels = addAzureResourceTags(infoLabels, val.Tags)
+		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.Add(infoLabels, 1)
 
 		statusMetric.Add(prometheus.Labels{

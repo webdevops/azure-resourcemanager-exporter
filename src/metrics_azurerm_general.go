@@ -49,7 +49,7 @@ func (m *MetricsCollectorAzureRmGeneral) Setup(collector *CollectorGeneral) {
 				"resourceGroup",
 				"location",
 			},
-			prefixSliceForPrometheusLabels(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)...
+			opts.azureResourceGroupTags.prometheusLabels...,
 		),
 	)
 
@@ -132,7 +132,7 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.C
 	infoMetric := MetricCollectorList{}
 
 	for _, item := range *resourceGroupResult.Response().Value {
-		infoLabels := addAzureResourceTags(prometheus.Labels{
+		infoLabels := opts.azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
 			"resourceID": *item.ID,
 			"subscriptionID": *subscription.SubscriptionID,
 			"resourceGroup": *item.Name,

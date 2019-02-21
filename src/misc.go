@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,15 +10,7 @@ import (
 var (
 	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
 	providerFromResourceIdRegExp = regexp.MustCompile("/providers/([^/]*)")
-	azureTagNameToPrometheusNameRegExp = regexp.MustCompile("[^_a-zA-Z0-9]")
 )
-
-func prefixSlice(prefix string, valueMap []string) (ret []string) {
-	for _, value := range valueMap {
-		ret = append(ret, prefix + value)
-	}
-	return
-}
 
 func extractResourceGroupFromAzureId (azureId string) (resourceGroup string) {
 	if subMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
@@ -71,29 +62,3 @@ func stringsTrimSuffixCI(str, suffix string) (string) {
 func timeToFloat64(v time.Time) float64 {
 	return float64(v.Unix())
 }
-
-func addAzureResourceTags(labels prometheus.Labels, tags map[string]*string) (prometheus.Labels) {
-	for _, rgTag := range opts.AzureResourceTags {
-		rgTabLabel := azureTagNameToPrometheusTagName(AZURE_RESOURCE_TAG_PREFIX + rgTag)
-
-		if _, ok := tags[rgTag]; ok {
-			labels[rgTabLabel] = *tags[rgTag]
-		} else {
-			labels[rgTabLabel] = ""
-		}
-	}
-
-	return labels
-}
-
-func prefixSliceForPrometheusLabels(prefix string, valueMap []string) (ret []string) {
-	for _, value := range valueMap {
-		ret = append(ret, azureTagNameToPrometheusTagName(prefix + value))
-	}
-	return
-}
-
-func azureTagNameToPrometheusTagName(name string) (string) {
-	return azureTagNameToPrometheusNameRegExp.ReplaceAllLiteralString(name, "_")
-}
-
