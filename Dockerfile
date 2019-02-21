@@ -23,7 +23,7 @@ RUN apk add --no-cache \
         libc6-compat \
     	ca-certificates \
         wget \
-        curl \
+        curl
 COPY --from=build /app/ /app/
 USER 1000
 ENTRYPOINT ["/app/entrypoint.sh"]
