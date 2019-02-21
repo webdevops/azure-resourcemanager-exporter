@@ -19,7 +19,7 @@ import (
 
 const (
 	Author  = "webdevops.io"
-	Version = "0.14.0"
+	Version = "0.15.0"
 	AZURE_RESOURCE_TAG_PREFIX = "tag_"
 )
 
