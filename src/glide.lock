@@ -1,5 +1,5 @@
 hash: 8b9edf5e1c0ec6c95bfc7a7bf7b53a306964f16e3f8d3ed44c6ebc6be6faecc7
-updated: 2019-02-16T16:22:43.543031+01:00
+updated: 2019-02-26T20:21:46.362562+01:00
 imports:
 - name: contrib.go.opencensus.io/exporter/ocagent
   version: b8ece14a43f0cda76036504e4a4fd7fa27ce1869
@@ -9,7 +9,7 @@ imports:
   - predictors
   - predictors/webserver
 - name: github.com/Azure/azure-sdk-for-go
-  version: e924335e24341fbcd625b3241eaa7ec4b8bdbc34
+  version: 4d7ea88c4dd04df3dff2c3118136a0e1e3bd787d
   subpackages:
   - profiles/latest/advisor/mgmt/advisor
   - profiles/latest/compute/mgmt/compute
@@ -29,7 +29,7 @@ imports:
   - services/containerinstance/mgmt/2018-10-01/containerinstance
   - services/containerregistry/mgmt/2018-09-01/containerregistry
   - services/mysql/mgmt/2017-12-01/mysql
-  - services/network/mgmt/2018-11-01/network
+  - services/network/mgmt/2018-12-01/network
   - services/postgresql/mgmt/2017-12-01/postgresql
   - services/preview/security/mgmt/2017-08-01-preview/security
   - services/resourcehealth/mgmt/2017-07-01/resourcehealth
@@ -38,7 +38,7 @@ imports:
   - services/storage/mgmt/2018-07-01/storage
   - version
 - name: github.com/Azure/go-autorest
-  version: 71d02b67e17a3d80abf8db171f1ca80c39eb2e90
+  version: f4369d4c79bf40df5e86def1e0f54c7ef261a51c
   subpackages:
   - autorest
   - autorest/adal
@@ -75,7 +75,7 @@ imports:
   - ptypes/timestamp
   - ptypes/wrappers
 - name: github.com/google/logger
-  version: 7047ffcb7339f3f59be32de74a92217cb17cb40c
+  version: b1301ce8ed2021a3ad344027d245c708e6ede041
 - name: github.com/jessevdk/go-flags
   version: c0795c8afcf41dd1d786bebce68636c199b3bb45
 - name: github.com/matttproud/golang_protobuf_extensions
@@ -85,7 +85,7 @@ imports:
 - name: github.com/mitchellh/go-homedir
   version: ae18d6b8b3205b561c79e8e5f69bff09736185f4
 - name: github.com/prometheus/client_golang
-  version: 4c99dd66303a54cbf8559dd6110d5c30b1819e4c
+  version: 2daed26f633ce23fab5efc02fb3f2e803b3526c3
   subpackages:
   - prometheus
   - prometheus/internal
@@ -147,7 +147,7 @@ imports:
   subpackages:
   - semaphore
 - name: golang.org/x/sys
-  version: d0b11bdaac8adb652bff00e49bcacf992835621a
+  version: cc5685c2db1239775905f3911f0067c0fa74762f
   subpackages:
   - unix
   - windows
@@ -169,7 +169,7 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 29c406a5bd0ed61c5752d00c6aabd9fa036ed328
+  version: 40cb5618f475e7b9d61aa7920ae4b04ef9bbaf89
   subpackages:
   - balancer
   - balancer/base
