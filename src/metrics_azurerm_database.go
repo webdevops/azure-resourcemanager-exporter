@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/mysql/mgmt/mysql"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/postgresql/mgmt/postgresql"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -66,9 +66,8 @@ func (m *MetricsCollectorAzureRmDatabase) Reset() {
 
 func (m *MetricsCollectorAzureRmDatabase) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
 	m.collectAzureDatabasePostgresql(ctx, callback, subscription)
+	m.collectAzureDatabaseMysql(ctx, callback, subscription)
 }
-
-
 
 func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := postgresql.NewServersClient(*subscription.SubscriptionID)
@@ -113,6 +112,13 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 			"resourceID": *val.ID,
 			"type": "backupRetentionDays",
 		}, float64(*val.StorageProfile.BackupRetentionDays))
+
+		if val.EarliestRestoreDate != nil {
+			statusMetric.AddTime(prometheus.Labels{
+				"resourceID": *val.ID,
+				"type": "earliestRestoreDate",
+			}, val.EarliestRestoreDate.ToTime())
+		}
 
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
@@ -169,6 +175,13 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 			"resourceID": *val.ID,
 			"type": "backupRetentionDays",
 		}, float64(*val.StorageProfile.BackupRetentionDays))
+
+		if val.EarliestRestoreDate != nil {
+			statusMetric.AddTime(prometheus.Labels{
+				"resourceID": *val.ID,
+				"type": "earliestRestoreDate",
+			}, val.EarliestRestoreDate.ToTime())
+		}
 
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
