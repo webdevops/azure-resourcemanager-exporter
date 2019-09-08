@@ -18,14 +18,13 @@ type AzureTagFilter struct {
 }
 
 type AzureTagFilterTag struct {
-	name string
+	name            string
 	prometheusLabel string
-	methods []string
+	methods         []string
 }
 
-func NewAzureTagFilter(prefix string, tags []string) (AzureTagFilter) {
+func NewAzureTagFilter(prefix string, tags []string) AzureTagFilter {
 	ret := AzureTagFilter{}
-
 
 	for _, tag := range tags {
 		tagName := tag
@@ -40,9 +39,9 @@ func NewAzureTagFilter(prefix string, tags []string) (AzureTagFilter) {
 		prometheusLabel := ret.azureTagNameToPrometheusTagName(prefix + tagName)
 
 		tagFilter := AzureTagFilterTag{
-			name: tagName,
+			name:            tagName,
 			prometheusLabel: prometheusLabel,
-			methods: tagMethods,
+			methods:         tagMethods,
 		}
 
 		ret.tags = append(ret.tags, tagFilter)
@@ -91,13 +90,13 @@ func (t *AzureTagFilter) filterTags(tags map[string]*string, usePrometheusName b
 	return
 }
 
-func (t *AzureTagFilter) appendPrometheusLabel(labels prometheus.Labels, tags map[string]*string,) (prometheus.Labels) {
+func (t *AzureTagFilter) appendPrometheusLabel(labels prometheus.Labels, tags map[string]*string) prometheus.Labels {
 	for tagName, tagValue := range t.filterTags(tags, true) {
 		labels[tagName] = tagValue
 	}
 	return labels
 }
 
-func (t *AzureTagFilter) azureTagNameToPrometheusTagName(name string) (string) {
+func (t *AzureTagFilter) azureTagNameToPrometheusTagName(name string) string {
 	return azureTagNameToPrometheusNameRegExp.ReplaceAllLiteralString(name, "_")
 }

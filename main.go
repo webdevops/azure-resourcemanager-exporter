@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	Author  = "webdevops.io"
-	Version = "0.16.0"
+	Author                    = "webdevops.io"
+	Version                   = "0.16.0"
 	AZURE_RESOURCE_TAG_PREFIX = "tag_"
 )
 
@@ -31,57 +31,57 @@ var (
 	AzureAuthorizer    autorest.Authorizer
 	AzureSubscriptions []subscriptions.Subscription
 
-	collectorGeneralList    map[string]*CollectorGeneral
-	collectorCustomList     map[string]*CollectorCustom
+	collectorGeneralList map[string]*CollectorGeneral
+	collectorCustomList  map[string]*CollectorCustom
 
 	portrangeRegexp = regexp.MustCompile("^(?P<first>[0-9]+)(-(?P<last>[0-9]+))?$")
 )
 
 type Portrange struct {
 	FirstPort int
-	LastPort int
+	LastPort  int
 }
 
 var opts struct {
 	// general settings
-	Verbose     []bool `         long:"verbose" short:"v"             env:"VERBOSE"                                  description:"Verbose mode"`
+	Verbose []bool `long:"verbose" short:"v"             env:"VERBOSE"                                  description:"Verbose mode"`
 
 	// server settings
-	ServerBind  string `              long:"bind"                     env:"SERVER_BIND"                              description:"Server address"                                   default:":8080"`
+	ServerBind string `long:"bind"                     env:"SERVER_BIND"                              description:"Server address"                                   default:":8080"`
 
 	// scrape times
-	ScrapeTime  time.Duration `                 long:"scrape-time"                    env:"SCRAPE_TIME"                    description:"Default scrape time (time.duration)"                      default:"5m"`
-	ScrapeTimeExporter  *time.Duration `        long:"scrape-time-exporter"           env:"SCRAPE_TIME_EXPORTER"           description:"Scrape time for exporter metrics (time.duration)"         default:"10s"`
-	ScrapeTimeGeneral  *time.Duration `         long:"scrape-time-general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
-	ScrapeTimeResource *time.Duration `         long:"scrape-time-resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`
-	ScrapeTimeQuota *time.Duration `            long:"scrape-time-quota"              env:"SCRAPE_TIME_QUOTA"              description:"Scrape time for quota metrics  (time.duration)"`
+	ScrapeTime                  time.Duration  `long:"scrape-time"                    env:"SCRAPE_TIME"                    description:"Default scrape time (time.duration)"                      default:"5m"`
+	ScrapeTimeExporter          *time.Duration `long:"scrape-time-exporter"           env:"SCRAPE_TIME_EXPORTER"           description:"Scrape time for exporter metrics (time.duration)"         default:"10s"`
+	ScrapeTimeGeneral           *time.Duration `long:"scrape-time-general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
+	ScrapeTimeResource          *time.Duration `long:"scrape-time-resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`
+	ScrapeTimeQuota             *time.Duration `long:"scrape-time-quota"              env:"SCRAPE_TIME_QUOTA"              description:"Scrape time for quota metrics  (time.duration)"`
 	ScrapeTimeContainerRegistry *time.Duration `long:"scrape-time-containerregistry"  env:"SCRAPE_TIME_CONTAINERREGISTRY"  description:"Scrape time for ContainerRegistry metrics (time.duration)"`
 	ScrapeTimeContainerInstance *time.Duration `long:"scrape-time-containerinstance"  env:"SCRAPE_TIME_CONTAINERINSTANCE"  description:"Scrape time for ContainerInstance metrics (time.duration)"`
-	ScrapeTimeDatabase *time.Duration `         long:"scrape-time-database"           env:"SCRAPE_TIME_DATABASE"           description:"Scrape time for Database metrics (time.duration)"`
-	ScrapeTimeSecurity *time.Duration `         long:"scrape-time-security"           env:"SCRAPE_TIME_SECURITY"           description:"Scrape time for Security metrics (time.duration)"`
-	ScrapeTimeResourceHealth *time.Duration `   long:"scrape-time-resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
-	ScrapeTimeComputing *time.Duration `        long:"scrape-time-computing"          env:"SCRAPE_TIME_COMPUTING"          description:"Scrape time for Computing metrics (time.duration)"`
-	ScrapeTimeStorage *time.Duration `          long:"scrape-time-storage"            env:"SCRAPE_TIME_STORAGE"            description:"Scrape time for Storage metrics (time.duration)"`
+	ScrapeTimeDatabase          *time.Duration `long:"scrape-time-database"           env:"SCRAPE_TIME_DATABASE"           description:"Scrape time for Database metrics (time.duration)"`
+	ScrapeTimeSecurity          *time.Duration `long:"scrape-time-security"           env:"SCRAPE_TIME_SECURITY"           description:"Scrape time for Security metrics (time.duration)"`
+	ScrapeTimeResourceHealth    *time.Duration `long:"scrape-time-resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
+	ScrapeTimeComputing         *time.Duration `long:"scrape-time-computing"          env:"SCRAPE_TIME_COMPUTING"          description:"Scrape time for Computing metrics (time.duration)"`
+	ScrapeTimeStorage           *time.Duration `long:"scrape-time-storage"            env:"SCRAPE_TIME_STORAGE"            description:"Scrape time for Storage metrics (time.duration)"`
 
 	// azure settings
-	AzureSubscription []string ` long:"azure-subscription"            env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID"`
-	AzureLocation []string `     long:"azure-location"                env:"AZURE_LOCATION"            env-delim:" "  description:"Azure locations"                                  default:"westeurope" default:"northeurope"`
+	AzureSubscription      []string `long:"azure-subscription"            env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID"`
+	AzureLocation          []string `long:"azure-location"                env:"AZURE_LOCATION"            env-delim:" "  description:"Azure locations"                                  default:"westeurope" default:"northeurope"`
 	AzureResourceGroupTags []string `long:"azure-resourcegroup-tag"   env:"AZURE_RESOURCEGROUP_TAG"   env-delim:" "  description:"Azure ResourceGroup tags"                         default:"owner"`
 	azureResourceGroupTags AzureTagFilter
-	AzureResourceTags []string `long:"azure-resource-tag"             env:"AZURE_RESOURCE_TAG"        env-delim:" "  description:"Azure Resource tags"                              default:"owner"`
-	azureResourceTags AzureTagFilter
+	AzureResourceTags      []string `long:"azure-resource-tag"             env:"AZURE_RESOURCE_TAG"        env-delim:" "  description:"Azure Resource tags"                              default:"owner"`
+	azureResourceTags      AzureTagFilter
 
 	// portscan settings
-	Portscan  bool    `          long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
-	PortscanTime  time.Duration `long:"portscan-time"                 env:"PORTSCAN_TIME"                            description:"Portscan time (time.duration)"                         default:"3h"`
-	PortscanPrallel  int    `    long:"portscan-parallel"             env:"PORTSCAN_PARALLEL"                        description:"Portscan parallel scans (parallel * threads = concurrent gofuncs)"  default:"2"`
-	PortscanThreads  int    `    long:"portscan-threads"              env:"PORTSCAN_THREADS"                         description:"Portscan threads (concurrent port scans per IP)"  default:"1000"`
-	PortscanTimeout  int    `    long:"portscan-timeout"              env:"PORTSCAN_TIMEOUT"                         description:"Portscan timeout (seconds)"                       default:"5"`
-	PortscanPortRange []string  `long:"portscan-range"                env:"PORTSCAN_RANGE"            env-delim:" "  description:"Portscan port range (first-last)"                 default:"1-65535"`
+	Portscan          bool          `long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
+	PortscanTime      time.Duration `long:"portscan-time"                 env:"PORTSCAN_TIME"                            description:"Portscan time (time.duration)"                         default:"3h"`
+	PortscanPrallel   int           `long:"portscan-parallel"             env:"PORTSCAN_PARALLEL"                        description:"Portscan parallel scans (parallel * threads = concurrent gofuncs)"  default:"2"`
+	PortscanThreads   int           `long:"portscan-threads"              env:"PORTSCAN_THREADS"                         description:"Portscan threads (concurrent port scans per IP)"  default:"1000"`
+	PortscanTimeout   int           `long:"portscan-timeout"              env:"PORTSCAN_TIMEOUT"                         description:"Portscan timeout (seconds)"                       default:"5"`
+	PortscanPortRange []string      `long:"portscan-range"                env:"PORTSCAN_RANGE"            env-delim:" "  description:"Portscan port range (first-last)"                 default:"1-65535"`
 	portscanPortRange []Portrange
 
 	// caching
-	CachePath string `           long:"cache-path"                    env:"CACHE_PATH"                               description:"Cache path"`
+	CachePath string `long:"cache-path"                    env:"CACHE_PATH"                               description:"Cache path"`
 }
 
 func main() {

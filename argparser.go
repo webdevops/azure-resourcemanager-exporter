@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -73,7 +73,7 @@ func argparserParsePortrange() (errorMessage error) {
 			// add to portlist
 			opts.portscanPortRange = append(
 				opts.portscanPortRange,
-				Portrange{FirstPort:int(firstPort), LastPort:int(lastPort)},
+				Portrange{FirstPort: int(firstPort), LastPort: int(lastPort)},
 			)
 		}
 	} else {

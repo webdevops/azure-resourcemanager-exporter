@@ -11,9 +11,9 @@ type MetricsCollectorAzureRmContainerRegistry struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		containerRegistry *prometheus.GaugeVec
+		containerRegistry             *prometheus.GaugeVec
 		containerRegistryQuotaCurrent *prometheus.GaugeVec
-		containerRegistryQuotaLimit *prometheus.GaugeVec
+		containerRegistryQuotaLimit   *prometheus.GaugeVec
 	}
 }
 
@@ -109,27 +109,26 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		}
 
 		infoLabels := prometheus.Labels{
-			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
-			"location": *val.Location,
-			"registryName": *val.Name,
-			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
+			"resourceID":       *val.ID,
+			"subscriptionID":   *subscription.SubscriptionID,
+			"location":         *val.Location,
+			"registryName":     *val.Name,
+			"resourceGroup":    extractResourceGroupFromAzureId(*val.ID),
 			"adminUserEnabled": boolToString(*val.AdminUserEnabled),
-			"skuName": skuName,
-			"skuTier": skuTier,
+			"skuName":          skuName,
+			"skuTier":          skuTier,
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 
 		infoMetric.Add(infoLabels, 1)
 
-
 		if arcUsage.Value != nil {
 			for _, usage := range *arcUsage.Value {
 				quotaLabels := prometheus.Labels{
 					"subscriptionID": *subscription.SubscriptionID,
-					"registryName": *val.Name,
-					"quotaUnit": string(usage.Unit),
-					"quotaName": *usage.Name,
+					"registryName":   *val.Name,
+					"quotaUnit":      string(usage.Unit),
+					"quotaName":      *usage.Name,
 				}
 
 				quotaCurrentMetric.Add(quotaLabels, float64(*usage.CurrentValue))

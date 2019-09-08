@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -58,9 +58,9 @@ func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, callback
 
 		infoLabels := prometheus.Labels{
 			"subscriptionID": *subscription.SubscriptionID,
-			"resourceID": *val.ID,
-			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
-			"provider": extractProviderFromAzureId(*val.ID),
+			"resourceID":     *val.ID,
+			"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
+			"provider":       extractProviderFromAzureId(*val.ID),
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		resourceMetric.AddInfo(infoLabels)

@@ -13,9 +13,9 @@ type MetricsCollectorAzureRmQuota struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		quota *prometheus.GaugeVec
+		quota        *prometheus.GaugeVec
 		quotaCurrent *prometheus.GaugeVec
-		quotaLimit *prometheus.GaugeVec
+		quotaLimit   *prometheus.GaugeVec
 	}
 }
 
@@ -103,17 +103,17 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 
 			labels := prometheus.Labels{
 				"subscriptionID": *subscription.SubscriptionID,
-				"location": location,
-				"scope": "compute",
-				"quota": quotaName,
+				"location":       location,
+				"scope":          "compute",
+				"quota":          quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
 				"subscriptionID": *subscription.SubscriptionID,
-				"location": location,
-				"scope": "compute",
-				"quota": quotaName,
-				"quotaName": quotaNameLocalized,
+				"location":       location,
+				"scope":          "compute",
+				"quota":          quotaName,
+				"quotaName":      quotaNameLocalized,
 			}
 
 			quotaMetric.Add(infoLabels, 1)
@@ -153,17 +153,17 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 
 			labels := prometheus.Labels{
 				"subscriptionID": *subscription.SubscriptionID,
-				"location": location,
-				"scope": "network",
-				"quota": quotaName,
+				"location":       location,
+				"scope":          "network",
+				"quota":          quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
 				"subscriptionID": *subscription.SubscriptionID,
-				"location": location,
-				"scope": "network",
-				"quota": quotaName,
-				"quotaName": quotaNameLocalized,
+				"location":       location,
+				"scope":          "network",
+				"quota":          quotaName,
+				"quotaName":      quotaNameLocalized,
 			}
 
 			quotaMetric.Add(infoLabels, 1)
@@ -203,17 +203,17 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 
 			labels := prometheus.Labels{
 				"subscriptionID": *subscription.SubscriptionID,
-				"location": location,
-				"scope": "storage",
-				"quota": quotaName,
+				"location":       location,
+				"scope":          "storage",
+				"quota":          quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
 				"subscriptionID": *subscription.SubscriptionID,
-				"location": location,
-				"scope": "storage",
-				"quota": quotaName,
-				"quotaName": quotaNameLocalized,
+				"location":       location,
+				"scope":          "storage",
+				"quota":          quotaName,
+				"quotaName":      quotaNameLocalized,
 			}
 
 			quotaMetric.Add(infoLabels, 1)

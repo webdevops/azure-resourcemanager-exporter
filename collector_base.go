@@ -1,20 +1,19 @@
 package main
 
 import (
-	"time"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-
+	"time"
 )
 
 type CollectorBase struct {
 	Name       string
 	scrapeTime *time.Duration
 
-	LastScrapeDuration *time.Duration
+	LastScrapeDuration  *time.Duration
 	collectionStartTime time.Time
 
 	AzureSubscriptions []subscriptions.Subscription
-	AzureLocations []string
+	AzureLocations     []string
 
 	isHidden bool
 }
@@ -35,7 +34,7 @@ func (c *CollectorBase) SetIsHidden(v bool) {
 	c.isHidden = v
 }
 
-func (c *CollectorBase) collectionStart() () {
+func (c *CollectorBase) collectionStart() {
 	c.collectionStartTime = time.Now()
 
 	if !c.isHidden {
@@ -43,7 +42,7 @@ func (c *CollectorBase) collectionStart() () {
 	}
 }
 
-func (c *CollectorBase) collectionFinish() () {
+func (c *CollectorBase) collectionFinish() {
 	duration := time.Now().Sub(c.collectionStartTime)
 	c.LastScrapeDuration = &duration
 
@@ -52,7 +51,7 @@ func (c *CollectorBase) collectionFinish() () {
 	}
 }
 
-func (c *CollectorBase) sleepUntilNextCollection() () {
+func (c *CollectorBase) sleepUntilNextCollection() {
 	if !c.isHidden {
 		Logger.Verbosef("collector[%s]: sleeping %v", c.Name, c.GetScrapeTime().String())
 	}

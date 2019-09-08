@@ -11,10 +11,10 @@ type MetricsCollectorAzureRmContainerInstances struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		containerInstance *prometheus.GaugeVec
-		containerInstanceContainer *prometheus.GaugeVec
+		containerInstance                  *prometheus.GaugeVec
+		containerInstanceContainer         *prometheus.GaugeVec
 		containerInstanceContainerResource *prometheus.GaugeVec
-		containerInstanceContainerPort *prometheus.GaugeVec
+		containerInstanceContainerPort     *prometheus.GaugeVec
 	}
 }
 
@@ -111,13 +111,13 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"resourceID": *val.ID,
+			"resourceID":     *val.ID,
 			"subscriptionID": *subscription.SubscriptionID,
-			"location": *val.Location,
-			"instanceName": *val.Name,
-			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
-			"osType": string(val.OsType),
-			"ipAdress": *val.IPAddress.IP,
+			"location":       *val.Location,
+			"instanceName":   *val.Name,
+			"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
+			"osType":         string(val.OsType),
+			"ipAdress":       *val.IPAddress.IP,
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.Add(infoLabels, 1)
@@ -125,10 +125,10 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 		if val.Containers != nil {
 			for _, container := range *val.Containers {
 				containerMetric.Add(prometheus.Labels{
-					"resourceID": *val.ID,
-					"containerName": *container.Name,
+					"resourceID":     *val.ID,
+					"containerName":  *container.Name,
 					"containerImage": *container.Image,
-					"livenessProbe": boolToString(container.LivenessProbe != nil),
+					"livenessProbe":  boolToString(container.LivenessProbe != nil),
 					"readinessProbe": boolToString(container.ReadinessProbe != nil),
 				}, 1)
 
@@ -136,9 +136,9 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 				if container.Ports != nil {
 					for _, port := range *container.Ports {
 						containerPortMetric.Add(prometheus.Labels{
-							"resourceID": *val.ID,
+							"resourceID":    *val.ID,
 							"containerName": *container.Name,
-							"protocol": string(port.Protocol),
+							"protocol":      string(port.Protocol),
 						}, float64(*port.Port))
 					}
 				}
@@ -148,40 +148,40 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 					if container.Resources.Requests != nil {
 						if container.Resources.Requests.CPU != nil {
 							containerResourceMetric.Add(prometheus.Labels{
-								"resourceID": *val.ID,
+								"resourceID":    *val.ID,
 								"containerName": *container.Name,
-								"type": "request",
-								"resource": "cpu",
+								"type":          "request",
+								"resource":      "cpu",
 							}, *container.Resources.Requests.CPU)
 						}
 
 						if container.Resources.Requests.MemoryInGB != nil {
 							containerResourceMetric.Add(prometheus.Labels{
-								"resourceID": *val.ID,
+								"resourceID":    *val.ID,
 								"containerName": *container.Name,
-								"type": "request",
-								"resource": "memory",
-							}, *container.Resources.Requests.MemoryInGB * 1073741824)
+								"type":          "request",
+								"resource":      "memory",
+							}, *container.Resources.Requests.MemoryInGB*1073741824)
 						}
 					}
 
 					if container.Resources.Limits != nil {
 						if container.Resources.Limits.CPU != nil {
 							containerResourceMetric.Add(prometheus.Labels{
-								"resourceID": *val.ID,
+								"resourceID":    *val.ID,
 								"containerName": *container.Name,
-								"type": "limit",
-								"resource": "cpu",
+								"type":          "limit",
+								"resource":      "cpu",
 							}, *container.Resources.Limits.CPU)
 						}
 
 						if container.Resources.Limits.MemoryInGB != nil {
 							containerResourceMetric.Add(prometheus.Labels{
-								"resourceID": *val.ID,
+								"resourceID":    *val.ID,
 								"containerName": *container.Name,
-								"type": "limit",
-								"resource": "memory",
-							}, *container.Resources.Limits.MemoryInGB * 1073741824)
+								"type":          "limit",
+								"resource":      "memory",
+							}, *container.Resources.Limits.MemoryInGB*1073741824)
 						}
 					}
 				}

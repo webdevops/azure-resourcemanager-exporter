@@ -14,9 +14,9 @@ type MetricsCollectorPortscanner struct {
 	portscanner *Portscanner
 
 	prometheus struct {
-		publicIpPortscanStatus *prometheus.GaugeVec
+		publicIpPortscanStatus  *prometheus.GaugeVec
 		publicIpPortscanUpdated *prometheus.GaugeVec
-		publicIpPortscanPort *prometheus.GaugeVec
+		publicIpPortscanPort    *prometheus.GaugeVec
 	}
 }
 
@@ -81,7 +81,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 		// set the ipAdress to be scanned
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
-			"type": "finished",
+			"type":      "finished",
 		}).Set(0)
 	}
 
@@ -89,19 +89,19 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 		// set ipAddess to be finsihed
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
-			"type": "finished",
+			"type":      "finished",
 		}).Set(1)
 
 		// set the elapsed time
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
-			"type": "elapsed",
+			"type":      "elapsed",
 		}).Set(elapsed)
 
 		// set update time
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
-			"type": "updated",
+			"type":      "updated",
 		}).SetToCurrentTime()
 	}
 
@@ -146,7 +146,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context,
 			panic(err)
 		}
 
-		for _, val:= range list.Values() {
+		for _, val := range list.Values() {
 			if val.IPAddress != nil {
 				ipAddressList = append(ipAddressList, *val.IPAddress)
 			}

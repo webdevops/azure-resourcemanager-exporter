@@ -9,10 +9,10 @@ import (
 
 var (
 	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
-	providerFromResourceIdRegExp = regexp.MustCompile("/providers/([^/]*)")
+	providerFromResourceIdRegExp      = regexp.MustCompile("/providers/([^/]*)")
 )
 
-func extractResourceGroupFromAzureId (azureId string) (resourceGroup string) {
+func extractResourceGroupFromAzureId(azureId string) (resourceGroup string) {
 	if subMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
 		resourceGroup = subMatch[1]
 	}
@@ -20,7 +20,7 @@ func extractResourceGroupFromAzureId (azureId string) (resourceGroup string) {
 	return
 }
 
-func extractProviderFromAzureId (azureId string) (provider string) {
+func extractProviderFromAzureId(azureId string) (provider string) {
 	if subMatch := providerFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
 		provider = subMatch[1]
 	}
@@ -50,10 +50,10 @@ func int64ToString(v int64) string {
 	return strconv.FormatInt(v, 10)
 }
 
-func stringsTrimSuffixCI(str, suffix string) (string) {
+func stringsTrimSuffixCI(str, suffix string) string {
 
 	if strings.HasSuffix(strings.ToLower(str), strings.ToLower(suffix)) {
-		str = str[0:len(str)-len(suffix)]
+		str = str[0 : len(str)-len(suffix)]
 	}
 
 	return str

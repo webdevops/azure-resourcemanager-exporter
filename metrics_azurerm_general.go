@@ -13,9 +13,9 @@ type MetricsCollectorAzureRmGeneral struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		subscription *prometheus.GaugeVec
+		subscription  *prometheus.GaugeVec
 		resourceGroup *prometheus.GaugeVec
-		apiQuota *prometheus.GaugeVec
+		apiQuota      *prometheus.GaugeVec
 	}
 }
 
@@ -93,7 +93,7 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 
 	subscriptionMetric := MetricCollectorRow{
 		labels: prometheus.Labels{
-			"resourceID": *sub.ID,
+			"resourceID":          *sub.ID,
 			"subscriptionID":      *sub.SubscriptionID,
 			"subscriptionName":    *sub.DisplayName,
 			"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
@@ -118,7 +118,6 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 	}
 }
 
-
 // Collect Azure ResourceGroup metrics
 func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := resources.NewGroupsClient(*subscription.SubscriptionID)
@@ -133,10 +132,10 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.C
 
 	for _, item := range *resourceGroupResult.Response().Value {
 		infoLabels := opts.azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
-			"resourceID": *item.ID,
+			"resourceID":     *item.ID,
 			"subscriptionID": *subscription.SubscriptionID,
-			"resourceGroup": *item.Name,
-			"location": *item.Location,
+			"resourceGroup":  *item.Name,
+			"location":       *item.Location,
 		}, item.Tags)
 
 		infoMetric.Add(infoLabels, 1)

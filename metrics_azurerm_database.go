@@ -12,7 +12,7 @@ type MetricsCollectorAzureRmDatabase struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		database *prometheus.GaugeVec
+		database       *prometheus.GaugeVec
 		databaseStatus *prometheus.GaugeVec
 	}
 }
@@ -92,17 +92,17 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 		}
 
 		infoLabels := prometheus.Labels{
-			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
-			"location": *val.Location,
-			"type": "postgresql",
-			"serverName": *val.Name,
-			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
-			"skuName": skuName,
-			"skuTier": skuTier,
-			"version": string(val.Version),
-			"fqdn": *val.FullyQualifiedDomainName,
-			"sslEnforcement": string(val.SslEnforcement),
+			"resourceID":         *val.ID,
+			"subscriptionID":     *subscription.SubscriptionID,
+			"location":           *val.Location,
+			"type":               "postgresql",
+			"serverName":         *val.Name,
+			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
+			"skuName":            skuName,
+			"skuTier":            skuTier,
+			"version":            string(val.Version),
+			"fqdn":               *val.FullyQualifiedDomainName,
+			"sslEnforcement":     string(val.SslEnforcement),
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
@@ -110,20 +110,20 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
-			"type": "backupRetentionDays",
+			"type":       "backupRetentionDays",
 		}, float64(*val.StorageProfile.BackupRetentionDays))
 
 		if val.EarliestRestoreDate != nil {
 			statusMetric.AddTime(prometheus.Labels{
 				"resourceID": *val.ID,
-				"type": "earliestRestoreDate",
+				"type":       "earliestRestoreDate",
 			}, val.EarliestRestoreDate.ToTime())
 		}
 
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
-			"type": "storage",
-		}, float64(*val.StorageProfile.StorageMB) * 1048576)
+			"type":       "storage",
+		}, float64(*val.StorageProfile.StorageMB)*1048576)
 	}
 
 	callback <- func() {
@@ -155,17 +155,17 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 		}
 
 		infoLabels := prometheus.Labels{
-			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
-			"location": *val.Location,
-			"serverName": *val.Name,
-			"type": "mysql",
-			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
-			"skuName": skuName,
-			"skuTier": skuTier,
-			"version": string(val.Version),
-			"fqdn": *val.FullyQualifiedDomainName,
-			"sslEnforcement": string(val.SslEnforcement),
+			"resourceID":         *val.ID,
+			"subscriptionID":     *subscription.SubscriptionID,
+			"location":           *val.Location,
+			"serverName":         *val.Name,
+			"type":               "mysql",
+			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
+			"skuName":            skuName,
+			"skuTier":            skuTier,
+			"version":            string(val.Version),
+			"fqdn":               *val.FullyQualifiedDomainName,
+			"sslEnforcement":     string(val.SslEnforcement),
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
@@ -173,20 +173,20 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
-			"type": "backupRetentionDays",
+			"type":       "backupRetentionDays",
 		}, float64(*val.StorageProfile.BackupRetentionDays))
 
 		if val.EarliestRestoreDate != nil {
 			statusMetric.AddTime(prometheus.Labels{
 				"resourceID": *val.ID,
-				"type": "earliestRestoreDate",
+				"type":       "earliestRestoreDate",
 			}, val.EarliestRestoreDate.ToTime())
 		}
 
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
-			"type": "storage",
-		}, float64(*val.StorageProfile.StorageMB) * 1048576)
+			"type":       "storage",
+		}, float64(*val.StorageProfile.StorageMB)*1048576)
 	}
 
 	callback <- func() {

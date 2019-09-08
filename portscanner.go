@@ -1,36 +1,36 @@
 package main
 
 import (
-	"os"
-	"sync"
-	"time"
-	"strconv"
-	"io/ioutil"
 	"encoding/json"
 	scanner "github.com/anvie/port-scanner"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/remeh/sizedwaitgroup"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"sync"
+	"time"
 )
 
 type PortscannerResult struct {
 	IpAddress string
-	Labels prometheus.Labels
-	Value float64
+	Labels    prometheus.Labels
+	Value     float64
 }
 
 type Portscanner struct {
-	List map[string][]PortscannerResult
+	List      map[string][]PortscannerResult
 	PublicIps map[string]string
-	Enabled bool `json:"-"`
-	mux sync.Mutex `json:"-"`
+	Enabled   bool       `json:"-"`
+	mux       sync.Mutex `json:"-"`
 
 	Callbacks struct {
-		StartupScan func(c *Portscanner)
-		FinishScan func(c *Portscanner)
-		StartScanIpAdress func(c *Portscanner, ipAddress string)
+		StartupScan        func(c *Portscanner)
+		FinishScan         func(c *Portscanner)
+		StartScanIpAdress  func(c *Portscanner, ipAddress string)
 		FinishScanIpAdress func(c *Portscanner, ipAddress string, elapsed float64)
-		ResultCleanup func(c *Portscanner)
-		ResultPush func(c *Portscanner, result PortscannerResult)
+		ResultCleanup      func(c *Portscanner)
+		ResultPush         func(c *Portscanner, result PortscannerResult)
 	} `json:"-"`
 }
 
@@ -93,7 +93,7 @@ func (c *Portscanner) SetIps(ipAddresses []string) {
 	for _, ipAddress := range ipAddresses {
 		ipAddressList[ipAddress] = ipAddress
 	}
-	
+
 	c.PublicIps = ipAddressList
 	c.mux.Unlock()
 }
@@ -111,7 +111,7 @@ func (c *Portscanner) Cleanup() {
 	c.mux.Lock()
 
 	orphanedIpList := []string{}
-	for ipAddress,_ := range c.List {
+	for ipAddress, _ := range c.List {
 		if _, ok := c.PublicIps[ipAddress]; !ok {
 			orphanedIpList = append(orphanedIpList, ipAddress)
 		}
@@ -156,11 +156,11 @@ func (c *Portscanner) Start() {
 			defer swg.Done()
 
 			c.Callbacks.StartScanIpAdress(c, ipAddress)
-			
+
 			results, elapsed := c.scanIp(ipAddress, portscanTimeout)
 
 			c.Callbacks.FinishScanIpAdress(c, ipAddress, elapsed)
-			
+
 			c.addResults(ipAddress, results)
 		}(ipAddress, portscanTimeout)
 	}
@@ -195,9 +195,9 @@ func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (r
 				PortscannerResult{
 					IpAddress: ipAddress,
 					Labels: prometheus.Labels{
-						"ipAddress": ipAddress,
-						"protocol": "TCP",
-						"port": strconv.Itoa(port),
+						"ipAddress":   ipAddress,
+						"protocol":    "TCP",
+						"port":        strconv.Itoa(port),
 						"description": "",
 					},
 					Value: 1,

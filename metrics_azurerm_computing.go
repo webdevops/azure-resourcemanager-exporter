@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -12,8 +12,8 @@ type MetricsCollectorAzureRmComputing struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		vm *prometheus.GaugeVec
-		vmOs *prometheus.GaugeVec
+		vm       *prometheus.GaugeVec
+		vmOs     *prometheus.GaugeVec
 		publicIp *prometheus.GaugeVec
 	}
 }
@@ -103,7 +103,7 @@ func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Cont
 
 	infoMetric := MetricCollectorList{}
 
-	for _, val:= range list.Values() {
+	for _, val := range list.Values() {
 		location := *val.Location
 		ipAddress := ""
 		ipAllocationMethod := string(val.PublicIPAllocationMethod)
@@ -119,7 +119,7 @@ func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Cont
 		}
 
 		infoLabels := prometheus.Labels{
-			"resourceID": *val.ID,
+			"resourceID":         *val.ID,
 			"subscriptionID":     *subscription.SubscriptionID,
 			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
 			"location":           location,
@@ -139,7 +139,6 @@ func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Cont
 	return
 }
 
-
 func (m *MetricsCollectorAzureRmComputing) collectAzureVm(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := compute.NewVirtualMachinesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
@@ -157,24 +156,24 @@ func (m *MetricsCollectorAzureRmComputing) collectAzureVm(ctx context.Context, c
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"resourceID": *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
-			"location": *val.Location,
-			"resourceGroup": extractResourceGroupFromAzureId(*val.ID),
-			"vmID": *val.VMID,
-			"vmName": *val.Name,
-			"vmType": *val.Type,
-			"vmSize": string(val.VirtualMachineProperties.HardwareProfile.VMSize),
+			"resourceID":          *val.ID,
+			"subscriptionID":      *subscription.SubscriptionID,
+			"location":            *val.Location,
+			"resourceGroup":       extractResourceGroupFromAzureId(*val.ID),
+			"vmID":                *val.VMID,
+			"vmName":              *val.Name,
+			"vmType":              *val.Type,
+			"vmSize":              string(val.VirtualMachineProperties.HardwareProfile.VMSize),
 			"vmProvisioningState": *val.ProvisioningState,
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 
 		osLabels := prometheus.Labels{
-			"vmID": *val.VMID,
+			"vmID":           *val.VMID,
 			"imagePublisher": *val.StorageProfile.ImageReference.Publisher,
-			"imageSku": *val.StorageProfile.ImageReference.Sku,
-			"imageOffer": *val.StorageProfile.ImageReference.Offer,
-			"imageVersion": *val.StorageProfile.ImageReference.Version,
+			"imageSku":       *val.StorageProfile.ImageReference.Sku,
+			"imageOffer":     *val.StorageProfile.ImageReference.Offer,
+			"imageVersion":   *val.StorageProfile.ImageReference.Version,
 		}
 
 		infoMetric.Add(infoLabels, 1)

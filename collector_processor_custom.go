@@ -14,12 +14,12 @@ type CollectorProcessorCustom struct {
 	CollectorReference *CollectorCustom
 }
 
-func NewCollectorCustom(name string, processor CollectorProcessorCustomInterface) (*CollectorCustom) {
+func NewCollectorCustom(name string, processor CollectorProcessorCustomInterface) *CollectorCustom {
 	collector := CollectorCustom{
 		CollectorBase: CollectorBase{
-			Name: name,
+			Name:               name,
 			AzureSubscriptions: AzureSubscriptions,
-			AzureLocations: opts.AzureLocation,
+			AzureLocations:     opts.AzureLocation,
 		},
 
 		Processor: processor,

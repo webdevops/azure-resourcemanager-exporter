@@ -12,9 +12,9 @@ type MetricsCollectorAzureRmStorage struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		storageAccount *prometheus.GaugeVec
-		managedDisk *prometheus.GaugeVec
-		managedDiskSize *prometheus.GaugeVec
+		storageAccount   *prometheus.GaugeVec
+		managedDisk      *prometheus.GaugeVec
+		managedDiskSize  *prometheus.GaugeVec
 		managedDiskStats *prometheus.GaugeVec
 	}
 }
@@ -76,7 +76,6 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 		},
 	)
 
-
 	m.prometheus.managedDiskStats = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_manageddisk_status",
@@ -119,7 +118,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 
 	infoMetric := MetricCollectorList{}
 
-	for _, val:= range *list.Value {
+	for _, val := range *list.Value {
 		infoLabels := prometheus.Labels{
 			"resourceID":         *val.ID,
 			"subscriptionID":     *subscription.SubscriptionID,
@@ -158,14 +157,14 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 
 	for _, val := range list.Values() {
 		infoLabels := prometheus.Labels{
-			"resourceID":         *val.ID,
-			"subscriptionID":     *subscription.SubscriptionID,
-			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
-			"managedDiskName":    *val.Name,
-			"location":           *val.Location,
-			"sku":                string(val.Sku.Name),
-			"encrypted":          boolToString(false),
-			"provisioningState":  string(*val.ProvisioningState),
+			"resourceID":        *val.ID,
+			"subscriptionID":    *subscription.SubscriptionID,
+			"resourceGroup":     extractResourceGroupFromAzureId(*val.ID),
+			"managedDiskName":   *val.Name,
+			"location":          *val.Location,
+			"sku":               string(val.Sku.Name),
+			"encrypted":         boolToString(false),
+			"provisioningState": string(*val.ProvisioningState),
 		}
 
 		if val.EncryptionSettings != nil {
@@ -182,7 +181,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 				"resourceID":      *val.ID,
 				"subscriptionID":  *subscription.SubscriptionID,
 				"managedDiskName": *val.Name,
-			}, float64(*val.DiskSizeGB) * 1073741824)
+			}, float64(*val.DiskSizeGB)*1073741824)
 		}
 
 		if val.DiskIOPSReadWrite != nil {

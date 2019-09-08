@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resourcehealth/mgmt/resourcehealth"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -49,7 +49,6 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, callback ch
 
 	availabilityStateValues := resourcehealth.PossibleAvailabilityStateValuesValues()
 
-
 	resourceHealthMetric := MetricCollectorList{}
 
 	for list.NotDone() {
@@ -65,8 +64,8 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, callback ch
 
 		for _, availabilityState := range availabilityStateValues {
 			labels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"resourceID": resourceId,
+				"subscriptionID":    *subscription.SubscriptionID,
+				"resourceID":        resourceId,
 				"availabilityState": string(availabilityState),
 			}
 

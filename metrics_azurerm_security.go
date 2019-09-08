@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/advisor/mgmt/advisor"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/security/mgmt/security"
 	"github.com/prometheus/client_golang/prometheus"
 	"time"
@@ -15,7 +15,7 @@ type MetricsCollectorAzureRmSecurity struct {
 
 	prometheus struct {
 		securitycenterCompliance *prometheus.GaugeVec
-		advisorRecommendations *prometheus.GaugeVec
+		advisorRecommendations   *prometheus.GaugeVec
 	}
 }
 
@@ -64,7 +64,6 @@ func (m *MetricsCollectorAzureRmSecurity) Collect(ctx context.Context, callback 
 		m.collectAzureSecurityCompliance(ctx, callback, subscription, location)
 	}
 }
-
 
 func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription, location string) {
 	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", *subscription.SubscriptionID)
