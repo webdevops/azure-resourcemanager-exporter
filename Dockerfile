@@ -1,29 +1,22 @@
-FROM golang:1.12 as build
+FROM golang:1.13 as build
 
-# golang deps
-WORKDIR /tmp/app/
-COPY ./src/glide.yaml /tmp/app/
-COPY ./src/glide.lock /tmp/app/
-RUN curl https://glide.sh/get | sh \
-    && glide install
+WORKDIR /go/src/github.com/webdevops/azure-resourcemanager-exporter
 
-WORKDIR /go/src/azure-resourcemanager-exporter/src
-COPY ./src /go/src/azure-resourcemanager-exporter/src
-RUN mkdir /app/ \
-    && cp -a /tmp/app/vendor ./vendor/ \
-    && cp -a entrypoint.sh /app/ \
-    && chmod 555 /app/entrypoint.sh \
-    && go build -o /app/azure-resourcemanager-exporter
+# Get deps (cached)
+COPY ./go.mod /go/src/github.com/webdevops/azure-resourcemanager-exporter
+COPY ./go.sum /go/src/github.com/webdevops/azure-resourcemanager-exporter
+RUN go mod download
+
+# Compile
+COPY ./ /go/src/github.com/webdevops/azure-resourcemanager-exporter
+RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o /azure-resourcemanager-exporter \
+    && chmod +x /azure-resourcemanager-exporter
+RUN /azure-resourcemanager-exporter --help
 
 #############################################
 # FINAL IMAGE
 #############################################
-FROM alpine
-RUN apk add --no-cache \
-        libc6-compat \
-    	ca-certificates \
-        wget \
-        curl
-COPY --from=build /app/ /app/
+FROM gcr.io/distroless/static
+COPY --from=build /azure-resourcemanager-exporter /
 USER 1000
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/azure-resourcemanager-exporter"]
