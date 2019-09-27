@@ -167,9 +167,9 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 			"provisioningState": string(*val.ProvisioningState),
 		}
 
-		if val.EncryptionSettings != nil {
-			if val.EncryptionSettings.Enabled != nil {
-				infoLabels["encrypted"] = boolToString(*val.EncryptionSettings.Enabled)
+		if val.EncryptionSettingsCollection != nil {
+			if val.EncryptionSettingsCollection.Enabled != nil {
+				infoLabels["encrypted"] = boolToString(*val.EncryptionSettingsCollection.Enabled)
 			}
 		}
 
