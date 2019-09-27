@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -62,6 +63,7 @@ var opts struct {
 	ScrapeTimeResourceHealth    *time.Duration `long:"scrape-time-resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
 	ScrapeTimeComputing         *time.Duration `long:"scrape-time-computing"          env:"SCRAPE_TIME_COMPUTING"          description:"Scrape time for Computing metrics (time.duration)"`
 	ScrapeTimeStorage           *time.Duration `long:"scrape-time-storage"            env:"SCRAPE_TIME_STORAGE"            description:"Scrape time for Storage metrics (time.duration)"`
+	ScrapeTimeGraph             *time.Duration `long:"scrape-time-graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
 
 	// azure settings
 	AzureSubscription      []string `long:"azure-subscription"            env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID"`
@@ -70,6 +72,10 @@ var opts struct {
 	azureResourceGroupTags AzureTagFilter
 	AzureResourceTags      []string `long:"azure-resource-tag"             env:"AZURE_RESOURCE_TAG"        env-delim:" "  description:"Azure Resource tags"                              default:"owner"`
 	azureResourceTags      AzureTagFilter
+	azureEnvironment       azure.Environment
+
+	// graph settings
+	GraphApplicationFilter string `long:"graph-application-filter"    env:"GRAPH_APPLICATION_FILTER"               description:"Graph application filter query eg: startswith(displayName,'A')"`
 
 	// portscan settings
 	Portscan          bool          `long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
@@ -109,6 +115,7 @@ func main() {
 	Logger.Infof("  scape time Database: %v", opts.ScrapeTimeDatabase)
 	Logger.Infof("  scape time Security: %v", opts.ScrapeTimeSecurity)
 	Logger.Infof("  scape time ResourceHealth: %v", opts.ScrapeTimeResourceHealth)
+	Logger.Infof("  scape time Graph: %v", opts.ScrapeTimeGraph)
 
 	if opts.Portscan {
 		Logger.Infof("  scape time Portscan: %v", opts.PortscanTime)
@@ -205,6 +212,10 @@ func initArgparser() {
 		opts.ScrapeTimeResourceHealth = &opts.ScrapeTime
 	}
 
+	if opts.ScrapeTimeGraph == nil {
+		opts.ScrapeTimeGraph = &opts.ScrapeTime
+	}
+
 	opts.azureResourceGroupTags = NewAzureTagFilter(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceGroupTags)
 	opts.azureResourceTags = NewAzureTagFilter(AZURE_RESOURCE_TAG_PREFIX, opts.AzureResourceTags)
 }
@@ -243,6 +254,17 @@ func initAzureConnection() {
 			}
 			AzureSubscriptions = append(AzureSubscriptions, result)
 		}
+	}
+
+	// try to get cloud name, defaults to public cloud name
+	azureEnvName := azure.PublicCloud.Name
+	if env := os.Getenv("AZURE_ENVIRONMENT"); env != "" {
+		azureEnvName = env
+	}
+
+	opts.azureEnvironment, err = azure.EnvironmentFromName(azureEnvName)
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -327,6 +349,14 @@ func initMetricCollector() {
 	if opts.ScrapeTimeResourceHealth.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmHealth{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeResourceHealth)
+	} else {
+		Logger.Infof("collector[%s]: disabled", collectorName)
+	}
+
+	collectorName = "GraphApps"
+	if opts.ScrapeTimeGraph.Seconds() > 0 {
+		collectorCustomList[collectorName] = NewCollectorCustom(collectorName, &MetricsCollectorGraphApps{})
+		collectorCustomList[collectorName].Run(*opts.ScrapeTimeGraph)
 	} else {
 		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
