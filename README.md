@@ -25,6 +25,7 @@ Normally no configuration is needed but can be customized using environment vari
 | `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics                         |
 | `SCRAPE_TIME_SECURITY`            | -> SCRAPE_TIME              | Scrape time for Security metrics                                  |
 | `SCRAPE_TIME_HEALTH`              | -> SCRAPE_TIME              | Scrape time for Health metrics                                    |
+| `SCRAPE_TIME_GRAPH`               | -> SCRAPE_TIME              | Scrape time for AzurAD Graph metrics                              |
 | `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
 | `AZURE_RESOURCE_GROUP_TAG`        | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
 | `AZURE_RESOURCE_TAG`              | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
@@ -34,6 +35,7 @@ Normally no configuration is needed but can be customized using environment vari
 | `PORTSCAN_PARALLEL`               | `2`                         | Parallel IPs which are scanned at the same time                   |
 | `PORTSCAN_THREADS`                | `1000`                      | Number of threads per IP (parallel scanned ports)                 |
 | `PORTSCAN_TIMEOUT`                | `5`                         | Timeout (seconds) for each port                                   |
+| `GRAPH_APPLICATION_FILTER`        | `empty`                     | AzureAD graph application filter, eg. `startswith(displayName,'foo')` |
 
 for Azure API authentication (using ENV vars) see https://github.com/Azure/azure-sdk-for-go#authentication
 
@@ -69,3 +71,5 @@ Metrics
 | `azurerm_manageddisk_info`                     | Storage           | Azure ManagedDisk informations                                                        |
 | `azurerm_manageddisk_size`                     | Storage           | Azure ManagedDisk size                                                                |
 | `azurerm_manageddisk_status`                   | Storage           | Azure ManagedDisk stats informations                                                  |
+| `azurerm_graph_app_info`                       | Graph             | AzureAD graph application informations                                                |
+| `azurerm_graph_app_credential`                 | Graph             | AzureAD graph application credentials (create,expiry) informations                    |
