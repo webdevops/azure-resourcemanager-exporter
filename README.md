@@ -23,6 +23,7 @@ Normally no configuration is needed but can be customized using environment vari
 | `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
 | `SCRAPE_TIME_CONTAINERREGISTRY`   | -> SCRAPE_TIME              | Scrape time for ContainerRegistry metrics                         |
 | `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics                         |
+| `SCRAPE_TIME_EVENTHUB`            | `30m`        `              | Scrape time for Eventhub metrics                                  |
 | `SCRAPE_TIME_SECURITY`            | -> SCRAPE_TIME              | Scrape time for Security metrics                                  |
 | `SCRAPE_TIME_HEALTH`              | -> SCRAPE_TIME              | Scrape time for Health metrics                                    |
 | `SCRAPE_TIME_GRAPH`               | -> SCRAPE_TIME              | Scrape time for AzurAD Graph metrics                              |
@@ -63,6 +64,10 @@ Metrics
 | `azurerm_containerinstance_container`          | ContainerInstance | List of containers of container instances (container groups)                          |
 | `azurerm_containerinstance_container_resource` | ContainerInstance | Container resource (request / limit) per container                                    |
 | `azurerm_containerinstance_container_port`     | ContainerInstance | Container ports per container                                                         |
+| `azurerm_eventhub_namespace_info`              | Eventhub          | Eventhub namespace info                                                               |
+| `azurerm_eventhub_namespace_status`            | Eventhub          | Eventhub namespace status (maximumThroughputUnits)                                    |
+| `azurerm_eventhub_namespace_eventhub_info`     | Eventhub          | Eventhub namespace eventhub info                                                      |
+| `azurerm_eventhub_namespace_eventhub_status`   | Eventhub          | Eventhub namespace eventhub status (partitionCount, messageRetentionInDays)           |
 | `azurerm_securitycenter_compliance`            | Security          | Azure SecurityCenter compliance status                                                |
 | `azurerm_advisor_recommendation`               | Security          | Azure Adisor recommendations (eg. security findings)                                  |
 | `azurerm_resource_info`                        | Resource          | Azure Resource informations                                                           |

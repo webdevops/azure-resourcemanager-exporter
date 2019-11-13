@@ -62,6 +62,7 @@ var opts struct {
 	ScrapeTimeSecurity          *time.Duration `long:"scrape-time-security"           env:"SCRAPE_TIME_SECURITY"           description:"Scrape time for Security metrics (time.duration)"`
 	ScrapeTimeResourceHealth    *time.Duration `long:"scrape-time-resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
 	ScrapeTimeComputing         *time.Duration `long:"scrape-time-computing"          env:"SCRAPE_TIME_COMPUTING"          description:"Scrape time for Computing metrics (time.duration)"`
+	ScrapeTimeEventhub          *time.Duration `long:"scrape-time-eventhub"           env:"SCRAPE_TIME_EVENTHUB"           description:"Scrape time for Eventhub metrics (time.duration)"         default:"30m"`
 	ScrapeTimeStorage           *time.Duration `long:"scrape-time-storage"            env:"SCRAPE_TIME_STORAGE"            description:"Scrape time for Storage metrics (time.duration)"`
 	ScrapeTimeGraph             *time.Duration `long:"scrape-time-graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
 
@@ -204,6 +205,10 @@ func initArgparser() {
 		opts.ScrapeTimeDatabase = &opts.ScrapeTime
 	}
 
+	if opts.ScrapeTimeEventhub == nil {
+		opts.ScrapeTimeEventhub = &opts.ScrapeTime
+	}
+
 	if opts.ScrapeTimeSecurity == nil {
 		opts.ScrapeTimeSecurity = &opts.ScrapeTime
 	}
@@ -333,6 +338,14 @@ func initMetricCollector() {
 	if opts.ScrapeTimeDatabase.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmDatabase{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeDatabase)
+	} else {
+		Logger.Infof("collector[%s]: disabled", collectorName)
+	}
+
+	collectorName = "EventHub"
+	if opts.ScrapeTimeDatabase.Seconds() > 0 {
+		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmEventhub{})
+		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeEventhub)
 	} else {
 		Logger.Infof("collector[%s]: disabled", collectorName)
 	}
