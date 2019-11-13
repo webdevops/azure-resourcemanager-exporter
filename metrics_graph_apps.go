@@ -14,7 +14,7 @@ type MetricsCollectorGraphApps struct {
 	client graphrbac.ApplicationsClient
 
 	prometheus struct {
-		apps *prometheus.GaugeVec
+		apps            *prometheus.GaugeVec
 		appsCredentials *prometheus.GaugeVec
 	}
 }
@@ -68,30 +68,30 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
 
 	for _, row := range list.Values() {
 		appsMetrics.AddInfo(prometheus.Labels{
-			"appAppID": *row.AppID,
-			"appObjectID": *row.ObjectID,
+			"appAppID":       *row.AppID,
+			"appObjectID":    *row.ObjectID,
 			"appDisplayName": *row.DisplayName,
-			"appObjectType": string(row.ObjectType),
+			"appObjectType":  string(row.ObjectType),
 		})
-		
+
 		// password credentials
 		if row.PasswordCredentials != nil {
 			for _, credential := range *row.PasswordCredentials {
 				if credential.StartDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID": *row.AppID,
-						"credentialID": *credential.KeyID,
+						"appAppID":       *row.AppID,
+						"credentialID":   *credential.KeyID,
 						"credentialType": "password",
-						"type": "startDate",
+						"type":           "startDate",
 					}, (*credential.StartDate).ToTime())
 				}
 
 				if credential.EndDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID": *row.AppID,
-						"credentialID": *credential.KeyID,
+						"appAppID":       *row.AppID,
+						"credentialID":   *credential.KeyID,
 						"credentialType": "password",
-						"type": "endDate",
+						"type":           "endDate",
 					}, (*credential.EndDate).ToTime())
 				}
 			}
@@ -102,19 +102,19 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
 			for _, credential := range *row.KeyCredentials {
 				if credential.StartDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID": *row.AppID,
-						"credentialID": *credential.KeyID,
+						"appAppID":       *row.AppID,
+						"credentialID":   *credential.KeyID,
 						"credentialType": "key",
-						"type": "startDate",
+						"type":           "startDate",
 					}, (*credential.StartDate).ToTime())
 				}
 
 				if credential.EndDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID": *row.AppID,
-						"credentialID": *credential.KeyID,
+						"appAppID":       *row.AppID,
+						"credentialID":   *credential.KeyID,
 						"credentialType": "key",
-						"type": "endDate",
+						"type":           "endDate",
 					}, (*credential.EndDate).ToTime())
 				}
 			}
