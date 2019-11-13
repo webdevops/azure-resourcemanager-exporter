@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventhub/mgmt/eventhub"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
@@ -116,7 +115,6 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 
 		resourceGroup := extractResourceGroupFromAzureId(*namespace.ID)
 
-		fmt.Println("namespace:" + *namespace.ID)
 		infoLabels := prometheus.Labels{
 			"resourceID":           *namespace.ID,
 			"subscriptionID":       *subscription.SubscriptionID,
@@ -147,8 +145,6 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 
 		for eventhubResult.NotDone() {
 			eventhub := eventhubResult.Value()
-
-			fmt.Println("namespace eventhub:" + *eventhub.ID)
 
 			infoLabels := prometheus.Labels{
 				"resourceID": *eventhub.ID,
