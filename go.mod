@@ -1,4 +1,4 @@
-module azure-resourcemanager-exporter/src
+module github.com/webdevops/azure-resourcemanager-exporter
 
 go 1.13
 
