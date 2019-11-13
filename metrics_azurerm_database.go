@@ -120,6 +120,13 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 			}, val.EarliestRestoreDate.ToTime())
 		}
 
+		if val.ReplicaCapacity != nil {
+			statusMetric.Add(prometheus.Labels{
+				"resourceID": *val.ID,
+				"type":       "replicaCapacity",
+			}, float64(*val.ReplicaCapacity))
+		}
+
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,
 			"type":       "storage",
@@ -181,6 +188,13 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 				"resourceID": *val.ID,
 				"type":       "earliestRestoreDate",
 			}, val.EarliestRestoreDate.ToTime())
+		}
+
+		if val.ReplicaCapacity != nil {
+			statusMetric.Add(prometheus.Labels{
+				"resourceID": *val.ID,
+				"type":       "replicaCapacity",
+			}, float64(*val.ReplicaCapacity))
 		}
 
 		statusMetric.Add(prometheus.Labels{
