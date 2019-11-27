@@ -11,7 +11,7 @@ import (
 type MetricsCollectorGraphApps struct {
 	CollectorProcessorCustom
 
-	client graphrbac.ApplicationsClient
+	client *graphrbac.ApplicationsClient
 
 	prometheus struct {
 		apps            *prometheus.GaugeVec
@@ -24,8 +24,9 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 
 	// init azure client
 	auth, _ := auth.NewAuthorizerFromEnvironmentWithResource(opts.azureEnvironment.GraphEndpoint)
-	m.client = graphrbac.NewApplicationsClient(os.Getenv("AZURE_TENANT_ID"))
-	m.client.Authorizer = auth
+	client := graphrbac.NewApplicationsClient(os.Getenv("AZURE_TENANT_ID"))
+	client.Authorizer = auth
+	m.client = &client
 
 	m.prometheus.apps = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
