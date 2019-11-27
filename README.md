@@ -26,6 +26,7 @@ Normally no configuration is needed but can be customized using environment vari
 | `SCRAPE_TIME_EVENTHUB`            | `30m`        `              | Scrape time for Eventhub metrics                                  |
 | `SCRAPE_TIME_SECURITY`            | -> SCRAPE_TIME              | Scrape time for Security metrics                                  |
 | `SCRAPE_TIME_HEALTH`              | -> SCRAPE_TIME              | Scrape time for Health metrics                                    |
+| `SCRAPE_TIME_IAM`                 | -> SCRAPE_TIME              | Scrape time for AzurAD IAM (roledefinitions, rolebindings, principals) metrics  |
 | `SCRAPE_TIME_GRAPH`               | -> SCRAPE_TIME              | Scrape time for AzurAD Graph metrics                              |
 | `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
 | `AZURE_RESOURCE_GROUP_TAG`        | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
@@ -76,5 +77,8 @@ Metrics
 | `azurerm_manageddisk_info`                     | Storage           | Azure ManagedDisk informations                                                        |
 | `azurerm_manageddisk_size`                     | Storage           | Azure ManagedDisk size                                                                |
 | `azurerm_manageddisk_status`                   | Storage           | Azure ManagedDisk stats informations                                                  |
+| `azurerm_iam_roleassignment_info`              | IAM               | Azure IAM RoleAssignment information                                                  |
+| `azurerm_iam_roledefinition_info`              | IAM               | Azure IAM RoleDefinition information                                                  |
+| `azurerm_iam_principal_info`                   | IAM               | Azure IAM Principal informations                                                      |
 | `azurerm_graph_app_info`                       | Graph             | AzureAD graph application informations                                                |
 | `azurerm_graph_app_credential`                 | Graph             | AzureAD graph application credentials (create,expiry) informations                    |

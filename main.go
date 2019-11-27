@@ -64,6 +64,7 @@ var opts struct {
 	ScrapeTimeComputing         *time.Duration `long:"scrape-time-computing"          env:"SCRAPE_TIME_COMPUTING"          description:"Scrape time for Computing metrics (time.duration)"`
 	ScrapeTimeEventhub          *time.Duration `long:"scrape-time-eventhub"           env:"SCRAPE_TIME_EVENTHUB"           description:"Scrape time for Eventhub metrics (time.duration)"         default:"30m"`
 	ScrapeTimeStorage           *time.Duration `long:"scrape-time-storage"            env:"SCRAPE_TIME_STORAGE"            description:"Scrape time for Storage metrics (time.duration)"`
+	ScrapeTimeIam               *time.Duration `long:"scrape-time-iam"                env:"SCRAPE_TIME_IAM"                description:"Scrape time for IAM metrics (time.duration)"`
 	ScrapeTimeGraph             *time.Duration `long:"scrape-time-graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
 
 	// azure settings
@@ -191,6 +192,10 @@ func initArgparser() {
 
 	if opts.ScrapeTimeStorage == nil {
 		opts.ScrapeTimeStorage = &opts.ScrapeTime
+	}
+
+	if opts.ScrapeTimeIam == nil {
+		opts.ScrapeTimeIam = &opts.ScrapeTime
 	}
 
 	if opts.ScrapeTimeContainerRegistry == nil {
@@ -362,6 +367,14 @@ func initMetricCollector() {
 	if opts.ScrapeTimeResourceHealth.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmHealth{})
 		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeResourceHealth)
+	} else {
+		Logger.Infof("collector[%s]: disabled", collectorName)
+	}
+
+	collectorName = "IAM"
+	if opts.ScrapeTimeIam.Seconds() > 0 {
+		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmIam{})
+		collectorGeneralList[collectorName].Run(*opts.ScrapeTimeIam)
 	} else {
 		Logger.Infof("collector[%s]: disabled", collectorName)
 	}

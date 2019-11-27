@@ -10,6 +10,7 @@ import (
 var (
 	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
 	providerFromResourceIdRegExp      = regexp.MustCompile("/providers/([^/]*)")
+	roleDefinitionIdRegExp            = regexp.MustCompile("/Microsoft.Authorization/roleDefinitions/([^/]*)")
 )
 
 func extractResourceGroupFromAzureId(azureId string) (resourceGroup string) {
@@ -22,6 +23,14 @@ func extractResourceGroupFromAzureId(azureId string) (resourceGroup string) {
 
 func extractProviderFromAzureId(azureId string) (provider string) {
 	if subMatch := providerFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
+		provider = subMatch[1]
+	}
+
+	return
+}
+
+func extractRoleDefinitionIdFromAzureId(azureId string) (provider string) {
+	if subMatch := roleDefinitionIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
 		provider = subMatch[1]
 	}
 
