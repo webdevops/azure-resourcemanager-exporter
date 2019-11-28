@@ -70,7 +70,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 		[]string{
 			"subscriptionID",
 			"principalID",
-			"displayName",
+			"principalName",
 			"principalType",
 		},
 	)
@@ -188,29 +188,29 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, call
 		if object, valid := val.AsADGroup(); valid {
 			infoLabels = &prometheus.Labels{
 				"subscriptionID":   *subscription.SubscriptionID,
-				"principalID":      *object.ObjectID,
-				"displayName":      *object.DisplayName,
+				"principalID":      stringPtrToString(object.ObjectID),
+				"principalName":    stringPtrToString(object.DisplayName),
 				"principalType":    string(object.ObjectType),
 			}
 		} else if object, valid := val.AsApplication(); valid {
 			infoLabels = &prometheus.Labels{
 				"subscriptionID":   *subscription.SubscriptionID,
-				"principalID":      *object.ObjectID,
-				"displayName":      *object.DisplayName,
+				"principalID":      stringPtrToString(object.ObjectID),
+				"principalName":    stringPtrToString(object.DisplayName),
 				"principalType":    string(object.ObjectType),
 			}
 		} else if object, valid := val.AsServicePrincipal(); valid {
 			infoLabels = &prometheus.Labels{
 				"subscriptionID":   *subscription.SubscriptionID,
-				"principalID":      *object.ObjectID,
-				"displayName":      *object.DisplayName,
+				"principalID":      stringPtrToString(object.ObjectID),
+				"principalName":    stringPtrToString(object.DisplayName),
 				"principalType":    string(object.ObjectType),
 			}
 		} else if object, valid := val.AsUser(); valid {
 			infoLabels = &prometheus.Labels{
 				"subscriptionID": *subscription.SubscriptionID,
-				"principalID":    *object.ObjectID,
-				"displayName":    *object.DisplayName,
+				"principalID":    stringPtrToString(object.ObjectID),
+				"principalName":  stringPtrToString(object.DisplayName),
 				"principalType":  string(object.ObjectType),
 			}
 		}

@@ -37,6 +37,13 @@ func extractRoleDefinitionIdFromAzureId(azureId string) (provider string) {
 	return
 }
 
+func stringPtrToString(val *string) (ret string) {
+	if val != nil {
+		ret = *val
+	}
+	return
+}
+
 func boolToString(b bool) string {
 	if b {
 		return "true"
