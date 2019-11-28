@@ -111,24 +111,23 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		infoLabels := prometheus.Labels{
 			"resourceID":       *val.ID,
 			"subscriptionID":   *subscription.SubscriptionID,
-			"location":         *val.Location,
-			"registryName":     *val.Name,
+			"location":         stringPtrToString(val.Location),
+			"registryName":     stringPtrToString(val.Name),
 			"resourceGroup":    extractResourceGroupFromAzureId(*val.ID),
-			"adminUserEnabled": boolToString(*val.AdminUserEnabled),
+			"adminUserEnabled": boolPtrToString(val.AdminUserEnabled),
 			"skuName":          skuName,
 			"skuTier":          skuTier,
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
-
-		infoMetric.Add(infoLabels, 1)
+		infoMetric.AddInfo(infoLabels)
 
 		if arcUsage.Value != nil {
 			for _, usage := range *arcUsage.Value {
 				quotaLabels := prometheus.Labels{
 					"subscriptionID": *subscription.SubscriptionID,
-					"registryName":   *val.Name,
+					"registryName":   stringPtrToString(val.Name),
 					"quotaUnit":      string(usage.Unit),
-					"quotaName":      *usage.Name,
+					"quotaName":      stringPtrToString(usage.Name),
 				}
 
 				quotaCurrentMetric.Add(quotaLabels, float64(*usage.CurrentValue))

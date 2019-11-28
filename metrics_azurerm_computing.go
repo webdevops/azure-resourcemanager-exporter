@@ -111,7 +111,7 @@ func (m *MetricsCollectorAzureRmComputing) collectAzurePublicIp(ctx context.Cont
 		gaugeValue := float64(1)
 
 		if val.IPAddress != nil {
-			ipAddress = *val.IPAddress
+			ipAddress = stringPtrToString(val.IPAddress)
 			ipAddressList = append(ipAddressList, ipAddress)
 		} else {
 			ipAddress = "not allocated"
@@ -158,26 +158,26 @@ func (m *MetricsCollectorAzureRmComputing) collectAzureVm(ctx context.Context, c
 		infoLabels := prometheus.Labels{
 			"resourceID":          *val.ID,
 			"subscriptionID":      *subscription.SubscriptionID,
-			"location":            *val.Location,
+			"location":            stringPtrToString(val.Location),
 			"resourceGroup":       extractResourceGroupFromAzureId(*val.ID),
-			"vmID":                *val.VMID,
-			"vmName":              *val.Name,
-			"vmType":              *val.Type,
+			"vmID":                stringPtrToString(val.VMID),
+			"vmName":              stringPtrToString(val.Name),
+			"vmType":              stringPtrToString(val.Type),
 			"vmSize":              string(val.VirtualMachineProperties.HardwareProfile.VMSize),
-			"vmProvisioningState": *val.ProvisioningState,
+			"vmProvisioningState": stringPtrToString(val.ProvisioningState),
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoMetric.AddInfo(infoLabels)
 
-		osLabels := prometheus.Labels{
-			"vmID":           *val.VMID,
-			"imagePublisher": *val.StorageProfile.ImageReference.Publisher,
-			"imageSku":       *val.StorageProfile.ImageReference.Sku,
-			"imageOffer":     *val.StorageProfile.ImageReference.Offer,
-			"imageVersion":   *val.StorageProfile.ImageReference.Version,
+		if val.StorageProfile != nil {
+			osMetric.AddInfo(prometheus.Labels{
+				"vmID":           *val.VMID,
+				"imagePublisher": stringPtrToString(val.StorageProfile.ImageReference.Publisher),
+				"imageSku":       stringPtrToString(val.StorageProfile.ImageReference.Sku),
+				"imageOffer":     stringPtrToString(val.StorageProfile.ImageReference.Offer),
+				"imageVersion":   stringPtrToString(val.StorageProfile.ImageReference.Version),
+			})
 		}
-
-		infoMetric.Add(infoLabels, 1)
-		osMetric.Add(osLabels, 1)
 
 		if list.NextWithContext(ctx) != nil {
 			break

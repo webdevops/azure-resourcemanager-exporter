@@ -120,24 +120,24 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 			"ipAdress":       *val.IPAddress.IP,
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
-		infoMetric.Add(infoLabels, 1)
+		infoMetric.AddInfo(infoLabels)
 
 		if val.Containers != nil {
 			for _, container := range *val.Containers {
-				containerMetric.Add(prometheus.Labels{
+				containerMetric.AddInfo(prometheus.Labels{
 					"resourceID":     *val.ID,
-					"containerName":  *container.Name,
-					"containerImage": *container.Image,
+					"containerName":  stringPtrToString(container.Name),
+					"containerImage": stringPtrToString(container.Image),
 					"livenessProbe":  boolToString(container.LivenessProbe != nil),
 					"readinessProbe": boolToString(container.ReadinessProbe != nil),
-				}, 1)
+				})
 
 				// ports
 				if container.Ports != nil {
 					for _, port := range *container.Ports {
 						containerPortMetric.Add(prometheus.Labels{
 							"resourceID":    *val.ID,
-							"containerName": *container.Name,
+							"containerName": stringPtrToString(container.Name),
 							"protocol":      string(port.Protocol),
 						}, float64(*port.Port))
 					}
@@ -149,7 +149,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 						if container.Resources.Requests.CPU != nil {
 							containerResourceMetric.Add(prometheus.Labels{
 								"resourceID":    *val.ID,
-								"containerName": *container.Name,
+								"containerName": stringPtrToString(container.Name),
 								"type":          "request",
 								"resource":      "cpu",
 							}, *container.Resources.Requests.CPU)
@@ -158,7 +158,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 						if container.Resources.Requests.MemoryInGB != nil {
 							containerResourceMetric.Add(prometheus.Labels{
 								"resourceID":    *val.ID,
-								"containerName": *container.Name,
+								"containerName": stringPtrToString(container.Name),
 								"type":          "request",
 								"resource":      "memory",
 							}, *container.Resources.Requests.MemoryInGB*1073741824)
@@ -169,7 +169,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 						if container.Resources.Limits.CPU != nil {
 							containerResourceMetric.Add(prometheus.Labels{
 								"resourceID":    *val.ID,
-								"containerName": *container.Name,
+								"containerName": stringPtrToString(container.Name),
 								"type":          "limit",
 								"resource":      "cpu",
 							}, *container.Resources.Limits.CPU)
@@ -178,7 +178,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 						if container.Resources.Limits.MemoryInGB != nil {
 							containerResourceMetric.Add(prometheus.Labels{
 								"resourceID":    *val.ID,
-								"containerName": *container.Name,
+								"containerName": stringPtrToString(container.Name),
 								"type":          "limit",
 								"resource":      "memory",
 							}, *container.Resources.Limits.MemoryInGB*1073741824)

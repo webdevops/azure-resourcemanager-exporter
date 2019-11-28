@@ -44,6 +44,17 @@ func stringPtrToString(val *string) (ret string) {
 	return
 }
 
+func boolPtrToString(b *bool) string {
+	if b == nil {
+		return ""
+	}
+
+	if *b {
+		return "true"
+	}
+	return "false"
+}
+
 func boolToString(b bool) string {
 	if b {
 		return "true"

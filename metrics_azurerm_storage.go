@@ -160,11 +160,11 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 			"resourceID":        *val.ID,
 			"subscriptionID":    *subscription.SubscriptionID,
 			"resourceGroup":     extractResourceGroupFromAzureId(*val.ID),
-			"managedDiskName":   *val.Name,
-			"location":          *val.Location,
+			"managedDiskName":   stringPtrToString(val.Name),
+			"location":          stringPtrToString(val.Location),
 			"sku":               string(val.Sku.Name),
 			"encrypted":         boolToString(false),
-			"provisioningState": string(*val.ProvisioningState),
+			"provisioningState": stringPtrToString(val.ProvisioningState),
 		}
 
 		if val.EncryptionSettingsCollection != nil {
@@ -180,7 +180,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 			sizeMetric.Add(prometheus.Labels{
 				"resourceID":      *val.ID,
 				"subscriptionID":  *subscription.SubscriptionID,
-				"managedDiskName": *val.Name,
+				"managedDiskName": stringPtrToString(val.Name),
 			}, float64(*val.DiskSizeGB)*1073741824)
 		}
 
@@ -188,7 +188,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 			statusMetric.Add(prometheus.Labels{
 				"resourceID":      *val.ID,
 				"subscriptionID":  *subscription.SubscriptionID,
-				"managedDiskName": *val.Name,
+				"managedDiskName": stringPtrToString(val.Name),
 				"type":            "DiskIOPSReadWrite",
 			}, float64(*val.DiskIOPSReadWrite))
 		}
@@ -197,7 +197,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 			statusMetric.Add(prometheus.Labels{
 				"resourceID":      *val.ID,
 				"subscriptionID":  *subscription.SubscriptionID,
-				"managedDiskName": *val.Name,
+				"managedDiskName": stringPtrToString(val.Name),
 				"type":            "DiskMBpsReadWrite",
 			}, float64(*val.DiskMBpsReadWrite))
 		}

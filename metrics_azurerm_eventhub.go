@@ -119,8 +119,8 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 			"resourceID":           *namespace.ID,
 			"subscriptionID":       *subscription.SubscriptionID,
 			"resourceGroup":        resourceGroup,
-			"location":             *namespace.Location,
-			"namespace":            *namespace.Name,
+			"location":             stringPtrToString(namespace.Location),
+			"namespace":            stringPtrToString(namespace.Name),
 			"skuName":              string(namespace.Sku.Name),
 			"skuTier":              string(namespace.Sku.Tier),
 			"skuCapacity":          int32ToString(*namespace.Sku.Capacity),
@@ -148,8 +148,8 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 
 			infoLabels := prometheus.Labels{
 				"resourceID": *eventhub.ID,
-				"namespace":  *namespace.Name,
-				"name":       *eventhub.Name,
+				"namespace":  stringPtrToString(namespace.Name),
+				"name":       stringPtrToString(eventhub.Name),
 			}
 			infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, namespace.Tags)
 			namespaceEventhubMetric.AddInfo(infoLabels)
@@ -157,8 +157,8 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 			if eventhub.PartitionCount != nil {
 				statusLabels := prometheus.Labels{
 					"resourceID": *eventhub.ID,
-					"namespace":  *namespace.Name,
-					"name":       *eventhub.Name,
+					"namespace":  stringPtrToString(namespace.Name),
+					"name":       stringPtrToString(eventhub.Name),
 					"type":       "partitionCount",
 				}
 				namespaceEventhubStatusMetric.Add(statusLabels, float64(*eventhub.PartitionCount))
@@ -167,8 +167,8 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 			if eventhub.MessageRetentionInDays != nil {
 				statusLabels := prometheus.Labels{
 					"resourceID": *eventhub.ID,
-					"namespace":  *namespace.Name,
-					"name":       *eventhub.Name,
+					"namespace":  stringPtrToString(namespace.Name),
+					"name":       stringPtrToString(eventhub.Name),
 					"type":       "messageRetentionInDays",
 				}
 				namespaceEventhubStatusMetric.Add(statusLabels, float64(*eventhub.MessageRetentionInDays))

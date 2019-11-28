@@ -114,14 +114,14 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 		infoLabels := prometheus.Labels{
 			"subscriptionID": *subscription.SubscriptionID,
 			"category":       string(item.RecommendationProperties.Category),
-			"resourceType":   *item.RecommendationProperties.ImpactedField,
-			"resourceName":   *item.RecommendationProperties.ImpactedValue,
+			"resourceType":   stringPtrToString(item.RecommendationProperties.ImpactedField),
+			"resourceName":   stringPtrToString(item.RecommendationProperties.ImpactedValue),
 			"resourceGroup":  extractResourceGroupFromAzureId(*item.ID),
 			"impact":         string(item.Impact),
 			"risk":           string(item.Risk),
 		}
 
-		infoMetric.Add(infoLabels, 1)
+		infoMetric.AddInfo(infoLabels)
 	}
 
 	callback <- func() {

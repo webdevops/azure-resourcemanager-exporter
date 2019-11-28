@@ -69,9 +69,9 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
 
 	for _, row := range list.Values() {
 		appsMetrics.AddInfo(prometheus.Labels{
-			"appAppID":       *row.AppID,
-			"appObjectID":    *row.ObjectID,
-			"appDisplayName": *row.DisplayName,
+			"appAppID":       stringPtrToString(row.AppID),
+			"appObjectID":    stringPtrToString(row.ObjectID),
+			"appDisplayName": stringPtrToString(row.DisplayName),
 			"appObjectType":  string(row.ObjectType),
 		})
 
@@ -80,8 +80,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
 			for _, credential := range *row.PasswordCredentials {
 				if credential.StartDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID":       *row.AppID,
-						"credentialID":   *credential.KeyID,
+						"appAppID":       stringPtrToString(row.AppID),
+						"credentialID":   stringPtrToString(credential.KeyID),
 						"credentialType": "password",
 						"type":           "startDate",
 					}, (*credential.StartDate).ToTime())
@@ -89,8 +89,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
 
 				if credential.EndDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID":       *row.AppID,
-						"credentialID":   *credential.KeyID,
+						"appAppID":       stringPtrToString(row.AppID),
+						"credentialID":   stringPtrToString(credential.KeyID),
 						"credentialType": "password",
 						"type":           "endDate",
 					}, (*credential.EndDate).ToTime())
@@ -103,8 +103,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
 			for _, credential := range *row.KeyCredentials {
 				if credential.StartDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID":       *row.AppID,
-						"credentialID":   *credential.KeyID,
+						"appAppID":       stringPtrToString(row.AppID),
+						"credentialID":   stringPtrToString(credential.KeyID),
 						"credentialType": "key",
 						"type":           "startDate",
 					}, (*credential.StartDate).ToTime())
@@ -112,8 +112,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
 
 				if credential.EndDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID":       *row.AppID,
-						"credentialID":   *credential.KeyID,
+						"appAppID":       stringPtrToString(row.AppID),
+						"credentialID":   stringPtrToString(credential.KeyID),
 						"credentialType": "key",
 						"type":           "endDate",
 					}, (*credential.EndDate).ToTime())

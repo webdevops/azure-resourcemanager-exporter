@@ -157,15 +157,15 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 		skuTier := ""
 
 		if val.Sku != nil {
-			skuName = string(*val.Sku.Name)
+			skuName = stringPtrToString(val.Sku.Name)
 			skuTier = string(val.Sku.Tier)
 		}
 
 		infoLabels := prometheus.Labels{
 			"resourceID":         *val.ID,
 			"subscriptionID":     *subscription.SubscriptionID,
-			"location":           *val.Location,
-			"serverName":         *val.Name,
+			"location":           stringPtrToString(val.Location),
+			"serverName":         stringPtrToString(val.Name),
 			"type":               "mysql",
 			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
 			"skuName":            skuName,
@@ -176,7 +176,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
-		infoMetric.Add(infoLabels, 1)
+		infoMetric.AddInfo(infoLabels)
 
 		statusMetric.Add(prometheus.Labels{
 			"resourceID": *val.ID,

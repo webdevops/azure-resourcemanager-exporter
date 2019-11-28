@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/authorization/mgmt/authorization"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/graphrbac/graphrbac"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/prometheus/client_golang/prometheus"
 	"os"
@@ -20,7 +20,7 @@ type MetricsCollectorAzureRmIam struct {
 	prometheus struct {
 		roleAssignment *prometheus.GaugeVec
 		roleDefinition *prometheus.GaugeVec
-		principal *prometheus.GaugeVec
+		principal      *prometheus.GaugeVec
 	}
 }
 
@@ -90,7 +90,6 @@ func (m *MetricsCollectorAzureRmIam) Collect(ctx context.Context, callback chan<
 	m.collectRoleDefinitions(ctx, callback, subscription)
 	m.collectRoleAssignments(ctx, callback, subscription)
 }
-
 
 func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := authorization.NewRoleDefinitionsClient(*subscription.SubscriptionID)
@@ -168,7 +167,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 }
 
 func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription, principalIdList []string) {
-	var infoLabels  *prometheus.Labels
+	var infoLabels *prometheus.Labels
 	infoMetric := MetricCollectorList{}
 
 	opts := graphrbac.GetObjectsParameters{
@@ -187,24 +186,24 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, call
 
 		if object, valid := val.AsADGroup(); valid {
 			infoLabels = &prometheus.Labels{
-				"subscriptionID":   *subscription.SubscriptionID,
-				"principalID":      stringPtrToString(object.ObjectID),
-				"principalName":    stringPtrToString(object.DisplayName),
-				"principalType":    string(object.ObjectType),
+				"subscriptionID": *subscription.SubscriptionID,
+				"principalID":    stringPtrToString(object.ObjectID),
+				"principalName":  stringPtrToString(object.DisplayName),
+				"principalType":  string(object.ObjectType),
 			}
 		} else if object, valid := val.AsApplication(); valid {
 			infoLabels = &prometheus.Labels{
-				"subscriptionID":   *subscription.SubscriptionID,
-				"principalID":      stringPtrToString(object.ObjectID),
-				"principalName":    stringPtrToString(object.DisplayName),
-				"principalType":    string(object.ObjectType),
+				"subscriptionID": *subscription.SubscriptionID,
+				"principalID":    stringPtrToString(object.ObjectID),
+				"principalName":  stringPtrToString(object.DisplayName),
+				"principalType":  string(object.ObjectType),
 			}
 		} else if object, valid := val.AsServicePrincipal(); valid {
 			infoLabels = &prometheus.Labels{
-				"subscriptionID":   *subscription.SubscriptionID,
-				"principalID":      stringPtrToString(object.ObjectID),
-				"principalName":    stringPtrToString(object.DisplayName),
-				"principalType":    string(object.ObjectType),
+				"subscriptionID": *subscription.SubscriptionID,
+				"principalID":    stringPtrToString(object.ObjectID),
+				"principalName":  stringPtrToString(object.DisplayName),
+				"principalType":  string(object.ObjectType),
 			}
 		} else if object, valid := val.AsUser(); valid {
 			infoLabels = &prometheus.Labels{

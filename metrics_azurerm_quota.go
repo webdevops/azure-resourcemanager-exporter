@@ -201,6 +201,14 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 			currentValue := float64(*val.CurrentValue)
 			limitValue := float64(*val.Limit)
 
+			quotaMetric.AddInfo(prometheus.Labels{
+				"subscriptionID": *subscription.SubscriptionID,
+				"location":       location,
+				"scope":          "storage",
+				"quota":          quotaName,
+				"quotaName":      quotaNameLocalized,
+			})
+
 			labels := prometheus.Labels{
 				"subscriptionID": *subscription.SubscriptionID,
 				"location":       location,
@@ -208,15 +216,6 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 				"quota":          quotaName,
 			}
 
-			infoLabels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"location":       location,
-				"scope":          "storage",
-				"quota":          quotaName,
-				"quotaName":      quotaNameLocalized,
-			}
-
-			quotaMetric.Add(infoLabels, 1)
 			quotaCurrentMetric.Add(labels, currentValue)
 			quotaLimitMetric.Add(labels, limitValue)
 		}

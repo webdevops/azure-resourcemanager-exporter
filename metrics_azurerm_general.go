@@ -95,10 +95,10 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 		labels: prometheus.Labels{
 			"resourceID":          *sub.ID,
 			"subscriptionID":      *sub.SubscriptionID,
-			"subscriptionName":    *sub.DisplayName,
+			"subscriptionName":    stringPtrToString(sub.DisplayName),
 			"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
-			"quotaID":             *sub.SubscriptionPolicies.QuotaID,
-			"locationPlacementID": *sub.SubscriptionPolicies.LocationPlacementID,
+			"quotaID":             stringPtrToString(sub.SubscriptionPolicies.QuotaID),
+			"locationPlacementID": stringPtrToString(sub.SubscriptionPolicies.LocationPlacementID),
 		},
 		value: 1,
 	}
@@ -134,11 +134,10 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.C
 		infoLabels := opts.azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
 			"resourceID":     *item.ID,
 			"subscriptionID": *subscription.SubscriptionID,
-			"resourceGroup":  *item.Name,
-			"location":       *item.Location,
+			"resourceGroup":  stringPtrToString(item.Name),
+			"location":       stringPtrToString(item.Location),
 		}, item.Tags)
-
-		infoMetric.Add(infoLabels, 1)
+		infoMetric.AddInfo(infoLabels)
 	}
 
 	callback <- func() {
