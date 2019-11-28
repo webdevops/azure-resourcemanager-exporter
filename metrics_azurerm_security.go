@@ -44,6 +44,7 @@ func (m *MetricsCollectorAzureRmSecurity) Setup(collector *CollectorGeneral) {
 			"resourceType",
 			"resourceName",
 			"resourceGroup",
+			"problem",
 			"impact",
 			"risk",
 		},
@@ -117,6 +118,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 			"resourceType":   stringPtrToString(item.RecommendationProperties.ImpactedField),
 			"resourceName":   stringPtrToString(item.RecommendationProperties.ImpactedValue),
 			"resourceGroup":  extractResourceGroupFromAzureId(*item.ID),
+			"problem":        stringPtrToString(item.RecommendationProperties.ShortDescription.Problem),
 			"impact":         string(item.Impact),
 			"risk":           string(item.Risk),
 		}
