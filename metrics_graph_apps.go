@@ -122,6 +122,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
 		}
 	}
 
+	m.prometheus.apps.Reset()
+	m.prometheus.appsCredentials.Reset()
 	appsMetrics.GaugeSet(m.prometheus.apps)
 	appsCredentialMetrics.GaugeSet(m.prometheus.appsCredentials)
 }
