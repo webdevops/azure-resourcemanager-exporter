@@ -143,7 +143,7 @@ func (m *MetricsCollectorAzureRmComputing) collectAzureVm(ctx context.Context, c
 	client := compute.NewVirtualMachinesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
-	list, err := client.ListAllComplete(ctx)
+	list, err := client.ListAllComplete(ctx, "")
 
 	if err != nil {
 		panic(err)

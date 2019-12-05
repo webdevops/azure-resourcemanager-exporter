@@ -111,14 +111,16 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 	client := storage.NewAccountsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
-	list, err := client.List(ctx)
+	list, err := client.ListComplete(ctx)
 	if err != nil {
 		panic(err)
 	}
 
 	infoMetric := MetricCollectorList{}
 
-	for _, val := range *list.Value {
+	for list.NotDone() {
+		val := list.Value()
+
 		infoLabels := prometheus.Labels{
 			"resourceID":         *val.ID,
 			"subscriptionID":     *subscription.SubscriptionID,
@@ -133,6 +135,10 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
+
+		if list.NextWithContext(ctx) != nil {
+			break
+		}
 	}
 
 	callback <- func() {
