@@ -123,10 +123,15 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, cal
 
 		if val.NetworkProfile != nil && val.NetworkProfile.NetworkInterfaces != nil {
 			for _, nic := range *val.NetworkProfile.NetworkInterfaces {
+				var nicIsPrimary *bool
+				if (nic.NetworkInterfaceReferenceProperties != nil) {
+					nicIsPrimary = nic.NetworkInterfaceReferenceProperties.Primary
+				}
+
 				nicMetric.AddInfo(prometheus.Labels{
 					"vmID":           *val.VMID,
 					"resourceID":     stringPtrToString(nic.ID),
-					"isPrimary":      boolPtrToString(nic.Primary),
+					"isPrimary":      boolPtrToString(nicIsPrimary),
 				})
 			}
 		}
