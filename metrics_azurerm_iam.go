@@ -95,7 +95,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 	client := authorization.NewRoleDefinitionsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
-	list, err := client.ListComplete(ctx, "", "")
+	list, err := client.ListComplete(ctx, *subscription.ID, "")
 
 	if err != nil {
 		panic(err)
