@@ -20,13 +20,11 @@ import (
 
 const (
 	Author                    = "webdevops.io"
-	Version                   = "0.23.0"
 	AZURE_RESOURCE_TAG_PREFIX = "tag_"
 )
 
 var (
 	argparser          *flags.Parser
-	args               []string
 	Verbose            bool
 	Logger             *DaemonLogger
 	AzureAuthorizer    autorest.Authorizer
@@ -36,6 +34,10 @@ var (
 	collectorCustomList  map[string]*CollectorCustom
 
 	portrangeRegexp = regexp.MustCompile("^(?P<first>[0-9]+)(-(?P<last>[0-9]+))?$")
+
+	// Git version information
+	gitCommit = "<unknown>"
+	gitTag    = "<unknown>"
 )
 
 type Portrange struct {
@@ -105,7 +107,7 @@ func main() {
 	// set verbosity
 	Verbose = len(opts.Verbose) >= 1
 
-	Logger.Infof("Init Azure ResourceManager exporter v%s (written by %v)", Version, Author)
+	Logger.Infof("Init Azure ResourceManager exporter v%s (%s; by %v)", gitTag, gitCommit, Author)
 
 	Logger.Infof("Init Azure connection")
 	initAzureConnection()

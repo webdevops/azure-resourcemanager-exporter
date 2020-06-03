@@ -62,23 +62,11 @@ func boolToString(b bool) string {
 	return "false"
 }
 
-func boolToFloat64(b bool) float64 {
-	if b {
-		return 1
-	}
-	return 0
-}
-
 func int32ToString(v int32) string {
 	return strconv.FormatInt(int64(v), 10)
 }
 
-func int64ToString(v int64) string {
-	return strconv.FormatInt(v, 10)
-}
-
 func stringsTrimSuffixCI(str, suffix string) string {
-
 	if strings.HasSuffix(strings.ToLower(str), strings.ToLower(suffix)) {
 		str = str[0 : len(str)-len(suffix)]
 	}

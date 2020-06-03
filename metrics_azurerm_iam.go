@@ -15,8 +15,6 @@ type MetricsCollectorAzureRmIam struct {
 
 	graphclient *graphrbac.ObjectsClient
 
-	graphCache map[string]map[string]graphrbac.BasicDirectoryObject
-
 	prometheus struct {
 		roleAssignment *prometheus.GaugeVec
 		roleDefinition *prometheus.GaugeVec
@@ -28,7 +26,10 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 	m.CollectorReference = collector
 
 	// init azure client
-	auth, _ := auth.NewAuthorizerFromEnvironmentWithResource(opts.azureEnvironment.GraphEndpoint)
+	auth, err := auth.NewAuthorizerFromEnvironmentWithResource(opts.azureEnvironment.GraphEndpoint)
+	if err != nil {
+		panic(err)
+	}
 	graphclient := graphrbac.NewObjectsClient(os.Getenv("AZURE_TENANT_ID"))
 	graphclient.Authorizer = auth
 	m.graphclient = &graphclient

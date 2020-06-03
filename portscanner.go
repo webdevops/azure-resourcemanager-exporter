@@ -22,7 +22,7 @@ type Portscanner struct {
 	List      map[string][]PortscannerResult
 	PublicIps map[string]string
 	Enabled   bool       `json:"-"`
-	mux       sync.Mutex `json:"-"`
+	mux       sync.Mutex
 
 	Callbacks struct {
 		StartupScan        func(c *Portscanner)
