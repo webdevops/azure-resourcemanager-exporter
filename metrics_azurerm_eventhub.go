@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventhub/mgmt/eventhub"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmEventhub struct {
@@ -105,10 +106,10 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 		panic(err)
 	}
 
-	namespaceMetric := MetricCollectorList{}
-	namespaceStatusMetric := MetricCollectorList{}
-	namespaceEventhubMetric := MetricCollectorList{}
-	namespaceEventhubStatusMetric := MetricCollectorList{}
+	namespaceMetric := prometheusCommon.NewMetricsList()
+	namespaceStatusMetric := prometheusCommon.NewMetricsList()
+	namespaceEventhubMetric := prometheusCommon.NewMetricsList()
+	namespaceEventhubStatusMetric := prometheusCommon.NewMetricsList()
 
 	for namespaceResult.NotDone() {
 		namespace := namespaceResult.Value()

@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resourcehealth/mgmt/resourcehealth"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmHealth struct {
@@ -49,7 +50,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, callback ch
 
 	availabilityStateValues := resourcehealth.PossibleAvailabilityStateValuesValues()
 
-	resourceHealthMetric := MetricCollectorList{}
+	resourceHealthMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()

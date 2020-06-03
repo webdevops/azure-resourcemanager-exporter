@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerregistry/mgmt/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmContainerRegistry struct {
@@ -87,9 +88,9 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	quotaCurrentMetric := MetricCollectorList{}
-	quotaLimitMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
+	quotaCurrentMetric := prometheusCommon.NewMetricsList()
+	quotaLimitMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()

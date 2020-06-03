@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"os"
 )
 
@@ -102,7 +103,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()
@@ -136,7 +137,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
 
 	principalIdList := []string{}
 
@@ -169,7 +170,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 
 func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription, principalIdList []string) {
 	var infoLabels *prometheus.Labels
-	infoMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
 
 	opts := graphrbac.GetObjectsParameters{
 		ObjectIds: &principalIdList,

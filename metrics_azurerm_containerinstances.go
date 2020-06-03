@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmContainerInstances struct {
@@ -102,10 +103,10 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	containerMetric := MetricCollectorList{}
-	containerResourceMetric := MetricCollectorList{}
-	containerPortMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
+	containerMetric := prometheusCommon.NewMetricsList()
+	containerResourceMetric := prometheusCommon.NewMetricsList()
+	containerPortMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()

@@ -5,15 +5,16 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmCompute struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		vm       *prometheus.GaugeVec
-		vmOs     *prometheus.GaugeVec
-		vmNic    *prometheus.GaugeVec
+		vm    *prometheus.GaugeVec
+		vmOs  *prometheus.GaugeVec
+		vmNic *prometheus.GaugeVec
 	}
 }
 
@@ -90,9 +91,9 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, cal
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	osMetric := MetricCollectorList{}
-	nicMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
+	osMetric := prometheusCommon.NewMetricsList()
+	nicMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()
@@ -124,14 +125,14 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, cal
 		if val.NetworkProfile != nil && val.NetworkProfile.NetworkInterfaces != nil {
 			for _, nic := range *val.NetworkProfile.NetworkInterfaces {
 				var nicIsPrimary *bool
-				if (nic.NetworkInterfaceReferenceProperties != nil) {
+				if nic.NetworkInterfaceReferenceProperties != nil {
 					nicIsPrimary = nic.NetworkInterfaceReferenceProperties.Primary
 				}
 
 				nicMetric.AddInfo(prometheus.Labels{
-					"vmID":           *val.VMID,
-					"resourceID":     stringPtrToString(nic.ID),
-					"isPrimary":      boolPtrToString(nicIsPrimary),
+					"vmID":       *val.VMID,
+					"resourceID": stringPtrToString(nic.ID),
+					"isPrimary":  boolPtrToString(nicIsPrimary),
 				})
 			}
 		}

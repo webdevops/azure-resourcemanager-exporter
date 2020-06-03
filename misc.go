@@ -4,7 +4,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 var (
@@ -72,8 +71,4 @@ func stringsTrimSuffixCI(str, suffix string) string {
 	}
 
 	return str
-}
-
-func timeToFloat64(v time.Time) float64 {
-	return float64(v.Unix())
 }

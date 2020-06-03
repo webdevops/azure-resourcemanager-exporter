@@ -6,6 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/postgresql/mgmt/postgresql"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmDatabase struct {
@@ -79,8 +80,8 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	statusMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
+	statusMetric := prometheusCommon.NewMetricsList()
 
 	for _, val := range *list.Value {
 		skuName := ""
@@ -149,8 +150,8 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	statusMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
+	statusMetric := prometheusCommon.NewMetricsList()
 
 	for _, val := range *list.Value {
 		skuName := ""

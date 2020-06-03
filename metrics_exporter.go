@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorExporter struct {
@@ -35,7 +36,7 @@ func (m *MetricsCollectorExporter) Collect(ctx context.Context) {
 }
 
 func (m *MetricsCollectorExporter) collectCollectorStats(ctx context.Context) {
-	statsMetrics := MetricCollectorList{}
+	statsMetrics := prometheusCommon.NewMetricsList()
 
 	for _, collector := range collectorGeneralList {
 		if collector.LastScrapeDuration != nil {

@@ -21,7 +21,7 @@ type PortscannerResult struct {
 type Portscanner struct {
 	List      map[string][]PortscannerResult
 	PublicIps map[string]string
-	Enabled   bool       `json:"-"`
+	Enabled   bool `json:"-"`
 	mux       sync.Mutex
 
 	Callbacks struct {

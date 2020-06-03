@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmResources struct {
@@ -51,7 +52,7 @@ func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, callback
 		panic(err)
 	}
 
-	resourceMetric := MetricCollectorList{}
+	resourceMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()

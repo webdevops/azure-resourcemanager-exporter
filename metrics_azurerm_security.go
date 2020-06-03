@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/security/mgmt/security"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"time"
 )
 
@@ -77,7 +78,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 		return
 	}
 
-	infoMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
 
 	if complienceResult.AssessmentResult != nil {
 		for _, result := range *complienceResult.AssessmentResult {
@@ -108,7 +109,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
 
 	for _, item := range *recommendationResult.Response().Value {
 

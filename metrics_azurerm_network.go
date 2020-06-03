@@ -5,19 +5,20 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmNetwork struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		vnet     *prometheus.GaugeVec
-		vnetAddress     *prometheus.GaugeVec
-		vnetSubnet     *prometheus.GaugeVec
-		vnetSubnetAddress     *prometheus.GaugeVec
-		nic      *prometheus.GaugeVec
-		nicIp    *prometheus.GaugeVec
-		publicIp *prometheus.GaugeVec
+		vnet              *prometheus.GaugeVec
+		vnetAddress       *prometheus.GaugeVec
+		vnetSubnet        *prometheus.GaugeVec
+		vnetSubnetAddress *prometheus.GaugeVec
+		nic               *prometheus.GaugeVec
+		nicIp             *prometheus.GaugeVec
+		publicIp          *prometheus.GaugeVec
 	}
 }
 
@@ -168,20 +169,20 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, c
 		panic(err)
 	}
 
-	vnetMetric := MetricCollectorList{}
-	vnetAddressMetric := MetricCollectorList{}
-	vnetSubnetMetric := MetricCollectorList{}
-	vnetSubnetAddressMetric := MetricCollectorList{}
+	vnetMetric := prometheusCommon.NewMetricsList()
+	vnetAddressMetric := prometheusCommon.NewMetricsList()
+	vnetSubnetMetric := prometheusCommon.NewMetricsList()
+	vnetSubnetAddressMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()
 
 		// VNET
 		infoLabels := prometheus.Labels{
-			"vnetID":             *val.ID,
-			"subscriptionID":     *subscription.SubscriptionID,
-			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
-			"vnetName":           stringPtrToString(val.Name),
+			"vnetID":         *val.ID,
+			"subscriptionID": *subscription.SubscriptionID,
+			"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
+			"vnetName":       stringPtrToString(val.Name),
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		vnetMetric.AddInfo(infoLabels)
@@ -189,9 +190,9 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, c
 		if val.AddressSpace != nil && val.AddressSpace.AddressPrefixes != nil {
 			for _, addressRange := range *val.AddressSpace.AddressPrefixes {
 				vnetAddressMetric.AddInfo(prometheus.Labels{
-					"vnetID":             *val.ID,
-					"subscriptionID":     *subscription.SubscriptionID,
-					"addressRange":       addressRange,
+					"vnetID":         *val.ID,
+					"subscriptionID": *subscription.SubscriptionID,
+					"addressRange":   addressRange,
 				})
 			}
 		}
@@ -200,34 +201,33 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, c
 		if val.Subnets != nil {
 			for _, subnet := range *val.Subnets {
 				vnetSubnetMetric.AddInfo(prometheus.Labels{
-					"vnetID":             *val.ID,
-					"subnetID":           *subnet.ID,
-					"subscriptionID":     *subscription.SubscriptionID,
-					"subnetName":         stringPtrToString(subnet.Name),
+					"vnetID":         *val.ID,
+					"subnetID":       *subnet.ID,
+					"subscriptionID": *subscription.SubscriptionID,
+					"subnetName":     stringPtrToString(subnet.Name),
 				})
 
 				if subnet.AddressPrefix != nil {
 					vnetSubnetAddressMetric.AddInfo(prometheus.Labels{
-						"vnetID":             *val.ID,
-						"subnetID":           *subnet.ID,
-						"subscriptionID":     *subscription.SubscriptionID,
-						"addressRange":       *subnet.AddressPrefix,
+						"vnetID":         *val.ID,
+						"subnetID":       *subnet.ID,
+						"subscriptionID": *subscription.SubscriptionID,
+						"addressRange":   *subnet.AddressPrefix,
 					})
 				}
 
 				if subnet.AddressPrefixes != nil {
 					for _, addressRange := range *subnet.AddressPrefixes {
 						vnetSubnetAddressMetric.AddInfo(prometheus.Labels{
-							"vnetID":             *val.ID,
-							"subnetID":           *subnet.ID,
-							"subscriptionID":     *subscription.SubscriptionID,
-							"addressRange":       addressRange,
+							"vnetID":         *val.ID,
+							"subnetID":       *subnet.ID,
+							"subscriptionID": *subscription.SubscriptionID,
+							"addressRange":   addressRange,
 						})
 					}
 				}
 			}
 		}
-
 
 		if list.NextWithContext(ctx) != nil {
 			break
@@ -252,25 +252,24 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, c
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	ipConfigMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
+	ipConfigMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"resourceID":         *val.ID,
-			"subscriptionID":     *subscription.SubscriptionID,
-			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
-			"name":               stringPtrToString(val.Name),
-			"macAddress":         stringPtrToString(val.MacAddress),
-			"isPrimary":          boolPtrToString(val.Primary),
-			"enableIPForwarding": boolPtrToString(val.EnableIPForwarding),
+			"resourceID":                  *val.ID,
+			"subscriptionID":              *subscription.SubscriptionID,
+			"resourceGroup":               extractResourceGroupFromAzureId(*val.ID),
+			"name":                        stringPtrToString(val.Name),
+			"macAddress":                  stringPtrToString(val.MacAddress),
+			"isPrimary":                   boolPtrToString(val.Primary),
+			"enableIPForwarding":          boolPtrToString(val.EnableIPForwarding),
 			"enableAcceleratedNetworking": boolPtrToString(val.EnableAcceleratedNetworking),
 		}
 		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
-
 
 		if val.IPConfigurations != nil {
 			for _, ipconf := range *val.IPConfigurations {
@@ -280,13 +279,13 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, c
 				}
 
 				ipConfigMetric.AddInfo(prometheus.Labels{
-					"resourceID":         *val.ID,
-					"subscriptionID":     *subscription.SubscriptionID,
-					"subnetID":           vnetSubnetID,
-					"isPrimary":          boolPtrToString(ipconf.Primary),
-					"ipAddress":          stringPtrToString(ipconf.PrivateIPAddress),
-					"ipAddressVersion":   string(ipconf.PrivateIPAddressVersion),
-					"allocationMethod":   string(ipconf.PrivateIPAllocationMethod),
+					"resourceID":       *val.ID,
+					"subscriptionID":   *subscription.SubscriptionID,
+					"subnetID":         vnetSubnetID,
+					"isPrimary":        boolPtrToString(ipconf.Primary),
+					"ipAddress":        stringPtrToString(ipconf.PrivateIPAddress),
+					"ipAddressVersion": string(ipconf.PrivateIPAddressVersion),
+					"allocationMethod": string(ipconf.PrivateIPAllocationMethod),
 				})
 			}
 		}
@@ -314,7 +313,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Contex
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
 
 	for _, val := range list.Values() {
 		location := *val.Location

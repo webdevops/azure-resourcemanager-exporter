@@ -6,6 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmStorage struct {
@@ -116,7 +117,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
 
 	for list.NotDone() {
 		val := list.Value()
@@ -157,9 +158,9 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
-	sizeMetric := MetricCollectorList{}
-	statusMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
+	sizeMetric := prometheusCommon.NewMetricsList()
+	statusMetric := prometheusCommon.NewMetricsList()
 
 	for _, val := range list.Values() {
 		infoLabels := prometheus.Labels{

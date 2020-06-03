@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/graphrbac/graphrbac"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"os"
 )
 
@@ -59,8 +60,8 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 }
 
 func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
-	appsMetrics := MetricCollectorList{}
-	appsCredentialMetrics := MetricCollectorList{}
+	appsMetrics := prometheusCommon.NewMetricsList()
+	appsCredentialMetrics := prometheusCommon.NewMetricsList()
 
 	list, err := m.client.List(context.Background(), opts.GraphApplicationFilter)
 	if err != nil {

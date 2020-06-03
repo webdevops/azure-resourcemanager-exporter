@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
 type MetricsCollectorAzureRmQuota struct {
@@ -84,9 +85,9 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 	client := compute.NewUsageClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
-	quotaMetric := MetricCollectorList{}
-	quotaCurrentMetric := MetricCollectorList{}
-	quotaLimitMetric := MetricCollectorList{}
+	quotaMetric := prometheusCommon.NewMetricsList()
+	quotaCurrentMetric := prometheusCommon.NewMetricsList()
+	quotaLimitMetric := prometheusCommon.NewMetricsList()
 
 	for _, location := range m.CollectorReference.AzureLocations {
 		list, err := client.List(ctx, location)
@@ -134,9 +135,9 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 	client := network.NewUsagesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
-	quotaMetric := MetricCollectorList{}
-	quotaCurrentMetric := MetricCollectorList{}
-	quotaLimitMetric := MetricCollectorList{}
+	quotaMetric := prometheusCommon.NewMetricsList()
+	quotaCurrentMetric := prometheusCommon.NewMetricsList()
+	quotaLimitMetric := prometheusCommon.NewMetricsList()
 
 	for _, location := range opts.AzureLocation {
 		list, err := client.List(ctx, location)
@@ -184,9 +185,9 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 	client := storage.NewUsagesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
-	quotaMetric := MetricCollectorList{}
-	quotaCurrentMetric := MetricCollectorList{}
-	quotaLimitMetric := MetricCollectorList{}
+	quotaMetric := prometheusCommon.NewMetricsList()
+	quotaCurrentMetric := prometheusCommon.NewMetricsList()
+	quotaLimitMetric := prometheusCommon.NewMetricsList()
 
 	for _, location := range opts.AzureLocation {
 		list, err := client.ListByLocation(ctx, location)

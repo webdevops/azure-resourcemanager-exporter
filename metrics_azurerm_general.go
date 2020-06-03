@@ -6,6 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/prometheus/client_golang/prometheus"
+	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"strconv"
 )
 
@@ -91,17 +92,15 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 		panic(err)
 	}
 
-	subscriptionMetric := MetricCollectorRow{
-		labels: prometheus.Labels{
-			"resourceID":          *sub.ID,
-			"subscriptionID":      *sub.SubscriptionID,
-			"subscriptionName":    stringPtrToString(sub.DisplayName),
-			"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
-			"quotaID":             stringPtrToString(sub.SubscriptionPolicies.QuotaID),
-			"locationPlacementID": stringPtrToString(sub.SubscriptionPolicies.LocationPlacementID),
-		},
-		value: 1,
-	}
+	subscriptionMetric := prometheusCommon.NewMetricsList()
+	subscriptionMetric.AddInfo(prometheus.Labels{
+		"resourceID":          *sub.ID,
+		"subscriptionID":      *sub.SubscriptionID,
+		"subscriptionName":    stringPtrToString(sub.DisplayName),
+		"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
+		"quotaID":             stringPtrToString(sub.SubscriptionPolicies.QuotaID),
+		"locationPlacementID": stringPtrToString(sub.SubscriptionPolicies.LocationPlacementID),
+	})
 
 	// subscription rate limits
 	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "subscription", "type": "read"}, callback)
@@ -114,7 +113,7 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 	m.probeProcessHeader(sub.Response, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": *subscription.SubscriptionID, "scope": "tenant", "type": "resource-entities-read"}, callback)
 
 	callback <- func() {
-		m.prometheus.subscription.With(subscriptionMetric.labels).Set(subscriptionMetric.value)
+		subscriptionMetric.GaugeSet(m.prometheus.subscription)
 	}
 }
 
@@ -128,7 +127,7 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.C
 		panic(err)
 	}
 
-	infoMetric := MetricCollectorList{}
+	infoMetric := prometheusCommon.NewMetricsList()
 
 	for _, item := range *resourceGroupResult.Response().Value {
 		infoLabels := opts.azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
