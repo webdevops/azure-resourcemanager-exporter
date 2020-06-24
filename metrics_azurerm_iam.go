@@ -172,58 +172,69 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, call
 	var infoLabels *prometheus.Labels
 	infoMetric := prometheusCommon.NewMetricsList()
 
-	opts := graphrbac.GetObjectsParameters{
-		ObjectIds: &principalIdList,
-	}
-
-	list, err := m.graphclient.GetObjectsByObjectIdsComplete(ctx, opts)
-	if err != nil {
-		panic(err)
-	}
-
-	for list.NotDone() {
-		val := list.Value()
-
-		infoLabels = nil
-
-		if object, valid := val.AsADGroup(); valid {
-			infoLabels = &prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"principalID":    stringPtrToString(object.ObjectID),
-				"principalName":  stringPtrToString(object.DisplayName),
-				"principalType":  string(object.ObjectType),
-			}
-		} else if object, valid := val.AsApplication(); valid {
-			infoLabels = &prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"principalID":    stringPtrToString(object.ObjectID),
-				"principalName":  stringPtrToString(object.DisplayName),
-				"principalType":  string(object.ObjectType),
-			}
-		} else if object, valid := val.AsServicePrincipal(); valid {
-			infoLabels = &prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"principalID":    stringPtrToString(object.ObjectID),
-				"principalName":  stringPtrToString(object.DisplayName),
-				"principalType":  string(object.ObjectType),
-			}
-		} else if object, valid := val.AsUser(); valid {
-			infoLabels = &prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"principalID":    stringPtrToString(object.ObjectID),
-				"principalName":  stringPtrToString(object.DisplayName),
-				"principalType":  string(object.ObjectType),
-			}
+	// azure limits objects ids
+	chunkSize := 999
+	for i := 0; i < len(principalIdList); i += chunkSize {
+		end := i + chunkSize
+		if end > len(principalIdList) {
+			end = len(principalIdList)
 		}
 
-		if infoLabels != nil {
-			infoMetric.AddInfo(*infoLabels)
+		principalIdChunkList := principalIdList[i:end]
+		opts := graphrbac.GetObjectsParameters{
+			ObjectIds: &principalIdChunkList,
 		}
 
-		if list.NextWithContext(ctx) != nil {
-			break
+		list, err := m.graphclient.GetObjectsByObjectIdsComplete(ctx, opts)
+		if err != nil {
+			panic(err)
+		}
+
+		for list.NotDone() {
+			val := list.Value()
+
+			infoLabels = nil
+
+			if object, valid := val.AsADGroup(); valid {
+				infoLabels = &prometheus.Labels{
+					"subscriptionID": *subscription.SubscriptionID,
+					"principalID":    stringPtrToString(object.ObjectID),
+					"principalName":  stringPtrToString(object.DisplayName),
+					"principalType":  string(object.ObjectType),
+				}
+			} else if object, valid := val.AsApplication(); valid {
+				infoLabels = &prometheus.Labels{
+					"subscriptionID": *subscription.SubscriptionID,
+					"principalID":    stringPtrToString(object.ObjectID),
+					"principalName":  stringPtrToString(object.DisplayName),
+					"principalType":  string(object.ObjectType),
+				}
+			} else if object, valid := val.AsServicePrincipal(); valid {
+				infoLabels = &prometheus.Labels{
+					"subscriptionID": *subscription.SubscriptionID,
+					"principalID":    stringPtrToString(object.ObjectID),
+					"principalName":  stringPtrToString(object.DisplayName),
+					"principalType":  string(object.ObjectType),
+				}
+			} else if object, valid := val.AsUser(); valid {
+				infoLabels = &prometheus.Labels{
+					"subscriptionID": *subscription.SubscriptionID,
+					"principalID":    stringPtrToString(object.ObjectID),
+					"principalName":  stringPtrToString(object.DisplayName),
+					"principalType":  string(object.ObjectType),
+				}
+			}
+
+			if infoLabels != nil {
+				infoMetric.AddInfo(*infoLabels)
+			}
+
+			if list.NextWithContext(ctx) != nil {
+				break
+			}
 		}
 	}
+
 
 	callback <- func() {
 		infoMetric.GaugeSet(m.prometheus.principal)
