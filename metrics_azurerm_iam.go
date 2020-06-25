@@ -139,10 +139,11 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 
 	infoMetric := prometheusCommon.NewMetricsList()
 
-	principalIdList := []string{}
+	principalIdMap := map[string]string{}
 
 	for list.NotDone() {
 		val := list.Value()
+		principalId := *val.Properties.PrincipalID
 
 		infoLabels := prometheus.Labels{
 			"subscriptionID":   *subscription.SubscriptionID,
@@ -150,17 +151,21 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(*val.Properties.RoleDefinitionID),
 			"resourceID":       *val.Properties.Scope,
 			"resourceGroup":    extractResourceGroupFromAzureId(*val.Properties.Scope),
-			"principalID":      *val.Properties.PrincipalID,
+			"principalID":      principalId,
 		}
 		infoMetric.AddInfo(infoLabels)
 
-		principalIdList = append(principalIdList, *val.Properties.PrincipalID)
+		principalIdMap[principalId] = principalId
 
 		if list.NextWithContext(ctx) != nil {
 			break
 		}
 	}
 
+	principalIdList := []string{}
+	for _, val := range principalIdMap {
+		principalIdList = append(principalIdList, val)
+	}
 	m.collectPrincipals(ctx, callback, subscription, principalIdList)
 
 	callback <- func() {
@@ -234,7 +239,6 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, call
 			}
 		}
 	}
-
 
 	callback <- func() {
 		infoMetric.GaugeSet(m.prometheus.principal)
