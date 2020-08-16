@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
