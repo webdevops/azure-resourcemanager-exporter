@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -37,7 +38,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 				"osType",
 				"ipAdress",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -93,14 +94,14 @@ func (m *MetricsCollectorAzureRmContainerInstances) Reset() {
 	m.prometheus.containerInstanceContainerPort.Reset()
 }
 
-func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := containerinstance.NewContainerGroupsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx)
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -120,7 +121,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 			"osType":         string(val.OsType),
 			"ipAdress":       *val.IPAddress.IP,
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if val.Containers != nil {

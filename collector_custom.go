@@ -27,6 +27,6 @@ func (m *CollectorCustom) Run(scrapeTime time.Duration) {
 func (m *CollectorCustom) Collect() {
 	ctx := context.Background()
 	m.collectionStart()
-	m.Processor.Collect(ctx)
+	m.Processor.Collect(ctx, m.logger)
 	m.collectionFinish()
 }

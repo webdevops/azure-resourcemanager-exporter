@@ -6,6 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -41,7 +42,7 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 				"encrypted",
 				"provisioningState",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -61,7 +62,7 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 				"encrypted",
 				"provisioningState",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -103,18 +104,18 @@ func (m *MetricsCollectorAzureRmStorage) Reset() {
 	m.prometheus.managedDiskStats.Reset()
 }
 
-func (m *MetricsCollectorAzureRmStorage) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureStorageAccounts(ctx, callback, subscription)
-	m.collectAzureStorageManagedDisks(ctx, callback, subscription)
+func (m *MetricsCollectorAzureRmStorage) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureStorageAccounts(ctx, logger, callback, subscription)
+	m.collectAzureStorageManagedDisks(ctx, logger, callback, subscription)
 }
 
-func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) (ipAddressList []string) {
+func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) (ipAddressList []string) {
 	client := storage.NewAccountsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -134,7 +135,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 			"encrypted":          boolToString(val.Encryption.KeySource != ""),
 			"provisioningState":  string(val.ProvisioningState),
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if list.NextWithContext(ctx) != nil {
@@ -149,13 +150,13 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 	return
 }
 
-func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) (ipAddressList []string) {
+func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) (ipAddressList []string) {
 	client := compute.NewDisksClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.List(ctx)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -180,7 +181,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 			}
 		}
 
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if val.DiskSizeGB != nil {

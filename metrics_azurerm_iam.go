@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"os"
 )
@@ -27,9 +28,9 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 	m.CollectorReference = collector
 
 	// init azure client
-	auth, err := auth.NewAuthorizerFromEnvironmentWithResource(opts.azureEnvironment.GraphEndpoint)
+	auth, err := auth.NewAuthorizerFromEnvironmentWithResource(azureEnvironment.GraphEndpoint)
 	if err != nil {
-		panic(err)
+		m.logger().Panic(err)
 	}
 	graphclient := graphrbac.NewObjectsClient(os.Getenv("AZURE_TENANT_ID"))
 	graphclient.Authorizer = auth
@@ -88,19 +89,19 @@ func (m *MetricsCollectorAzureRmIam) Reset() {
 	m.prometheus.principal.Reset()
 }
 
-func (m *MetricsCollectorAzureRmIam) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectRoleDefinitions(ctx, callback, subscription)
-	m.collectRoleAssignments(ctx, callback, subscription)
+func (m *MetricsCollectorAzureRmIam) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectRoleDefinitions(ctx, logger, callback, subscription)
+	m.collectRoleAssignments(ctx, logger, callback, subscription)
 }
 
-func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := authorization.NewRoleDefinitionsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx, *subscription.ID, "")
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -127,14 +128,14 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := authorization.NewRoleAssignmentsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx, "")
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -166,14 +167,14 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 	for _, val := range principalIdMap {
 		principalIdList = append(principalIdList, val)
 	}
-	m.collectPrincipals(ctx, callback, subscription, principalIdList)
+	m.collectPrincipals(ctx, logger, callback, subscription, principalIdList)
 
 	callback <- func() {
 		infoMetric.GaugeSet(m.prometheus.roleAssignment)
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription, principalIdList []string) {
+func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, principalIdList []string) {
 	var infoLabels *prometheus.Labels
 	infoMetric := prometheusCommon.NewMetricsList()
 
@@ -192,7 +193,7 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, call
 
 		list, err := m.graphclient.GetObjectsByObjectIdsComplete(ctx, opts)
 		if err != nil {
-			panic(err)
+			logger.Panic(err)
 		}
 
 		for list.NotDone() {

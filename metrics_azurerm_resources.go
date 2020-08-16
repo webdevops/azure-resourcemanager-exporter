@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -31,7 +32,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 				"resourceGroup",
 				"provider",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -42,14 +43,14 @@ func (m *MetricsCollectorAzureRmResources) Reset() {
 	m.prometheus.resource.Reset()
 }
 
-func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := resources.NewClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx, "", "", nil)
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	resourceMetric := prometheusCommon.NewMetricsList()
@@ -63,7 +64,7 @@ func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, callback
 			"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
 			"provider":       extractProviderFromAzureId(*val.ID),
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		resourceMetric.AddInfo(infoLabels)
 
 		if list.NextWithContext(ctx) != nil {

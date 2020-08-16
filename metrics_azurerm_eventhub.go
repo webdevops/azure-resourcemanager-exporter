@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventhub/mgmt/eventhub"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -40,7 +41,7 @@ func (m *MetricsCollectorAzureRmEventhub) Setup(collector *CollectorGeneral) {
 				"isAutoInflateEnabled",
 				"kafkaEnabled",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -66,7 +67,7 @@ func (m *MetricsCollectorAzureRmEventhub) Setup(collector *CollectorGeneral) {
 				"namespace",
 				"name",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -94,7 +95,7 @@ func (m *MetricsCollectorAzureRmEventhub) Reset() {
 	m.prometheus.namespaceEventhub.Reset()
 }
 
-func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	namespaceClient := eventhub.NewNamespacesClient(*subscription.SubscriptionID)
 	namespaceClient.Authorizer = AzureAuthorizer
 
@@ -103,7 +104,7 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 
 	namespaceResult, err := namespaceClient.ListComplete(ctx)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
 
 	namespaceMetric := prometheusCommon.NewMetricsList()
@@ -128,7 +129,7 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 			"isAutoInflateEnabled": boolToString(*namespace.IsAutoInflateEnabled),
 			"kafkaEnabled":         boolToString(*namespace.KafkaEnabled),
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, namespace.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, namespace.Tags)
 		namespaceMetric.AddInfo(infoLabels)
 
 		if namespace.MaximumThroughputUnits != nil {
@@ -141,7 +142,7 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 
 		eventhubResult, err := eventhubClient.ListByNamespaceComplete(ctx, resourceGroup, *namespace.Name, nil, nil)
 		if err != nil {
-			panic(err)
+			m.logger().Panic(err)
 		}
 
 		for eventhubResult.NotDone() {
@@ -152,7 +153,7 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, callback 
 				"namespace":  stringPtrToString(namespace.Name),
 				"name":       stringPtrToString(eventhub.Name),
 			}
-			infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, namespace.Tags)
+			infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, namespace.Tags)
 			namespaceEventhubMetric.AddInfo(infoLabels)
 
 			if eventhub.PartitionCount != nil {

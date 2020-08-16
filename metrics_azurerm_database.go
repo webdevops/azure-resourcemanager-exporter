@@ -6,6 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/postgresql/mgmt/postgresql"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -41,7 +42,7 @@ func (m *MetricsCollectorAzureRmDatabase) Setup(collector *CollectorGeneral) {
 				"sslEnforcement",
 				"geoRedundantBackup",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -65,19 +66,19 @@ func (m *MetricsCollectorAzureRmDatabase) Reset() {
 	m.prometheus.databaseStatus.Reset()
 }
 
-func (m *MetricsCollectorAzureRmDatabase) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureDatabasePostgresql(ctx, callback, subscription)
-	m.collectAzureDatabaseMysql(ctx, callback, subscription)
+func (m *MetricsCollectorAzureRmDatabase) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureDatabasePostgresql(ctx, logger, callback, subscription)
+	m.collectAzureDatabaseMysql(ctx, logger, callback, subscription)
 }
 
-func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := postgresql.NewServersClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.List(ctx)
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -106,7 +107,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 			"sslEnforcement":     string(val.SslEnforcement),
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.Add(infoLabels, 1)
 
 		statusMetric.Add(prometheus.Labels{
@@ -140,14 +141,14 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 	}
 }
 
-func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := mysql.NewServersClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.List(ctx)
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -176,7 +177,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 			"sslEnforcement":     string(val.SslEnforcement),
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		statusMetric.Add(prometheus.Labels{

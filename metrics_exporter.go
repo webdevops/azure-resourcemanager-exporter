@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -31,11 +32,11 @@ func (m *MetricsCollectorExporter) Setup(collector *CollectorCustom) {
 	prometheus.MustRegister(m.prometheus.stats)
 }
 
-func (m *MetricsCollectorExporter) Collect(ctx context.Context) {
-	m.collectCollectorStats(ctx)
+func (m *MetricsCollectorExporter) Collect(ctx context.Context, logger *log.Entry) {
+	m.collectCollectorStats(ctx, logger)
 }
 
-func (m *MetricsCollectorExporter) collectCollectorStats(ctx context.Context) {
+func (m *MetricsCollectorExporter) collectCollectorStats(ctx context.Context, logger *log.Entry) {
 	statsMetrics := prometheusCommon.NewMetricsList()
 
 	for _, collector := range collectorGeneralList {

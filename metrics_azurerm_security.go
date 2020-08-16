@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/security/mgmt/security"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"time"
 )
@@ -60,21 +61,21 @@ func (m *MetricsCollectorAzureRmSecurity) Reset() {
 	m.prometheus.advisorRecommendations.Reset()
 }
 
-func (m *MetricsCollectorAzureRmSecurity) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureAdvisorRecommendations(ctx, callback, subscription)
+func (m *MetricsCollectorAzureRmSecurity) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureAdvisorRecommendations(ctx, logger, callback, subscription)
 	for _, location := range m.CollectorReference.AzureLocations {
-		m.collectAzureSecurityCompliance(ctx, callback, subscription, location)
+		m.collectAzureSecurityCompliance(ctx, logger, callback, subscription, location)
 	}
 }
 
-func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription, location string) {
+func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, location string) {
 	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", *subscription.SubscriptionID)
 	client := security.NewCompliancesClient(subscriptionResourceId, location)
 	client.Authorizer = AzureAuthorizer
 
 	complienceResult, err := client.Get(ctx, subscriptionResourceId, time.Now().Format("2006-01-02Z"))
 	if err != nil {
-		Logger.Errorf("subscription[%v]: %v", *subscription.SubscriptionID, err)
+		logger.Error(err)
 		return
 	}
 
@@ -100,13 +101,13 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 	}
 }
 
-func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := advisor.NewRecommendationsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	recommendationResult, err := client.ListComplete(ctx, "", nil, "")
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()

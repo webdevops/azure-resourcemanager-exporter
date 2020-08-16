@@ -7,6 +7,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -74,14 +75,14 @@ func (m *MetricsCollectorAzureRmQuota) Reset() {
 	m.prometheus.quotaLimit.Reset()
 }
 
-func (m *MetricsCollectorAzureRmQuota) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureComputeUsage(ctx, callback, subscription)
-	m.collectAzureNetworkUsage(ctx, callback, subscription)
-	m.collectAzureStorageUsage(ctx, callback, subscription)
+func (m *MetricsCollectorAzureRmQuota) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureComputeUsage(ctx, logger, callback, subscription)
+	m.collectAzureNetworkUsage(ctx, logger, callback, subscription)
+	m.collectAzureStorageUsage(ctx, logger, callback, subscription)
 }
 
 // Collect Azure ComputeUsage metrics
-func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := compute.NewUsageClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
@@ -93,7 +94,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 		list, err := client.List(ctx, location)
 
 		if err != nil {
-			panic(err)
+			logger.Panic(err)
 		}
 
 		for _, val := range list.Values() {
@@ -131,7 +132,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 }
 
 // Collect Azure NetworkUsage metrics
-func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := network.NewUsagesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
@@ -139,11 +140,11 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 	quotaCurrentMetric := prometheusCommon.NewMetricsList()
 	quotaLimitMetric := prometheusCommon.NewMetricsList()
 
-	for _, location := range opts.AzureLocation {
+	for _, location := range opts.Azure.Location {
 		list, err := client.List(ctx, location)
 
 		if err != nil {
-			panic(err)
+			logger.Panic(err)
 		}
 
 		for _, val := range list.Values() {
@@ -181,7 +182,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 }
 
 // Collect Azure StorageUsage metrics
-func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := storage.NewUsagesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
@@ -189,11 +190,11 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 	quotaCurrentMetric := prometheusCommon.NewMetricsList()
 	quotaLimitMetric := prometheusCommon.NewMetricsList()
 
-	for _, location := range opts.AzureLocation {
+	for _, location := range opts.Azure.Location {
 		list, err := client.ListByLocation(ctx, location)
 
 		if err != nil {
-			panic(err)
+			logger.Panic(err)
 		}
 
 		for _, val := range *list.Value {

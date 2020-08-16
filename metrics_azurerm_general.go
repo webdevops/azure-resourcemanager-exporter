@@ -6,6 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"strconv"
 )
@@ -50,7 +51,7 @@ func (m *MetricsCollectorAzureRmGeneral) Setup(collector *CollectorGeneral) {
 				"resourceGroup",
 				"location",
 			},
-			opts.azureResourceGroupTags.prometheusLabels...,
+			azureResourceGroupTags.prometheusLabels...,
 		),
 	)
 
@@ -77,19 +78,19 @@ func (m *MetricsCollectorAzureRmGeneral) Reset() {
 	m.prometheus.apiQuota.Reset()
 }
 
-func (m *MetricsCollectorAzureRmGeneral) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureSubscription(ctx, callback, subscription)
-	m.collectAzureResourceGroup(ctx, callback, subscription)
+func (m *MetricsCollectorAzureRmGeneral) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureSubscription(ctx, logger, callback, subscription)
+	m.collectAzureResourceGroup(ctx, logger, callback, subscription)
 }
 
 // Collect Azure Subscription metrics
-func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := subscriptions.NewClient()
 	client.Authorizer = AzureAuthorizer
 
 	sub, err := client.Get(ctx, *subscription.SubscriptionID)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	subscriptionMetric := prometheusCommon.NewMetricsList()
@@ -118,19 +119,19 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 }
 
 // Collect Azure ResourceGroup metrics
-func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := resources.NewGroupsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	resourceGroupResult, err := client.ListComplete(ctx, "", nil)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
 
 	for _, item := range *resourceGroupResult.Response().Value {
-		infoLabels := opts.azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
+		infoLabels := azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
 			"resourceID":     *item.ID,
 			"subscriptionID": *subscription.SubscriptionID,
 			"resourceGroup":  stringPtrToString(item.Name),
@@ -154,7 +155,7 @@ func (m *MetricsCollectorAzureRmGeneral) probeProcessHeader(response autorest.Re
 				m.prometheus.apiQuota.With(labels).Set(valFloat)
 			}
 		} else {
-			Logger.Errorf("Failed to parse value '%v': %v", val, err)
+			m.logger().Errorf("failed to parse value '%v': %v", val, err)
 		}
 	}
 }

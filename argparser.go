@@ -12,16 +12,16 @@ func argparserParsePortrange() (errorMessage error) {
 	var firstPort int64
 	var lastPort int64
 
-	if len(opts.PortscanPortRange) > 0 {
-		opts.portscanPortRange = []Portrange{}
+	if len(opts.Portscan.PortRange) > 0 {
+		portscanPortRange = []Portrange{}
 
-		for _, portrange := range opts.PortscanPortRange {
+		for _, portrange := range opts.Portscan.PortRange {
 			// parse via regexp
 			portscanRangeSubMatch := portrangeRegexp.FindStringSubmatch(portrange)
 
 			if len(portscanRangeSubMatch) == 0 {
 				// portrange is invalid
-				errorMessage = errors.New(fmt.Sprintf("Unable to parse \"--portscan-range\", has to be format \"nnn-mmm\""))
+				errorMessage = fmt.Errorf("unable to parse \"--portscan-range\", has to be format \"nnn-mmm\"")
 				return
 			}
 
@@ -36,7 +36,7 @@ func argparserParsePortrange() (errorMessage error) {
 			// parse first port
 			firstPort, err = strconv.ParseInt(portscanRangeSubMatchResult["first"], 10, 32)
 			if err != nil {
-				errorMessage = errors.New(fmt.Sprintf("Failed to parse \"--portscan-range\": %v", err))
+				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": %v", err)
 				return
 			}
 
@@ -44,7 +44,7 @@ func argparserParsePortrange() (errorMessage error) {
 			if portscanRangeSubMatchResult["last"] != "" {
 				lastPort, err = strconv.ParseInt(portscanRangeSubMatchResult["last"], 10, 32)
 				if err != nil {
-					errorMessage = errors.New(fmt.Sprintf("Failed to parse \"--portscan-range\": %v", err))
+					errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": %v", err)
 					return
 				}
 			} else {
@@ -54,30 +54,30 @@ func argparserParsePortrange() (errorMessage error) {
 
 			// check min port
 			if firstPort < 1 {
-				errorMessage = errors.New(fmt.Sprintf("Failed to parse \"--portscan-range\": first port cannot be smaller then 0 (%v -> %v)", firstPort, lastPort))
+				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": first port cannot be smaller then 0 (%v -> %v)", firstPort, lastPort)
 				return
 			}
 
 			// check max port
 			if lastPort > 65535 {
-				errorMessage = errors.New(fmt.Sprintf("Failed to parse \"--portscan-range\": last port cannot be bigger then 65535 (%v -> %v)", firstPort, lastPort))
+				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": last port cannot be bigger then 65535 (%v -> %v)", firstPort, lastPort)
 				return
 			}
 
 			// check if range is ok
 			if firstPort > lastPort {
-				errorMessage = errors.New(fmt.Sprintf("Failed to parse \"--portscan-range\": first port cannot be beyond last port (%v -> %v)", firstPort, lastPort))
+				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": first port cannot be beyond last port (%v -> %v)", firstPort, lastPort)
 				return
 			}
 
 			// add to portlist
-			opts.portscanPortRange = append(
-				opts.portscanPortRange,
+			portscanPortRange = append(
+				portscanPortRange,
 				Portrange{FirstPort: int(firstPort), LastPort: int(lastPort)},
 			)
 		}
 	} else {
-		errorMessage = errors.New("No port range available, set via \"--portscan-range\"")
+		errorMessage = errors.New("no port range available, set via \"--portscan-range\"")
 		return
 	}
 

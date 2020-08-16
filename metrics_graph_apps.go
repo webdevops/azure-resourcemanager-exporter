@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/graphrbac/graphrbac"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"os"
 )
@@ -24,7 +25,7 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 	m.CollectorReference = collector
 
 	// init azure client
-	auth, _ := auth.NewAuthorizerFromEnvironmentWithResource(opts.azureEnvironment.GraphEndpoint)
+	auth, _ := auth.NewAuthorizerFromEnvironmentWithResource(azureEnvironment.GraphEndpoint)
 	client := graphrbac.NewApplicationsClient(os.Getenv("AZURE_TENANT_ID"))
 	client.Authorizer = auth
 	m.client = &client
@@ -59,13 +60,13 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 	prometheus.MustRegister(m.prometheus.appsCredentials)
 }
 
-func (m *MetricsCollectorGraphApps) Collect(ctx context.Context) {
+func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Entry) {
 	appsMetrics := prometheusCommon.NewMetricsList()
 	appsCredentialMetrics := prometheusCommon.NewMetricsList()
 
 	list, err := m.client.List(context.Background(), opts.GraphApplicationFilter)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	for _, row := range list.Values() {

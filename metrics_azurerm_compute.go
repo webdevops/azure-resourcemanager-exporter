@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -38,7 +39,7 @@ func (m *MetricsCollectorAzureRmCompute) Setup(collector *CollectorGeneral) {
 				"vmSize",
 				"vmProvisioningState",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -77,18 +78,18 @@ func (m *MetricsCollectorAzureRmCompute) Reset() {
 	m.prometheus.vmNic.Reset()
 }
 
-func (m *MetricsCollectorAzureRmCompute) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureVm(ctx, callback, subscription)
+func (m *MetricsCollectorAzureRmCompute) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureVm(ctx, logger, callback, subscription)
 }
 
-func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := compute.NewVirtualMachinesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListAllComplete(ctx, "")
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -109,7 +110,7 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, cal
 			"vmSize":              string(val.VirtualMachineProperties.HardwareProfile.VMSize),
 			"vmProvisioningState": stringPtrToString(val.ProvisioningState),
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if val.StorageProfile != nil {

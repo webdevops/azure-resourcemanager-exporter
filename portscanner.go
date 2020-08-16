@@ -5,6 +5,7 @@ import (
 	scanner "github.com/anvie/port-scanner"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/remeh/sizedwaitgroup"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -24,6 +25,8 @@ type Portscanner struct {
 	Enabled   bool `json:"-"`
 	mux       sync.Mutex
 
+	logger *log.Entry
+
 	Callbacks struct {
 		StartupScan        func(c *Portscanner)
 		FinishScan         func(c *Portscanner)
@@ -38,6 +41,8 @@ func (c *Portscanner) Init() {
 	c.Enabled = false
 	c.List = map[string][]PortscannerResult{}
 	c.PublicIps = map[string]string{}
+
+	c.logger = log.WithField("component", "portscanner")
 
 	c.Callbacks.StartupScan = func(c *Portscanner) {}
 	c.Callbacks.FinishScan = func(c *Portscanner) {}
@@ -56,14 +61,14 @@ func (c *Portscanner) CacheLoad(path string) {
 
 	file, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		c.logger.Panic(err)
 	}
 	defer file.Close()
 
 	jsonContent, _ := ioutil.ReadAll(file)
 	err = json.Unmarshal(jsonContent, &c)
 	if err != nil {
-		Logger.Errorf("Failed to load portscanner cache: %v", err)
+		c.logger.Errorf("failed to load portscanner cache: %v", err)
 	}
 
 	c.mux.Unlock()
@@ -79,7 +84,7 @@ func (c *Portscanner) CacheSave(path string) {
 	jsonData, _ := json.Marshal(c)
 	err := ioutil.WriteFile(path, jsonData, 0644)
 	if err != nil {
-		panic(err)
+		c.logger.Panic(err)
 	}
 
 	c.mux.Unlock()
@@ -141,7 +146,7 @@ func (c *Portscanner) pushResults() {
 }
 
 func (c *Portscanner) Start() {
-	portscanTimeout := time.Duration(opts.PortscanTimeout) * time.Second
+	portscanTimeout := time.Duration(opts.Portscan.Timeout) * time.Second
 
 	c.Callbacks.StartupScan(c)
 
@@ -149,7 +154,7 @@ func (c *Portscanner) Start() {
 	c.Cleanup()
 	c.Publish()
 
-	swg := sizedwaitgroup.New(opts.PortscanPrallel)
+	swg := sizedwaitgroup.New(opts.Portscan.Prallel)
 	for _, ipAddress := range c.PublicIps {
 		swg.Add()
 		go func(ipAddress string, portscanTimeout time.Duration) {
@@ -178,18 +183,20 @@ func (c *Portscanner) Start() {
 func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (result []PortscannerResult, elapsed float64) {
 	startTime := time.Now().Unix()
 
+	contextLogger := c.logger.WithField("ipAddress", ipAddress)
+
 	// check if public ip is still owned
 	if _, ok := c.PublicIps[ipAddress]; !ok {
 		return
 	}
 
-	ps := scanner.NewPortScanner(ipAddress, portscanTimeout, opts.PortscanThreads)
+	ps := scanner.NewPortScanner(ipAddress, portscanTimeout, opts.Portscan.Threads)
 
-	for _, portrange := range opts.portscanPortRange {
+	for _, portrange := range portscanPortRange {
 		openedPorts := ps.GetOpenedPort(portrange.FirstPort, portrange.LastPort)
 
 		for _, port := range openedPorts {
-			Logger.Verbosef("portscan[%v]: detected open port %v", ipAddress, port)
+			contextLogger.WithField("port", port).Debugf("detected open port %v", ipAddress, port)
 			result = append(
 				result,
 				PortscannerResult{

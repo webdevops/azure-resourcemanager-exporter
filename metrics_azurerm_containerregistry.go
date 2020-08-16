@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerregistry/mgmt/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -37,7 +38,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 				"skuName",
 				"skuTier",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -78,14 +79,14 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Reset() {
 	m.prometheus.containerRegistryQuotaLimit.Reset()
 }
 
-func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := containerregistry.NewRegistriesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListComplete(ctx)
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -98,7 +99,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		arcUsage, err := client.ListUsages(ctx, extractResourceGroupFromAzureId(*val.ID), *val.Name)
 
 		if err != nil {
-			Logger.Errorf("subscription[%v]: unable to fetch ACR usage for %v: %v", *subscription.SubscriptionID, *val.Name, err)
+			logger.Errorf("unable to fetch ACR usage for %v: %v", *val.Name, err)
 		}
 
 		skuName := ""
@@ -119,7 +120,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 			"skuName":          skuName,
 			"skuTier":          skuTier,
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if arcUsage.Value != nil {

@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resourcehealth/mgmt/resourcehealth"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -38,14 +39,14 @@ func (m *MetricsCollectorAzureRmHealth) Reset() {
 	m.prometheus.resourceHealth.Reset()
 }
 
-func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := resourcehealth.NewAvailabilityStatusesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListBySubscriptionIDComplete(ctx, *subscription.SubscriptionID, "")
 
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	availabilityStateValues := resourcehealth.PossibleAvailabilityStateValuesValues()

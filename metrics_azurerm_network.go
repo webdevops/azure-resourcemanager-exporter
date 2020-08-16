@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/prometheus/client_golang/prometheus"
+	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 )
 
@@ -37,7 +38,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 				"resourceGroup",
 				"vnetName",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -95,7 +96,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 				"enableIPForwarding",
 				"enableAcceleratedNetworking",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -130,7 +131,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 				"ipAllocationMethod",
 				"ipAdressVersion",
 			},
-			opts.azureResourceTags.prometheusLabels...,
+			azureResourceTags.prometheusLabels...,
 		),
 	)
 
@@ -153,20 +154,20 @@ func (m *MetricsCollectorAzureRmNetwork) Reset() {
 	m.prometheus.publicIp.Reset()
 }
 
-func (m *MetricsCollectorAzureRmNetwork) Collect(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureVnet(ctx, callback, subscription)
-	m.collectAzureNics(ctx, callback, subscription)
-	m.collectAzurePublicIp(ctx, callback, subscription)
+func (m *MetricsCollectorAzureRmNetwork) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	m.collectAzureVnet(ctx, logger, callback, subscription)
+	m.collectAzureNics(ctx, logger, callback, subscription)
+	m.collectAzurePublicIp(ctx, logger, callback, subscription)
 }
 
 // Collect Azure NIC metrics
-func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := network.NewVirtualNetworksClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListAllComplete(ctx)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	vnetMetric := prometheusCommon.NewMetricsList()
@@ -184,7 +185,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, c
 			"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
 			"vnetName":       stringPtrToString(val.Name),
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		vnetMetric.AddInfo(infoLabels)
 
 		if val.AddressSpace != nil && val.AddressSpace.AddressPrefixes != nil {
@@ -243,13 +244,13 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, c
 }
 
 // Collect Azure NIC metrics
-func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := network.NewInterfacesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.ListAllComplete(ctx)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -268,7 +269,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, c
 			"enableIPForwarding":          boolPtrToString(val.EnableIPForwarding),
 			"enableAcceleratedNetworking": boolPtrToString(val.EnableAcceleratedNetworking),
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if val.IPConfigurations != nil {
@@ -302,7 +303,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, c
 }
 
 // Collect Azure PublicIP metrics
-func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	ipAddressList := []string{}
 
 	client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)
@@ -310,7 +311,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Contex
 
 	list, err := client.ListAll(ctx)
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -339,7 +340,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Contex
 			"ipAllocationMethod": ipAllocationMethod,
 			"ipAdressVersion":    ipAdressVersion,
 		}
-		infoLabels = opts.azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 
 		infoMetric.Add(infoLabels, gaugeValue)
 	}
