@@ -5,7 +5,7 @@ WORKDIR /go/src/github.com/webdevops/azure-resourcemanager-exporter
 # Get deps (cached)
 COPY ./go.mod /go/src/github.com/webdevops/azure-resourcemanager-exporter
 COPY ./go.sum /go/src/github.com/webdevops/azure-resourcemanager-exporter
-COPY ./Makefile /go/src/github.com/webdevops/azure-metrics-exporter
+COPY ./Makefile /go/src/github.com/webdevops/azure-resourcemanager-exporter
 RUN make dependencies
 
 # Compile
