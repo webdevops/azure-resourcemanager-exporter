@@ -2,10 +2,10 @@ Azure ResourceManager Exporter
 ==============================
 
 [![license](https://img.shields.io/github/license/webdevops/azure-resourcemanager-exporter.svg)](https://github.com/webdevops/azure-resourcemanager-exporter/blob/master/LICENSE)
-[![Docker](https://img.shields.io/docker/cloud/automated/webdevops/azure-resourcemanager-exporter)](https://hub.docker.com/r/webdevops/azure-resourcemanager-exporter/)
-[![Docker Build Status](https://img.shields.io/docker/cloud/build/webdevops/azure-resourcemanager-exporter)](https://hub.docker.com/r/webdevops/azure-resourcemanager-exporter/)
+[![DockerHub](https://img.shields.io/badge/DockerHub-webdevops%2Fazure--resourcemanager--exporter-blue)](https://hub.docker.com/r/webdevops/azure-resourcemanager-exporter/)
+[![Quay.io](https://img.shields.io/badge/Quay.io-webdevops%2Fazure--resourcemanager--exporter-blue)](https://quay.io/repository/webdevops/azure-resourcemanager-exporter)
 
-Prometheus exporter for Azure Resources and informations.
+Prometheus exporter for Azure Resources and information.
 
 Configuration
 -------------
