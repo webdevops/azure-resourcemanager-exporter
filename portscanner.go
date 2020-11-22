@@ -116,7 +116,7 @@ func (c *Portscanner) Cleanup() {
 	c.mux.Lock()
 
 	orphanedIpList := []string{}
-	for ipAddress, _ := range c.List {
+	for ipAddress := range c.List {
 		if _, ok := c.PublicIps[ipAddress]; !ok {
 			orphanedIpList = append(orphanedIpList, ipAddress)
 		}

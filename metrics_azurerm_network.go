@@ -304,8 +304,6 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, l
 
 // Collect Azure PublicIP metrics
 func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	ipAddressList := []string{}
-
 	client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
@@ -325,7 +323,6 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Contex
 
 		if val.IPAddress != nil {
 			ipAddress = stringPtrToString(val.IPAddress)
-			ipAddressList = append(ipAddressList, ipAddress)
 		} else {
 			ipAddress = "not allocated"
 			gaugeValue = 0
