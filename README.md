@@ -53,8 +53,11 @@ Metrics
 | `azurerm_quota`                                | Quota             | Azure RM quota details (readable name, scope, ...)                                    |
 | `azurerm_quota_current`                        | Quota             | Azure RM quota current (current value)                                                |
 | `azurerm_quota_limit`                          | Quota             | Azure RM quota limit (maximum limited value)                                          |
-| `azurerm_vm_info`                              | Computing         | Azure VM informations                                                                 |
-| `azurerm_vm_os`                                | Computing         | Azure VM base image informations                                                      |
+| `azurerm_vm_info`                              | Computing         | Azure VM information                                                                  |
+| `azurerm_vm_os`                                | Computing         | Azure VM base image information                                                       |
+| `azurerm_vm_nic`                               | Computing         | Azure VM network card information                                                     |
+| `azurerm_vmss_info`                            | Computing         | Azure VMSS base image information                                                     |
+| `azurerm_vmss_capacity`                        | Computing         | Azure VMSS capacity (number of instances)                                             |
 | `azurerm_publicip_info`                        | Computing         | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
 | `azurerm_publicip_portscan_status`             | Computing         | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
 | `azurerm_publicip_portscan_port`               | Portscan          | List of opend ports per IP                                                            |
@@ -71,14 +74,14 @@ Metrics
 | `azurerm_eventhub_namespace_eventhub_status`   | Eventhub          | Eventhub namespace eventhub status (partitionCount, messageRetentionInDays)           |
 | `azurerm_securitycenter_compliance`            | Security          | Azure SecurityCenter compliance status                                                |
 | `azurerm_advisor_recommendation`               | Security          | Azure Adisor recommendations (eg. security findings)                                  |
-| `azurerm_resource_info`                        | Resource          | Azure Resource informations                                                           |
-| `azurerm_resource_health`                      | Health            | Azure Resource health informations                                                    |
-| `azurerm_storageaccount_info`                  | Storage           | Azure StorageAccount informations                                                     |
-| `azurerm_manageddisk_info`                     | Storage           | Azure ManagedDisk informations                                                        |
+| `azurerm_resource_info`                        | Resource          | Azure Resource information                                                            |
+| `azurerm_resource_health`                      | Health            | Azure Resource health information                                                     |
+| `azurerm_storageaccount_info`                  | Storage           | Azure StorageAccount information                                                      |
+| `azurerm_manageddisk_info`                     | Storage           | Azure ManagedDisk information                                                         |
 | `azurerm_manageddisk_size`                     | Storage           | Azure ManagedDisk size                                                                |
-| `azurerm_manageddisk_status`                   | Storage           | Azure ManagedDisk stats informations                                                  |
+| `azurerm_manageddisk_status`                   | Storage           | Azure ManagedDisk stats information                                                   |
 | `azurerm_iam_roleassignment_info`              | IAM               | Azure IAM RoleAssignment information                                                  |
 | `azurerm_iam_roledefinition_info`              | IAM               | Azure IAM RoleDefinition information                                                  |
-| `azurerm_iam_principal_info`                   | IAM               | Azure IAM Principal informations                                                      |
-| `azurerm_graph_app_info`                       | Graph             | AzureAD graph application informations                                                |
-| `azurerm_graph_app_credential`                 | Graph             | AzureAD graph application credentials (create,expiry) informations                    |
+| `azurerm_iam_principal_info`                   | IAM               | Azure IAM Principal information                                                       |
+| `azurerm_graph_app_info`                       | Graph             | AzureAD graph application information                                                 |
+| `azurerm_graph_app_credential`                 | Graph             | AzureAD graph application credentials (create,expiry) information                     |

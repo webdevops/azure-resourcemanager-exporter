@@ -16,6 +16,9 @@ type MetricsCollectorAzureRmCompute struct {
 		vm    *prometheus.GaugeVec
 		vmOs  *prometheus.GaugeVec
 		vmNic *prometheus.GaugeVec
+
+		vmss         *prometheus.GaugeVec
+		vmssCapacity *prometheus.GaugeVec
 	}
 }
 
@@ -42,6 +45,7 @@ func (m *MetricsCollectorAzureRmCompute) Setup(collector *CollectorGeneral) {
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.vm)
 
 	m.prometheus.vmOs = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -56,6 +60,8 @@ func (m *MetricsCollectorAzureRmCompute) Setup(collector *CollectorGeneral) {
 			"imageVersion",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.vmOs)
+
 	m.prometheus.vmNic = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_vm_nic",
@@ -67,19 +73,55 @@ func (m *MetricsCollectorAzureRmCompute) Setup(collector *CollectorGeneral) {
 			"isPrimary",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.vmNic)
 
-	prometheus.MustRegister(m.prometheus.vm)
-	prometheus.MustRegister(m.prometheus.vmOs)
+	m.prometheus.vmss = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_vmss_info",
+			Help: "Azure ResourceManager VMSS",
+		},
+		append(
+			[]string{
+				"resourceID",
+				"subscriptionID",
+				"location",
+				"resourceGroup",
+				"vmssName",
+				"vmssType",
+				"vmssProvisioningState",
+			},
+			azureResourceTags.prometheusLabels...,
+		),
+	)
+	prometheus.MustRegister(m.prometheus.vmss)
+
+	m.prometheus.vmssCapacity = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_vmss_capacity",
+			Help: "Azure ResourceManager VMSS",
+		},
+		[]string{
+			"resourceID",
+			"subscriptionID",
+			"location",
+			"resourceGroup",
+			"vmssName",
+		},
+	)
+	prometheus.MustRegister(m.prometheus.vmssCapacity)
 }
 
 func (m *MetricsCollectorAzureRmCompute) Reset() {
 	m.prometheus.vm.Reset()
 	m.prometheus.vmOs.Reset()
 	m.prometheus.vmNic.Reset()
+	m.prometheus.vmss.Reset()
+	m.prometheus.vmssCapacity.Reset()
 }
 
 func (m *MetricsCollectorAzureRmCompute) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	m.collectAzureVm(ctx, logger, callback, subscription)
+	m.collectAzureVmss(ctx, logger, callback, subscription)
 }
 
 func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
@@ -147,5 +189,54 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, log
 		infoMetric.GaugeSet(m.prometheus.vm)
 		osMetric.GaugeSet(m.prometheus.vmOs)
 		nicMetric.GaugeSet(m.prometheus.vmNic)
+	}
+}
+
+func (m *MetricsCollectorAzureRmCompute) collectAzureVmss(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	client := compute.NewVirtualMachineScaleSetsClient(*subscription.SubscriptionID)
+	client.Authorizer = AzureAuthorizer
+
+	list, err := client.ListAllComplete(ctx)
+
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	infoMetric := prometheusCommon.NewMetricsList()
+	capacityMetric := prometheusCommon.NewMetricsList()
+
+	for list.NotDone() {
+		val := list.Value()
+
+		infoLabels := prometheus.Labels{
+			"resourceID":            *val.ID,
+			"subscriptionID":        *subscription.SubscriptionID,
+			"location":              stringPtrToString(val.Location),
+			"resourceGroup":         extractResourceGroupFromAzureId(*val.ID),
+			"vmssName":              stringPtrToString(val.Name),
+			"vmssType":              stringPtrToString(val.Type),
+			"vmssProvisioningState": stringPtrToString(val.ProvisioningState),
+		}
+		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoMetric.AddInfo(infoLabels)
+
+		if val.Sku != nil && val.Sku.Capacity != nil {
+			capacityMetric.Add(prometheus.Labels{
+				"resourceID":     *val.ID,
+				"subscriptionID": *subscription.SubscriptionID,
+				"location":       stringPtrToString(val.Location),
+				"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
+				"vmssName":       stringPtrToString(val.Name),
+			}, float64(*val.Sku.Capacity))
+		}
+
+		if list.NextWithContext(ctx) != nil {
+			break
+		}
+	}
+
+	callback <- func() {
+		infoMetric.GaugeSet(m.prometheus.vmss)
+		capacityMetric.GaugeSet(m.prometheus.vmssCapacity)
 	}
 }
