@@ -23,13 +23,14 @@ Normally no configuration is needed but can be customized using environment vari
 | `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
 | `SCRAPE_TIME_CONTAINERREGISTRY`   | -> SCRAPE_TIME              | Scrape time for ContainerRegistry metrics                         |
 | `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics                         |
+| `SCRAPE_TIME_KUBERNETESSERVICE`   | -> SCRAPE_TIME              | Scrape time for KubernetesService metrics                         |
 | `SCRAPE_TIME_EVENTHUB`            | `30m`        `              | Scrape time for Eventhub metrics                                  |
 | `SCRAPE_TIME_SECURITY`            | -> SCRAPE_TIME              | Scrape time for Security metrics                                  |
 | `SCRAPE_TIME_HEALTH`              | -> SCRAPE_TIME              | Scrape time for Health metrics                                    |
 | `SCRAPE_TIME_IAM`                 | -> SCRAPE_TIME              | Scrape time for AzurAD IAM (roledefinitions, rolebindings, principals) metrics  |
 | `SCRAPE_TIME_GRAPH`               | -> SCRAPE_TIME              | Scrape time for AzurAD Graph metrics                              |
 | `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
-| `AZURE_RESOURCE_GROUP_TAG`        | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
+| `AZURE_RESOURCEGROUP_TAG`        | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
 | `AZURE_RESOURCE_TAG`              | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
 | `PORTSCAN`                        | `0`                         | Enables portscanner for public IPs (experimental)                 |
 | `PORTSCAN_RANGE`                  | `1-65535`                   | Port range to scan (single port or range, mutliple ranges possible -> space as seperator)  |
@@ -68,6 +69,9 @@ Metrics
 | `azurerm_containerinstance_container`          | ContainerInstance | List of containers of container instances (container groups)                          |
 | `azurerm_containerinstance_container_resource` | ContainerInstance | Container resource (request / limit) per container                                    |
 | `azurerm_containerinstance_container_port`     | ContainerInstance | Container ports per container                                                         |
+| `azurerm_kubernetesservice_info`               | KubernetesService | Managed Kubernetes cluster information                                                |
+| `azurerm_kubernetesservice_agentpool_current`  | KubernetesService | Managed Kubernetes cluster NodePool current                                           |
+| `azurerm_kubernetesservice_agentpool_limit`    | KubernetesService | Managed Kubernetes cluster NodePool limit                                             |
 | `azurerm_eventhub_namespace_info`              | Eventhub          | Eventhub namespace info                                                               |
 | `azurerm_eventhub_namespace_status`            | Eventhub          | Eventhub namespace status (maximumThroughputUnits)                                    |
 | `azurerm_eventhub_namespace_eventhub_info`     | Eventhub          | Eventhub namespace eventhub info                                                      |

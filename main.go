@@ -3,6 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strings"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -11,13 +19,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"strings"
 )
 
 const (
@@ -178,6 +179,10 @@ func initArgparser() {
 		opts.Scrape.TimeContainerInstance = &opts.Scrape.Time
 	}
 
+	if opts.Scrape.TimeKubernetesService == nil {
+		opts.Scrape.TimeKubernetesService = &opts.Scrape.Time
+	}
+
 	if opts.Scrape.TimeDatabase == nil {
 		opts.Scrape.TimeDatabase = &opts.Scrape.Time
 	}
@@ -314,6 +319,14 @@ func initMetricCollector() {
 	if opts.Scrape.TimeContainerInstance.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmContainerInstances{})
 		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeContainerInstance)
+	} else {
+		log.WithField("collector", collectorName).Infof("collector disabled")
+	}
+
+	collectorName = "KubernetesService"
+	if opts.Scrape.TimeKubernetesService.Seconds() > 0 {
+		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmKubernetesService{})
+		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeKubernetesService)
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}

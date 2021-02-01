@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	"strconv"
 )
 
 type MetricsCollectorAzureRmGeneral struct {

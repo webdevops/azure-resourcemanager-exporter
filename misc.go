@@ -54,6 +54,13 @@ func boolPtrToString(b *bool) string {
 	return "false"
 }
 
+func int32PtrToString(v *int32) string {
+	if v == nil {
+		return ""
+	}
+	return strconv.FormatInt(int64(*v), 10)
+}
+
 func boolToString(b bool) string {
 	if b {
 		return "true"
