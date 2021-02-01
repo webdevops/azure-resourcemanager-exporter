@@ -69,9 +69,9 @@ Metrics
 | `azurerm_containerinstance_container`          | ContainerInstance | List of containers of container instances (container groups)                          |
 | `azurerm_containerinstance_container_resource` | ContainerInstance | Container resource (request / limit) per container                                    |
 | `azurerm_containerinstance_container_port`     | ContainerInstance | Container ports per container                                                         |
-| `azurerm_kubernetesservice_info`               | KubernetesService | Managed Kubernetes cluster information                                                |
-| `azurerm_kubernetesservice_agentpool_current`  | KubernetesService | Managed Kubernetes cluster NodePool current                                           |
-| `azurerm_kubernetesservice_agentpool_limit`    | KubernetesService | Managed Kubernetes cluster NodePool limit                                             |
+| `azurerm_aks_info`                             | KubernetesService | Managed Kubernetes cluster information                                                |
+| `azurerm_aks_agentpool_current`                | KubernetesService | Managed Kubernetes cluster NodePool current                                           |
+| `azurerm_aks_agentpool_limit`                  | KubernetesService | Managed Kubernetes cluster NodePool limit                                             |
 | `azurerm_eventhub_namespace_info`              | Eventhub          | Eventhub namespace info                                                               |
 | `azurerm_eventhub_namespace_status`            | Eventhub          | Eventhub namespace status (maximumThroughputUnits)                                    |
 | `azurerm_eventhub_namespace_eventhub_info`     | Eventhub          | Eventhub namespace eventhub info                                                      |

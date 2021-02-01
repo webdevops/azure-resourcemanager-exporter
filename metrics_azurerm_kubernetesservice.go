@@ -25,7 +25,7 @@ func (m *MetricsCollectorAzureRmKubernetesService) Setup(collector *CollectorGen
 
 	m.prometheus.managedCluster = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_kubernetesservice_info",
+			Name: "azurerm_aks_info",
 			Help: "Azure Kuberenetes Service info",
 		},
 		append(
@@ -43,7 +43,7 @@ func (m *MetricsCollectorAzureRmKubernetesService) Setup(collector *CollectorGen
 
 	m.prometheus.managedClusterAgentPoolCurrent = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_kubernetesservice_agentpool_current",
+			Name: "azurerm_aks_agentpool_current",
 			Help: "Azure Kuberenetes Service Agent Pool current value",
 		},
 		[]string{
@@ -55,7 +55,7 @@ func (m *MetricsCollectorAzureRmKubernetesService) Setup(collector *CollectorGen
 
 	m.prometheus.managedClusterAgentPoolLimit = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_kubernetesservice_agentpool_limit",
+			Name: "azurerm_aks_agentpool_limit",
 			Help: "Azure Kuberenetes Service Agent Pool limit",
 		},
 		[]string{
