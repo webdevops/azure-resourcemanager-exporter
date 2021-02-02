@@ -33,7 +33,7 @@ func (m *MetricsCollectorAzureRmKubernetesService) Setup(collector *CollectorGen
 				"resourceID",
 				"subscriptionID",
 				"location",
-				"name",
+				"clusterName",
 				"nodeResourceGroup",
 				"kubernetesVersion",
 			},
@@ -49,6 +49,7 @@ func (m *MetricsCollectorAzureRmKubernetesService) Setup(collector *CollectorGen
 		[]string{
 			"resourceID",
 			"name",
+			"clusterName",
 			"nodeSize",
 		},
 	)
@@ -61,6 +62,7 @@ func (m *MetricsCollectorAzureRmKubernetesService) Setup(collector *CollectorGen
 		[]string{
 			"resourceID",
 			"name",
+			"clusterName",
 			"nodeSize",
 		},
 	)
@@ -97,7 +99,7 @@ func (m *MetricsCollectorAzureRmKubernetesService) Collect(ctx context.Context, 
 			"resourceID":        *val.ID,
 			"subscriptionID":    *subscription.SubscriptionID,
 			"location":          *val.Location,
-			"name":              *val.Name,
+			"clusterName":       *val.Name,
 			"nodeResourceGroup": *val.ManagedClusterProperties.NodeResourceGroup,
 			"kubernetesVersion": *val.ManagedClusterProperties.KubernetesVersion,
 		}
@@ -116,9 +118,10 @@ func (m *MetricsCollectorAzureRmKubernetesService) Collect(ctx context.Context, 
 				int32PtrToString(agentPool.MaxCount)
 
 				labels := prometheus.Labels{
-					"resourceID": *val.ID,
-					"name":       agentPoolName,
-					"nodeSize":   agentPoolNodeSize,
+					"resourceID":  *val.ID,
+					"name":        agentPoolName,
+					"clusterName": *val.Name,
+					"nodeSize":    agentPoolNodeSize,
 				}
 
 				agentPoolMetricCurrent.Add(labels, currentValue)
