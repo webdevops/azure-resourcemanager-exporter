@@ -31,7 +31,7 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
-Create the name of the service account to use
+Create the name of the service account to use.
 */}}
 {{- define "azure-resourcemanager-exporter.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
