@@ -8,7 +8,7 @@ Expand the name of the chart.
 
 {{/*
 Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+App name is truncated to 63 chars because some Kubernetes name fields are limited to this (by DNS naming spec).
 */}}
 {{- define "azure-resourcemanager-exporter.fullname" -}}
 {{- if .Values.fullnameOverride -}}
