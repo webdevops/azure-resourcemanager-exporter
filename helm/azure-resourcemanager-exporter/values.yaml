@@ -73,7 +73,7 @@ ingress:
 secret:
   enabled: false
   name: azure-resourcemanager-exporter-secret
-  ## secrets will need the following vars :
+  ## secrets will need the following vars:
   ##  AZURE_CLIENT_ID: ""
   ##  AZURE_CLIENT_SECRET: ""
   ##  AZURE_SUBSCRIPTION_ID: ""
@@ -120,4 +120,3 @@ readinessProbe:
   httpGet:
     path: /metrics
     port: http
-
