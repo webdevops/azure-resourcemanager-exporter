@@ -1,6 +1,6 @@
 restartPolicy: Always
 
-extraEnv:
+extraEnv: {}
   #AZURE_LOCATION: ""
 
 strategy:

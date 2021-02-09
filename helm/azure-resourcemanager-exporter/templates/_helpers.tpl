@@ -42,12 +42,12 @@ Create the name of the service account to use.
 {{- end -}}
 
 {{/*
-Return the appropriate apiVersion for rbac.
+Return the appropriate apiVersion for ingress.
 */}}
-{{- define "rbac.apiVersion" -}}
-{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
-{{- print "rbac.authorization.k8s.io/v1" -}}
+{{- define "ingress.apiVersion" -}}
+{{- if semverCompare ">=1.14.0-0" .Capabilities.KubeVersion.GitVersion }}
+{{- print "networking.k8s.io/v1beta1" -}}
 {{- else -}}
-{{- print "rbac.authorization.k8s.io/v1beta1" -}}
+{{- print "extensions/v1beta1" -}}
 {{- end -}}
 {{- end -}}
