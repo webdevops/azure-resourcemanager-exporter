@@ -1,7 +1,10 @@
 restartPolicy: Always
 
 extraEnv: {}
-  #AZURE_LOCATION: ""
+  ## You can add environments vars to configure the exporter, like the AZURE_LOCATION or the SCRAPE_TIME
+  ## A list of all the environment vars is available in this doc: https://github.com/webdevops/azure-resourcemanager-exporter#configuration
+  ##
+  # AZURE_LOCATION: ""
 
 strategy:
   rollingUpdate:
@@ -20,6 +23,9 @@ image:
   # pullSecrets:
   #   - myRegistrKeySecretName
 
+## Annotations and labels to add to the deployment
+annotations: {}
+labels: {}
 
 ## User to run container as
 runAsUser: 1000
