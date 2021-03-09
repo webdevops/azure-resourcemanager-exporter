@@ -5,6 +5,8 @@ on:
       - '*'
     paths:
       - '.github/workflows/publish-helm.yml'
+  workflow_dispatch:
+
 jobs:
   publish-release:
     runs-on: ubuntu-latest
