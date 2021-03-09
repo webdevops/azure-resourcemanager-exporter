@@ -2,9 +2,8 @@ name: "Publish: helm chart"
 on:
   push:
     branches:
-      - main
+      - '**'
     paths:
-      - 'helm/**'
       - '.github/workflows/publish-helm.yml'
 jobs:
   publish-release:
@@ -22,4 +21,3 @@ jobs:
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          charts_dir: helm
