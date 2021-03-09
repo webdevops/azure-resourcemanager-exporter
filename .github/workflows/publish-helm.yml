@@ -6,7 +6,6 @@ on:
     paths:
       - 'helm/**'
       - '.github/workflows/publish-helm.yml'
-
 jobs:
   publish-release:
     runs-on: ubuntu-latest
