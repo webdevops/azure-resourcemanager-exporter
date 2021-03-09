@@ -4,7 +4,6 @@ on:
     branches:
       - '**'
     paths:
-      - 'helm/**'
       - '.github/workflows/lint-helm.yml'
   workflow_dispatch:
 
