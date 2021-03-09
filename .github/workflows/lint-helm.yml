@@ -18,4 +18,4 @@ jobs:
         uses: azure/setup-helm@v1
 
       - name: Helm lint
-        run: helm lint helm/azure-resourcemanager-exporter
+        run: helm lint charts/azure-resourcemanager-exporter
