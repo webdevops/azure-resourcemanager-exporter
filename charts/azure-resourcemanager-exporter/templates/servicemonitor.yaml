@@ -1,0 +1,29 @@
+{{- if .Values.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "azure-resourcemanager-exporter.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "azure-resourcemanager-exporter.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "azure-resourcemanager-exporter.chart" . }}
+    {{- if or .Values.serviceMonitor.labels .labels }}
+    {{- toYaml (.labels | default .Values.serviceMonitor.labels) | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: http
+    interval: {{ .Values.serviceMonitor.interval }}
+    scheme: {{ .Values.serviceMonitor.scheme }}
+    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+  jobLabel: "{{ .Release.Name }}"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "azure-resourcemanager-exporter.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,141 @@
+#Default values for azure-resourcemanager-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: quay.io/webdevops/azure-resourcemanager-exporter
+  tag: 20.11.1
+  pullPolicy: IfNotPresent
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistrKeySecretName
+
+extraEnv: {}
+  ## You can add environments vars to configure the exporter, like the AZURE_LOCATION or the SCRAPE_TIME
+  ## A list of all the environment vars is available in this doc: https://github.com/webdevops/azure-resourcemanager-exporter#configuration
+  ##
+  # AZURE_LOCATION: ""
+
+## Annotations and labels to add to the deployment
+annotations: {}
+labels: {}
+
+## Container securityContext
+securityContext:
+  enabled: true
+  # Container must run as
+  runAsUser: 1000
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+strategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+  type: RollingUpdate
+
+# Container resource requests and limits
+resources: {}
+  # limits:
+  #   cpu: 300m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 200m
+  #   memory: 128Mi
+
+service:
+  annotations: {}
+  labels: {}
+  type: ClusterIP
+  port: 8080
+
+containerPort: 8080
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  annotations: {}
+
+## An Ingress resource can provide name-based virtual hosting and TLS
+## termination among other things for CouchDB deployments which are accessed
+## from outside the Kubernetes cluster.
+## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  hosts: []
+     # - chart-example.local
+  path: '/'
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  tls: []
+    # Secrets must be manually created in the namespace.
+    # - secretName: chart-example-tls
+    #   hosts:
+    #     - chart-example.local
+
+
+# The secret to be used by the azure-resourcemanager-exporter deployment, which
+# should contain credentials for the cloud provider
+## secrets will need the following vars:
+##  AZURE_CLIENT_ID: ""
+##  AZURE_CLIENT_SECRET: ""
+##  AZURE_SUBSCRIPTION_ID: ""
+##  AZURE_TENANT_ID: ""
+credentials:
+  useSecret: true
+  name: azure-resourcemanager-exporter-secret
+
+podAnnotations: {}
+
+pod:
+  labels: {}
+
+extraArgs: []
+
+replicas: 1
+
+serviceMonitor:
+  ## If true, a ServiceMonitor CRD is created for a prometheus operator
+  ## https://github.com/coreos/prometheus-operator
+  ##
+  enabled: false
+  labels: {}
+  interval: 30s
+  scrapeTimeout: 30s
+
+  ## scheme: HTTP scheme to use for scraping. Can be used with `tlsConfig` for example if using istio mTLS.
+  scheme: http
+  ## tlsConfig: TLS configuration to use when scraping the endpoint. For example if using istio mTLS.
+  ## Of type: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#tlsconfig
+  tlsConfig: {}
+
+## Custom PrometheusRules to be defined
+## ref: https://github.com/coreos/prometheus-operator#customresourcedefinitions
+prometheusRule:
+  enabled: false
+  additionalLabels: {}
+  namespace: ""
+  rules: []
+
+
+# Probes configuration
+livenessProbe:
+  httpGet:
+    path: /metrics
+    port: http
+
+readinessProbe:
+  httpGet:
+    path: /metrics
+    port: http

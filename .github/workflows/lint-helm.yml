@@ -1,0 +1,21 @@
+name: "Lint: helm chart"
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '.github/workflows/lint-helm.yml'
+  workflow_dispatch:
+
+jobs:
+  helm3-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+
+      - name: Helm lint
+        run: helm lint charts/azure-resourcemanager-exporter

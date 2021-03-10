@@ -7,8 +7,33 @@ Azure ResourceManager Exporter
 
 Prometheus exporter for Azure Resources and information.
 
-Configuration
+Installation
 -------------
+
+[Helm 3](https://helm.sh/) must be installed to use the chart. Once Helm is set up properly, add the repo as follows:
+
+```shell
+$ helm repo add azure-resourcemanager-exporter https://carrefour-group.github.io/azure-resourcemanager-exporter
+$ helm repo update
+```
+
+Install Chart
+-------------
+The chart can be installed as follows:
+```shell
+$ helm install [RELEASE_NAME] azure-resourcemanager-exporter/azure-resourcemanager-exporter
+```
+
+Uninstall Chart
+-------------
+To uninstall the chart 
+
+```shell
+$ helm uninstall [RELEASE_NAME] 
+```
+
+Exporter Configuration
+---------------------
 
 Normally no configuration is needed but can be customized using environment variables.
 
@@ -85,3 +110,14 @@ Metrics
 | `azurerm_iam_principal_info`                   | IAM               | Azure IAM Principal information                                                       |
 | `azurerm_graph_app_info`                       | Graph             | AzureAD graph application information                                                 |
 | `azurerm_graph_app_credential`                 | Graph             | AzureAD graph application credentials (create,expiry) information                     |
+
+
+Contributing
+------------
+We welcome any contributions from the community with open arms. If you're planning a new feature, please file an issue to discuss first.
+
+How to Release
+--------------
+To release a new version of the helm chart, you need to bump:
+ * `appVersion` and `version` fields in `Chart.yaml` file.
+ * `image.tag` in `values.yaml` file.

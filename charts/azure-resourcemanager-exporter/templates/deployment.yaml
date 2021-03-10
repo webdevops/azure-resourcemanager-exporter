@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "azure-resourcemanager-exporter.fullname" . }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/name: {{ include "azure-resourcemanager-exporter.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "azure-resourcemanager-exporter.chart" . }}
+    {{- with .Values.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "azure-resourcemanager-exporter.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+{{ toYaml .Values.strategy | indent 4 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "azure-resourcemanager-exporter.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        helm.sh/chart: {{ include "azure-resourcemanager-exporter.chart" . }}
+        {{- if .Values.pod.labels }}
+{{ toYaml .Values.pod.labels | indent 8 }}
+        {{- end }}
+      annotations:
+        {{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations | indent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ template "azure-resourcemanager-exporter.serviceAccountName" . }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 6 }}
+    {{- end }}
+    {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+    {{- end }}
+      containers:
+        - name: azure-resourcemanager-exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.securityContext.enabled }}
+          securityContext:
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.securityContext.runAsNonRoot  }}
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+          {{- end }}
+          env:
+{{- if .Values.credentials.useSecret }}
+            - name: AZURE_SUBSCRIPTION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentials.name }}
+                  key: AZURE_SUBSCRIPTION_ID
+            - name: AZURE_TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentials.name }}
+                  key: AZURE_TENANT_ID
+            - name: AZURE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentials.name }}
+                  key: AZURE_CLIENT_ID
+            - name: AZURE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.credentials.name }}
+                  key: AZURE_CLIENT_SECRET
+{{ end }}
+          {{- range $key, $value := .Values.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          args:
+        {{- if .Values.extraArgs }}
+{{ toYaml .Values.extraArgs | indent 12 }}
+        {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+              name: http
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | trim | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | trim | nindent 12 }}
