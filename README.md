@@ -110,3 +110,15 @@ Metrics
 | `azurerm_iam_principal_info`                   | IAM               | Azure IAM Principal information                                                       |
 | `azurerm_graph_app_info`                       | Graph             | AzureAD graph application information                                                 |
 | `azurerm_graph_app_credential`                 | Graph             | AzureAD graph application credentials (create,expiry) information                     |
+
+
+Contributing
+------------
+We welcome any contributions from the community with open arms, If you're planning a new feature, please file an issue to discuss first.
+
+How to Release
+--------------
+To release a new version of the helm chart, you need to bump :
+ * `appVersion` & `version` fields in `Chart.yaml` file.
+ * `image.tag` in `values.yaml` file.
+
