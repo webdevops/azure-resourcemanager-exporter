@@ -114,11 +114,10 @@ Metrics
 
 Contributing
 ------------
-We welcome any contributions from the community with open arms, If you're planning a new feature, please file an issue to discuss first.
+We welcome any contributions from the community with open arms. If you're planning a new feature, please file an issue to discuss first.
 
 How to Release
 --------------
 To release a new version of the helm chart, you need to bump :
  * `appVersion` & `version` fields in `Chart.yaml` file.
  * `image.tag` in `values.yaml` file.
-
