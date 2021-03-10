@@ -56,36 +56,37 @@ spec:
         - name: {{ . }}
       {{- end }}
     {{- end }}
-      restartPolicy: {{ .Values.restartPolicy }}
       containers:
         - name: azure-resourcemanager-exporter
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.securityContext.enabled }}
           securityContext:
-            readOnlyRootFilesystem: {{ .Values.readOnlyRootFilesystem }}
-            runAsNonRoot: {{ .Values.runAsNonRoot  }}
-            runAsUser: {{ .Values.runAsUser }}
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.securityContext.runAsNonRoot  }}
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+          {{- end }}
           env:
-{{- if .Values.secret.enabled }}
+{{- if .Values.credentials.useSecret }}
             - name: AZURE_SUBSCRIPTION_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.name }}
+                  name: {{ .Values.credentials.name }}
                   key: AZURE_SUBSCRIPTION_ID
             - name: AZURE_TENANT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.name }}
+                  name: {{ .Values.credentials.name }}
                   key: AZURE_TENANT_ID
             - name: AZURE_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.name }}
+                  name: {{ .Values.credentials.name }}
                   key: AZURE_CLIENT_ID
             - name: AZURE_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.name }}
+                  name: {{ .Values.credentials.name }}
                   key: AZURE_CLIENT_SECRET
 {{ end }}
           {{- range $key, $value := .Values.extraEnv }}
