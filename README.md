@@ -10,7 +10,7 @@ Prometheus exporter for Azure Resources and information.
 Installation
 -------------
 
-[Helm 3](https://helm.sh/) must be installed to use the chart. Once Helm is set up properly, Add the repo as follows:
+[Helm 3](https://helm.sh/) must be installed to use the chart. Once Helm is set up properly, add the repo as follows:
 
 ```shell
 $ helm repo add azure-resourcemanager-exporter https://carrefour-group.github.io/azure-resourcemanager-exporter
