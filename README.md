@@ -119,5 +119,5 @@ We welcome any contributions from the community with open arms. If you're planni
 How to Release
 --------------
 To release a new version of the helm chart, you need to bump:
- * `appVersion` & `version` fields in `Chart.yaml` file.
+ * `appVersion` and `version` fields in `Chart.yaml` file.
  * `image.tag` in `values.yaml` file.
