@@ -18,12 +18,12 @@ Normally no configuration is needed but can be customized using environment vari
 | `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
 | `SCRAPE_TIME`                     | `5m`                        | Default scrape time (time.Duration) between Azure API collections |
 | `SCRAPE_TIME_GENERAL`             | -> SCRAPE_TIME              | Scrape time for General metrics                                   |
-| `SCRAPE_TIME_RESOURCE`            | -> SCRAPE_TIME              | Scrape time for Resource metrics                                  |
-| `SCRAPE_TIME_STORAGE`             | -> SCRAPE_TIME              | Scrape time for Storage metrics                                   |
+| `SCRAPE_TIME_RESOURCE`            | -> SCRAPE_TIME              | Scrape time for Resource metrics [*Deprecated*](README.md#Deprecations) |
+| `SCRAPE_TIME_STORAGE`             | -> SCRAPE_TIME              | Scrape time for Storage metrics [*Deprecated*](README.md#Deprecations) |
 | `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
-| `SCRAPE_TIME_CONTAINERREGISTRY`   | -> SCRAPE_TIME              | Scrape time for ContainerRegistry metrics                         |
-| `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics                         |
-| `SCRAPE_TIME_EVENTHUB`            | `30m`        `              | Scrape time for Eventhub metrics                                  |
+| `SCRAPE_TIME_CONTAINERREGISTRY`   | -> SCRAPE_TIME              | Scrape time for ContainerRegistry metrics [*Deprecated*](README.md#Deprecations) |
+| `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics [*Deprecated*](README.md#Deprecations) |
+| `SCRAPE_TIME_EVENTHUB`            | `30m`        `              | Scrape time for Eventhub metrics [*Deprecated*](README.md#Deprecations) |
 | `SCRAPE_TIME_SECURITY`            | -> SCRAPE_TIME              | Scrape time for Security metrics                                  |
 | `SCRAPE_TIME_HEALTH`              | -> SCRAPE_TIME              | Scrape time for Health metrics                                    |
 | `SCRAPE_TIME_IAM`                 | -> SCRAPE_TIME              | Scrape time for AzurAD IAM (roledefinitions, rolebindings, principals) metrics  |
@@ -40,6 +40,14 @@ Normally no configuration is needed but can be customized using environment vari
 | `GRAPH_APPLICATION_FILTER`        | `empty`                     | AzureAD graph application filter, eg. `startswith(displayName,'foo')` |
 
 for Azure API authentication (using ENV vars) see https://github.com/Azure/azure-sdk-for-go#authentication
+
+Deprecations
+------------
+
+Please use [`azure-resourcegraph-exporter`](https://github.com/webdevops/azure-resourcegraph-exporter) for exporting resources.
+This exporter is using Azure ResourceGraph queries and not wasting Azure API calls for fetching metrics.
+
+`azure-resourcegraph-exporter` provides a way how metrics can be build by using Kusto querys.
 
 Metrics
 -------
