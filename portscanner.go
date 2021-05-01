@@ -59,11 +59,15 @@ func (c *Portscanner) Enable() {
 func (c *Portscanner) CacheLoad(path string) {
 	c.mux.Lock()
 
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec
 	if err != nil {
 		c.logger.Panic(err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			c.logger.Errorf("error closing file: %s\n", err)
+		}
+	}()
 
 	jsonContent, _ := ioutil.ReadAll(file)
 	err = json.Unmarshal(jsonContent, &c)
@@ -82,7 +86,7 @@ func (c *Portscanner) CacheSave(path string) {
 	c.mux.Lock()
 
 	jsonData, _ := json.Marshal(c)
-	err := ioutil.WriteFile(path, jsonData, 0644)
+	err := ioutil.WriteFile(path, jsonData, 0600)
 	if err != nil {
 		c.logger.Panic(err)
 	}

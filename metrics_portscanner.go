@@ -135,7 +135,8 @@ func (m *MetricsCollectorPortscanner) Collect(ctx context.Context, logger *log.E
 func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context, logger *log.Entry, subscriptions []subscriptions.Subscription) (ipAddressList []string) {
 	logger.Info("collecting public ips")
 
-	for _, subscription := range subscriptions {
+	for _, val := range subscriptions {
+		subscription := val
 		contextLogger := logger.WithField("azureSubscription", subscription)
 
 		client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)

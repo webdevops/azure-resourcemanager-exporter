@@ -133,7 +133,7 @@ func initArgparser() {
 	if opts.Cache.Path != "" {
 		cacheDirectory := filepath.Dir(opts.Cache.Path)
 		if _, err := os.Stat(cacheDirectory); os.IsNotExist(err) {
-			err := os.Mkdir(cacheDirectory, 0755)
+			err := os.Mkdir(cacheDirectory, 0700)
 			if err != nil {
 				log.Panic(err)
 			}
