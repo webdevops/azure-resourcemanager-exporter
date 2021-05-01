@@ -5,7 +5,7 @@ Azure ResourceManager Exporter
 [![DockerHub](https://img.shields.io/badge/DockerHub-webdevops%2Fazure--resourcemanager--exporter-blue)](https://hub.docker.com/r/webdevops/azure-resourcemanager-exporter/)
 [![Quay.io](https://img.shields.io/badge/Quay.io-webdevops%2Fazure--resourcemanager--exporter-blue)](https://quay.io/repository/webdevops/azure-resourcemanager-exporter)
 
-Prometheus exporter for Azure Resources and information.
+Prometheus exporter for Azure information.
 
 Configuration
 -------------
@@ -52,23 +52,40 @@ This exporter is using Azure ResourceGraph queries and not wasting Azure API cal
 Metrics
 -------
 
+| Metric                                         | Collector           | Description                                                                           |
+|------------------------------------------------|---------------------|---------------------------------------------------------------------------------------|
+| `azurerm_stats`                                | Exporter            | General exporter stats                                                                |
+| `azurerm_subscription_info`                    | General             | Azure Subscription details (ID, name, ...)                                            |
+| `azurerm_ratelimit`                            | *all* (if detected) | Azure API ratelimit (left calls)                                                      |
+| `azurerm_quota`                                | Quota               | Azure RM quota details (readable name, scope, ...)                                    |
+| `azurerm_quota_current`                        | Quota               | Azure RM quota current (current value)                                                |
+| `azurerm_quota_limit`                          | Quota               | Azure RM quota limit (maximum limited value)                                          |
+| `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
+| `azurerm_publicip_portscan_port`               | Portscan            | List of opend ports per IP                                                            |
+| `azurerm_securitycenter_compliance`            | Security            | Azure SecurityCenter compliance status                                                |
+| `azurerm_advisor_recommendation`               | Security            | Azure Adisor recommendations (eg. security findings)                                  |
+| `azurerm_resource_health`                      | Health              | Azure Resource health information                                                     |
+| `azurerm_iam_roleassignment_info`              | IAM                 | Azure IAM RoleAssignment information                                                  |
+| `azurerm_iam_roledefinition_info`              | IAM                 | Azure IAM RoleDefinition information                                                  |
+| `azurerm_iam_principal_info`                   | IAM                 | Azure IAM Principal information                                                       |
+| `azurerm_graph_app_info`                       | Graph               | AzureAD graph application information                                                 |
+| `azurerm_graph_app_credential`                 | Graph               | AzureAD graph application credentials (create,expiry) information                     |
+
+Metrics (deprecated)
+--------------------
+
+see [*Deprecations*](README.md#Deprecations)
+
 | Metric                                         | Collector         | Description                                                                           |
 |------------------------------------------------|-------------------|---------------------------------------------------------------------------------------|
-| `azurerm_stats`                                | Exporter          | General exporter stats                                                                |
-| `azurerm_subscription_info`                    | General           | Azure Subscription details (ID, name, ...)                                            |
 | `azurerm_resourcegroup_info`                   | General           | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
-| `azurerm_ratelimit`                            | General           | Azure API ratelimit (left calls)                                                      |
-| `azurerm_quota`                                | Quota             | Azure RM quota details (readable name, scope, ...)                                    |
-| `azurerm_quota_current`                        | Quota             | Azure RM quota current (current value)                                                |
-| `azurerm_quota_limit`                          | Quota             | Azure RM quota limit (maximum limited value)                                          |
+| `azurerm_resource_info`                        | Resource          | Azure Resource information                                                            |
 | `azurerm_vm_info`                              | Computing         | Azure VM information                                                                  |
 | `azurerm_vm_os`                                | Computing         | Azure VM base image information                                                       |
 | `azurerm_vm_nic`                               | Computing         | Azure VM network card information                                                     |
 | `azurerm_vmss_info`                            | Computing         | Azure VMSS base image information                                                     |
 | `azurerm_vmss_capacity`                        | Computing         | Azure VMSS capacity (number of instances)                                             |
 | `azurerm_publicip_info`                        | Computing         | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
-| `azurerm_publicip_portscan_status`             | Computing         | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
-| `azurerm_publicip_portscan_port`               | Portscan          | List of opend ports per IP                                                            |
 | `azurerm_containerregistry_info`               | ContainerRegistry | List of Container registries                                                          |
 | `azurerm_containerregistry_quota_current`      | ContainerRegistry | Quota usage of Container registries                                                   |
 | `azurerm_containerregistry_quota_limit`        | ContainerRegistry | Quota limit of Container registries                                                   |
@@ -80,16 +97,7 @@ Metrics
 | `azurerm_eventhub_namespace_status`            | Eventhub          | Eventhub namespace status (maximumThroughputUnits)                                    |
 | `azurerm_eventhub_namespace_eventhub_info`     | Eventhub          | Eventhub namespace eventhub info                                                      |
 | `azurerm_eventhub_namespace_eventhub_status`   | Eventhub          | Eventhub namespace eventhub status (partitionCount, messageRetentionInDays)           |
-| `azurerm_securitycenter_compliance`            | Security          | Azure SecurityCenter compliance status                                                |
-| `azurerm_advisor_recommendation`               | Security          | Azure Adisor recommendations (eg. security findings)                                  |
-| `azurerm_resource_info`                        | Resource          | Azure Resource information                                                            |
-| `azurerm_resource_health`                      | Health            | Azure Resource health information                                                     |
 | `azurerm_storageaccount_info`                  | Storage           | Azure StorageAccount information                                                      |
 | `azurerm_manageddisk_info`                     | Storage           | Azure ManagedDisk information                                                         |
 | `azurerm_manageddisk_size`                     | Storage           | Azure ManagedDisk size                                                                |
 | `azurerm_manageddisk_status`                   | Storage           | Azure ManagedDisk stats information                                                   |
-| `azurerm_iam_roleassignment_info`              | IAM               | Azure IAM RoleAssignment information                                                  |
-| `azurerm_iam_roledefinition_info`              | IAM               | Azure IAM RoleDefinition information                                                  |
-| `azurerm_iam_principal_info`                   | IAM               | Azure IAM Principal information                                                       |
-| `azurerm_graph_app_info`                       | Graph             | AzureAD graph application information                                                 |
-| `azurerm_graph_app_credential`                 | Graph             | AzureAD graph application credentials (create,expiry) information                     |
