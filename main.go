@@ -8,6 +8,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/jessevdk/go-flags"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
@@ -17,6 +18,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -39,6 +41,8 @@ var (
 
 	collectorGeneralList map[string]*CollectorGeneral
 	collectorCustomList  map[string]*CollectorCustom
+
+	prometheusMetricApiQuota *prometheus.GaugeVec
 
 	portrangeRegexp = regexp.MustCompile("^(?P<first>[0-9]+)(-(?P<last>[0-9]+))?$")
 
@@ -254,6 +258,19 @@ func initMetricCollector() {
 	collectorGeneralList = map[string]*CollectorGeneral{}
 	collectorCustomList = map[string]*CollectorCustom{}
 
+	prometheusMetricApiQuota = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_ratelimit",
+			Help: "Azure ResourceManager ratelimit",
+		},
+		[]string{
+			"subscriptionID",
+			"scope",
+			"type",
+		},
+	)
+	prometheus.MustRegister(prometheusMetricApiQuota)
+
 	collectorName = "General"
 	if opts.Scrape.TimeGeneral.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmGeneral{})
@@ -389,4 +406,33 @@ func initMetricCollector() {
 func startHttpServer() {
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(opts.ServerBind, nil))
+}
+
+func azureResponseInspector(subscription *subscriptions.Subscription) autorest.RespondDecorator {
+	subscriptionId := ""
+	if subscription != nil {
+		subscriptionId = *subscription.SubscriptionID
+	}
+
+	apiQuotaMetric := func(r *http.Response, headerName string, labels prometheus.Labels) {
+		rateLimit := r.Header.Get(headerName)
+		if v, err := strconv.ParseInt(rateLimit, 10, 64); err == nil {
+			prometheusMetricApiQuota.With(labels).Set(float64(v))
+		}
+	}
+
+	return func(p autorest.Responder) autorest.Responder {
+		return autorest.ResponderFunc(func(r *http.Response) error {
+			// subscription rate limits
+			apiQuotaMetric(r, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "read"})
+			apiQuotaMetric(r, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-requests"})
+			apiQuotaMetric(r, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-entities-read"})
+
+			// tenant rate limits
+			apiQuotaMetric(r, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "read"})
+			apiQuotaMetric(r, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-requests"})
+			apiQuotaMetric(r, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-entities-read"})
+			return nil
+		})
+	}
 }

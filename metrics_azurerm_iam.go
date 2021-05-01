@@ -34,6 +34,8 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 	}
 	graphclient := graphrbac.NewObjectsClient(os.Getenv("AZURE_TENANT_ID"))
 	graphclient.Authorizer = auth
+	graphclient.ResponseInspector = azureResponseInspector(nil)
+
 	m.graphclient = &graphclient
 
 	m.prometheus.roleAssignment = prometheus.NewGaugeVec(
@@ -97,6 +99,7 @@ func (m *MetricsCollectorAzureRmIam) Collect(ctx context.Context, logger *log.En
 func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := authorization.NewRoleDefinitionsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	list, err := client.ListComplete(ctx, *subscription.ID, "")
 
@@ -131,6 +134,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := authorization.NewRoleAssignmentsClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	list, err := client.ListComplete(ctx, "")
 

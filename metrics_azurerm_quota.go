@@ -185,6 +185,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := storage.NewUsagesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	quotaMetric := prometheusCommon.NewMetricsList()
 	quotaCurrentMetric := prometheusCommon.NewMetricsList()

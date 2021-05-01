@@ -28,6 +28,8 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 	auth, _ := auth.NewAuthorizerFromEnvironmentWithResource(azureEnvironment.GraphEndpoint)
 	client := graphrbac.NewApplicationsClient(os.Getenv("AZURE_TENANT_ID"))
 	client.Authorizer = auth
+	client.ResponseInspector = azureResponseInspector(nil)
+
 	m.client = &client
 
 	m.prometheus.apps = prometheus.NewGaugeVec(

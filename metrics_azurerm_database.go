@@ -144,6 +144,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := mysql.NewServersClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	list, err := client.List(ctx)
 

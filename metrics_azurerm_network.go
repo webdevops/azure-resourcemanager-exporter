@@ -164,6 +164,7 @@ func (m *MetricsCollectorAzureRmNetwork) Collect(ctx context.Context, logger *lo
 func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := network.NewVirtualNetworksClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	list, err := client.ListAllComplete(ctx)
 	if err != nil {
@@ -247,6 +248,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := network.NewInterfacesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	list, err := client.ListAllComplete(ctx)
 	if err != nil {
@@ -306,6 +308,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, l
 func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	list, err := client.ListAll(ctx)
 	if err != nil {
