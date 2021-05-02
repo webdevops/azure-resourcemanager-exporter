@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/authorization/mgmt/authorization"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/graphrbac/graphrbac"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2020-04-01-preview/authorization"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -52,6 +53,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 			"roleDefinitionID",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.roleAssignment)
 
 	m.prometheus.roleDefinition = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -66,6 +68,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 			"roleType",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.roleDefinition)
 
 	m.prometheus.principal = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -79,9 +82,6 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 			"principalType",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.roleDefinition)
-	prometheus.MustRegister(m.prometheus.roleAssignment)
 	prometheus.MustRegister(m.prometheus.principal)
 }
 
@@ -115,9 +115,9 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 		infoLabels := prometheus.Labels{
 			"subscriptionID":   *subscription.SubscriptionID,
 			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(*val.ID),
-			"name":             *val.Name,
-			"roleName":         *val.RoleName,
-			"roleType":         *val.RoleType,
+			"name":             to.String(val.Name),
+			"roleName":         to.String(val.RoleName),
+			"roleType":         to.String(val.RoleType),
 		}
 		infoMetric.AddInfo(infoLabels)
 
@@ -148,14 +148,14 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 
 	for list.NotDone() {
 		val := list.Value()
-		principalId := *val.Properties.PrincipalID
+		principalId := *val.PrincipalID
 
 		infoLabels := prometheus.Labels{
 			"subscriptionID":   *subscription.SubscriptionID,
 			"roleAssignmentID": *val.ID,
-			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(*val.Properties.RoleDefinitionID),
-			"resourceID":       *val.Properties.Scope,
-			"resourceGroup":    extractResourceGroupFromAzureId(*val.Properties.Scope),
+			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(to.String(val.RoleDefinitionID)),
+			"resourceID":       to.String(val.Scope),
+			"resourceGroup":    extractResourceGroupFromAzureId(to.String(val.Scope)),
 			"principalID":      principalId,
 		}
 		infoMetric.AddInfo(infoLabels)
