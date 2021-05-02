@@ -70,7 +70,7 @@ func (m *MetricsCollectorAzureRmSecurity) Collect(ctx context.Context, logger *l
 
 func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, location string) {
 	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", *subscription.SubscriptionID)
-	client := security.NewCompliancesClient(subscriptionResourceId, location)
+	client := security.NewCompliancesClientWithBaseURI(subscriptionResourceId, location, azureEnvironment.ResourceManagerEndpoint)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
@@ -98,7 +98,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 }
 
 func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := advisor.NewRecommendationsClient(*subscription.SubscriptionID)
+	client := advisor.NewRecommendationsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 

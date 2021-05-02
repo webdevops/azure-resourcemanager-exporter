@@ -95,7 +95,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := containerinstance.NewContainerGroupsClient(*subscription.SubscriptionID)
+	client := containerinstance.NewContainerGroupsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 

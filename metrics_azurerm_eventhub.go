@@ -96,11 +96,11 @@ func (m *MetricsCollectorAzureRmEventhub) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	namespaceClient := eventhub.NewNamespacesClient(*subscription.SubscriptionID)
+	namespaceClient := eventhub.NewNamespacesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	namespaceClient.Authorizer = AzureAuthorizer
 	namespaceClient.ResponseInspector = azureResponseInspector(&subscription)
 
-	eventhubClient := eventhub.NewEventHubsClient(*subscription.SubscriptionID)
+	eventhubClient := eventhub.NewEventHubsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	eventhubClient.Authorizer = AzureAuthorizer
 	eventhubClient.ResponseInspector = azureResponseInspector(&subscription)
 

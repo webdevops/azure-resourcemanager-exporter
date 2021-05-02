@@ -72,7 +72,7 @@ func (m *MetricsCollectorAzureRmDatabase) Collect(ctx context.Context, logger *l
 }
 
 func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := postgresql.NewServersClient(*subscription.SubscriptionID)
+	client := postgresql.NewServersClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	list, err := client.List(ctx)
@@ -142,7 +142,7 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 }
 
 func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := mysql.NewServersClient(*subscription.SubscriptionID)
+	client := mysql.NewServersClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 

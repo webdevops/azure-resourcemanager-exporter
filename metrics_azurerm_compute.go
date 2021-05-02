@@ -126,7 +126,7 @@ func (m *MetricsCollectorAzureRmCompute) Collect(ctx context.Context, logger *lo
 }
 
 func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := compute.NewVirtualMachinesClient(*subscription.SubscriptionID)
+	client := compute.NewVirtualMachinesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
@@ -195,7 +195,7 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, log
 }
 
 func (m *MetricsCollectorAzureRmCompute) collectAzureVmss(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := compute.NewVirtualMachineScaleSetsClient(*subscription.SubscriptionID)
+	client := compute.NewVirtualMachineScaleSetsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 

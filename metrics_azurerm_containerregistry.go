@@ -80,7 +80,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := containerregistry.NewRegistriesClient(*subscription.SubscriptionID)
+	client := containerregistry.NewRegistriesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 

@@ -110,7 +110,7 @@ func (m *MetricsCollectorAzureRmStorage) Collect(ctx context.Context, logger *lo
 }
 
 func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) (ipAddressList []string) {
-	client := storage.NewAccountsClient(*subscription.SubscriptionID)
+	client := storage.NewAccountsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
@@ -152,7 +152,7 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 }
 
 func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) (ipAddressList []string) {
-	client := compute.NewDisksClient(*subscription.SubscriptionID)
+	client := compute.NewDisksClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 

@@ -162,7 +162,7 @@ func (m *MetricsCollectorAzureRmNetwork) Collect(ctx context.Context, logger *lo
 
 // Collect Azure NIC metrics
 func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := network.NewVirtualNetworksClient(*subscription.SubscriptionID)
+	client := network.NewVirtualNetworksClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
@@ -246,7 +246,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 
 // Collect Azure NIC metrics
 func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := network.NewInterfacesClient(*subscription.SubscriptionID)
+	client := network.NewInterfacesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
@@ -306,7 +306,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, l
 
 // Collect Azure PublicIP metrics
 func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := network.NewPublicIPAddressesClient(*subscription.SubscriptionID)
+	client := network.NewPublicIPAddressesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 

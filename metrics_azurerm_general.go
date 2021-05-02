@@ -68,7 +68,7 @@ func (m *MetricsCollectorAzureRmGeneral) Collect(ctx context.Context, logger *lo
 
 // Collect Azure Subscription metrics
 func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := subscriptions.NewClient()
+	client := subscriptions.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
@@ -94,7 +94,7 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 
 // Collect Azure ResourceGroup metrics
 func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := resources.NewGroupsClient(*subscription.SubscriptionID)
+	client := resources.NewGroupsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 

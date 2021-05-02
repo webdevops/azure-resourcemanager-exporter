@@ -84,7 +84,7 @@ func (m *MetricsCollectorAzureRmQuota) Collect(ctx context.Context, logger *log.
 
 // Collect Azure ComputeUsage metrics
 func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := compute.NewUsageClient(*subscription.SubscriptionID)
+	client := compute.NewUsageClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	quotaMetric := prometheusCommon.NewMetricsList()
@@ -134,7 +134,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 
 // Collect Azure NetworkUsage metrics
 func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := network.NewUsagesClient(*subscription.SubscriptionID)
+	client := network.NewUsagesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 
 	quotaMetric := prometheusCommon.NewMetricsList()
@@ -184,7 +184,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 
 // Collect Azure StorageUsage metrics
 func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := storage.NewUsagesClient(*subscription.SubscriptionID)
+	client := storage.NewUsagesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
