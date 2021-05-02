@@ -158,7 +158,7 @@ func (c *Portscanner) Start() {
 	c.Cleanup()
 	c.Publish()
 
-	swg := sizedwaitgroup.New(opts.Portscan.Prallel)
+	swg := sizedwaitgroup.New(opts.Portscan.Parallel)
 	for _, ipAddress := range c.PublicIps {
 		swg.Add()
 		go func(ipAddress string, portscanTimeout time.Duration) {
