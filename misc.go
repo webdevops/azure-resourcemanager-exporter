@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/resourceGroups/([^/]*)")
-	providerFromResourceIdRegExp      = regexp.MustCompile("/providers/([^/]*)")
+	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/subscriptions/[^/]+/resourceGroups/([^/]*)")
+	providerFromResourceIdRegExp      = regexp.MustCompile("/subscriptions/[^/]+/resourceGroups/[^/]+/providers/([^/]*)")
 	roleDefinitionIdRegExp            = regexp.MustCompile("/Microsoft.Authorization/roleDefinitions/([^/]*)")
 )
 

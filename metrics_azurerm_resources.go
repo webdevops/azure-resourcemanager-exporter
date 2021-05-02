@@ -44,11 +44,11 @@ func (m *MetricsCollectorAzureRmResources) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := resources.NewGroupsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	client := resources.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
-	list, err := client.ListComplete(ctx, "", nil)
+	list, err := client.ListComplete(ctx, "", "", nil)
 
 	if err != nil {
 		logger.Panic(err)
