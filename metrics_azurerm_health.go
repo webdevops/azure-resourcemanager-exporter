@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resourcehealth/mgmt/resourcehealth"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -31,7 +32,6 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *CollectorGeneral) {
 			"availabilityState",
 		},
 	)
-
 	prometheus.MustRegister(m.prometheus.resourceHealth)
 }
 
@@ -57,7 +57,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 	for list.NotDone() {
 		val := list.Value()
 
-		resourceId := stringsTrimSuffixCI(*val.ID, ("/providers/" + *val.Type + "/" + *val.Name))
+		resourceId := stringsTrimSuffixCI(to.String(val.ID), ("/providers/" + *val.Type + "/" + *val.Name))
 
 		resourceAvailabilityState := resourcehealth.Unknown
 
@@ -67,7 +67,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 
 		for _, availabilityState := range availabilityStateValues {
 			labels := prometheus.Labels{
-				"subscriptionID":    *subscription.SubscriptionID,
+				"subscriptionID":    to.String(subscription.SubscriptionID),
 				"resourceID":        resourceId,
 				"availabilityState": string(availabilityState),
 			}

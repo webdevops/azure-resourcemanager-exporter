@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"regexp"
@@ -60,7 +61,7 @@ func (t *AzureTagFilter) filterTags(tags map[string]*string, usePrometheusName b
 		// find tag value
 		for tagName, tagValue := range tags {
 			if strings.EqualFold(filterTag.name, tagName) {
-				filterTagValue = *tagValue
+				filterTagValue = to.String(tagValue)
 			}
 		}
 

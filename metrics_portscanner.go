@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -37,6 +38,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 			"type",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.publicIpPortscanStatus)
 
 	m.prometheus.publicIpPortscanPort = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -50,8 +52,6 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 			"description",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.publicIpPortscanStatus)
 	prometheus.MustRegister(m.prometheus.publicIpPortscanPort)
 
 	m.portscanner.Callbacks.FinishScan = func(c *Portscanner) {
@@ -150,7 +150,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context,
 
 		for _, val := range list.Values() {
 			if val.IPAddress != nil {
-				ipAddressList = append(ipAddressList, *val.IPAddress)
+				ipAddressList = append(ipAddressList, to.String(val.IPAddress))
 			}
 		}
 	}

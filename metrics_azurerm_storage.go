@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/storage/mgmt/storage"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -27,7 +28,7 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 	m.prometheus.storageAccount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_storageaccount_info",
-			Help: "Azure ResourceManager StorageACcount",
+			Help: "Azure ResourceManager StorageAccount",
 		},
 		append(
 			[]string{
@@ -45,6 +46,7 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.storageAccount)
 
 	m.prometheus.managedDisk = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -65,6 +67,7 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.managedDisk)
 
 	m.prometheus.managedDiskSize = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -77,6 +80,7 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 			"managedDiskName",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.managedDiskSize)
 
 	m.prometheus.managedDiskStats = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -90,10 +94,6 @@ func (m *MetricsCollectorAzureRmStorage) Setup(collector *CollectorGeneral) {
 			"type",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.storageAccount)
-	prometheus.MustRegister(m.prometheus.managedDisk)
-	prometheus.MustRegister(m.prometheus.managedDiskSize)
 	prometheus.MustRegister(m.prometheus.managedDiskStats)
 }
 
@@ -125,12 +125,12 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageAccounts(ctx context
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"resourceID":         *val.ID,
-			"subscriptionID":     *subscription.SubscriptionID,
-			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
-			"storageAccountName": *val.Name,
-			"location":           *val.Location,
-			"httpsOnly":          boolToString(*val.EnableHTTPSTrafficOnly),
+			"resourceID":         to.String(val.ID),
+			"subscriptionID":     to.String(subscription.SubscriptionID),
+			"resourceGroup":      extractResourceGroupFromAzureId(to.String(val.ID)),
+			"storageAccountName": to.String(val.Name),
+			"location":           to.String(val.Location),
+			"httpsOnly":          boolPtrToString(val.EnableHTTPSTrafficOnly),
 			"sku":                string(val.Sku.Name),
 			"accessTier":         string(val.AccessTier),
 			"encrypted":          boolToString(val.Encryption.KeySource != ""),
@@ -167,19 +167,19 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 
 	for _, val := range list.Values() {
 		infoLabels := prometheus.Labels{
-			"resourceID":        *val.ID,
-			"subscriptionID":    *subscription.SubscriptionID,
-			"resourceGroup":     extractResourceGroupFromAzureId(*val.ID),
-			"managedDiskName":   stringPtrToString(val.Name),
-			"location":          stringPtrToString(val.Location),
+			"resourceID":        to.String(val.ID),
+			"subscriptionID":    to.String(subscription.SubscriptionID),
+			"resourceGroup":     extractResourceGroupFromAzureId(to.String(val.ID)),
+			"managedDiskName":   to.String(val.Name),
+			"location":          to.String(val.Location),
 			"sku":               string(val.Sku.Name),
 			"encrypted":         boolToString(false),
-			"provisioningState": stringPtrToString(val.ProvisioningState),
+			"provisioningState": to.String(val.ProvisioningState),
 		}
 
 		if val.EncryptionSettingsCollection != nil {
 			if val.EncryptionSettingsCollection.Enabled != nil {
-				infoLabels["encrypted"] = boolToString(*val.EncryptionSettingsCollection.Enabled)
+				infoLabels["encrypted"] = boolPtrToString(val.EncryptionSettingsCollection.Enabled)
 			}
 		}
 
@@ -188,26 +188,26 @@ func (m *MetricsCollectorAzureRmStorage) collectAzureStorageManagedDisks(ctx con
 
 		if val.DiskSizeGB != nil {
 			sizeMetric.Add(prometheus.Labels{
-				"resourceID":      *val.ID,
-				"subscriptionID":  *subscription.SubscriptionID,
-				"managedDiskName": stringPtrToString(val.Name),
+				"resourceID":      to.String(val.ID),
+				"subscriptionID":  to.String(subscription.SubscriptionID),
+				"managedDiskName": to.String(val.Name),
 			}, float64(*val.DiskSizeGB)*1073741824)
 		}
 
 		if val.DiskIOPSReadWrite != nil {
 			statusMetric.Add(prometheus.Labels{
-				"resourceID":      *val.ID,
-				"subscriptionID":  *subscription.SubscriptionID,
-				"managedDiskName": stringPtrToString(val.Name),
+				"resourceID":      to.String(val.ID),
+				"subscriptionID":  to.String(subscription.SubscriptionID),
+				"managedDiskName": to.String(val.Name),
 				"type":            "DiskIOPSReadWrite",
 			}, float64(*val.DiskIOPSReadWrite))
 		}
 
 		if val.DiskMBpsReadWrite != nil {
 			statusMetric.Add(prometheus.Labels{
-				"resourceID":      *val.ID,
-				"subscriptionID":  *subscription.SubscriptionID,
-				"managedDiskName": stringPtrToString(val.Name),
+				"resourceID":      to.String(val.ID),
+				"subscriptionID":  to.String(subscription.SubscriptionID),
+				"managedDiskName": to.String(val.Name),
 				"type":            "DiskMBpsReadWrite",
 			}, float64(*val.DiskMBpsReadWrite))
 		}

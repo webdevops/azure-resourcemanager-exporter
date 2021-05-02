@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/mysql/mgmt/mysql"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/postgresql/mgmt/postgresql"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -45,6 +46,7 @@ func (m *MetricsCollectorAzureRmDatabase) Setup(collector *CollectorGeneral) {
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.database)
 
 	m.prometheus.databaseStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -56,8 +58,6 @@ func (m *MetricsCollectorAzureRmDatabase) Setup(collector *CollectorGeneral) {
 			"type",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.database)
 	prometheus.MustRegister(m.prometheus.databaseStatus)
 }
 
@@ -94,16 +94,16 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 		}
 
 		infoLabels := prometheus.Labels{
-			"resourceID":         *val.ID,
-			"subscriptionID":     *subscription.SubscriptionID,
-			"location":           *val.Location,
+			"resourceID":         to.String(val.ID),
+			"subscriptionID":     to.String(subscription.SubscriptionID),
+			"location":           to.String(val.Location),
 			"type":               "postgresql",
-			"serverName":         *val.Name,
-			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
+			"serverName":         to.String(val.Name),
+			"resourceGroup":      extractResourceGroupFromAzureId(to.String(val.ID)),
 			"skuName":            skuName,
 			"skuTier":            skuTier,
 			"version":            string(val.Version),
-			"fqdn":               *val.FullyQualifiedDomainName,
+			"fqdn":               to.String(val.FullyQualifiedDomainName),
 			"sslEnforcement":     string(val.SslEnforcement),
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
@@ -111,26 +111,26 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabasePostgresql(ctx con
 		infoMetric.Add(infoLabels, 1)
 
 		statusMetric.Add(prometheus.Labels{
-			"resourceID": *val.ID,
+			"resourceID": to.String(val.ID),
 			"type":       "backupRetentionDays",
 		}, float64(*val.StorageProfile.BackupRetentionDays))
 
 		if val.EarliestRestoreDate != nil {
 			statusMetric.AddTime(prometheus.Labels{
-				"resourceID": *val.ID,
+				"resourceID": to.String(val.ID),
 				"type":       "earliestRestoreDate",
 			}, val.EarliestRestoreDate.ToTime())
 		}
 
 		if val.ReplicaCapacity != nil {
 			statusMetric.Add(prometheus.Labels{
-				"resourceID": *val.ID,
+				"resourceID": to.String(val.ID),
 				"type":       "replicaCapacity",
 			}, float64(*val.ReplicaCapacity))
 		}
 
 		statusMetric.Add(prometheus.Labels{
-			"resourceID": *val.ID,
+			"resourceID": to.String(val.ID),
 			"type":       "storage",
 		}, float64(*val.StorageProfile.StorageMB)*1048576)
 	}
@@ -160,21 +160,21 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 		skuTier := ""
 
 		if val.Sku != nil {
-			skuName = stringPtrToString(val.Sku.Name)
+			skuName = to.String(val.Sku.Name)
 			skuTier = string(val.Sku.Tier)
 		}
 
 		infoLabels := prometheus.Labels{
-			"resourceID":         *val.ID,
-			"subscriptionID":     *subscription.SubscriptionID,
-			"location":           stringPtrToString(val.Location),
-			"serverName":         stringPtrToString(val.Name),
+			"resourceID":         to.String(val.ID),
+			"subscriptionID":     to.String(subscription.SubscriptionID),
+			"location":           to.String(val.Location),
+			"serverName":         to.String(val.Name),
 			"type":               "mysql",
-			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
+			"resourceGroup":      extractResourceGroupFromAzureId(to.String(val.ID)),
 			"skuName":            skuName,
 			"skuTier":            skuTier,
 			"version":            string(val.Version),
-			"fqdn":               *val.FullyQualifiedDomainName,
+			"fqdn":               to.String(val.FullyQualifiedDomainName),
 			"sslEnforcement":     string(val.SslEnforcement),
 			"geoRedundantBackup": string(val.StorageProfile.GeoRedundantBackup),
 		}
@@ -182,26 +182,26 @@ func (m *MetricsCollectorAzureRmDatabase) collectAzureDatabaseMysql(ctx context.
 		infoMetric.AddInfo(infoLabels)
 
 		statusMetric.Add(prometheus.Labels{
-			"resourceID": *val.ID,
+			"resourceID": to.String(val.ID),
 			"type":       "backupRetentionDays",
 		}, float64(*val.StorageProfile.BackupRetentionDays))
 
 		if val.EarliestRestoreDate != nil {
 			statusMetric.AddTime(prometheus.Labels{
-				"resourceID": *val.ID,
+				"resourceID": to.String(val.ID),
 				"type":       "earliestRestoreDate",
 			}, val.EarliestRestoreDate.ToTime())
 		}
 
 		if val.ReplicaCapacity != nil {
 			statusMetric.Add(prometheus.Labels{
-				"resourceID": *val.ID,
+				"resourceID": to.String(val.ID),
 				"type":       "replicaCapacity",
 			}, float64(*val.ReplicaCapacity))
 		}
 
 		statusMetric.Add(prometheus.Labels{
-			"resourceID": *val.ID,
+			"resourceID": to.String(val.ID),
 			"type":       "storage",
 		}, float64(*val.StorageProfile.StorageMB)*1048576)
 	}

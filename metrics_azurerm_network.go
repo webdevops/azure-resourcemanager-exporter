@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -41,6 +42,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.vnet)
 
 	m.prometheus.vnetAddress = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -53,6 +55,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 			"addressRange",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.vnetAddress)
 
 	m.prometheus.vnetSubnet = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -66,6 +69,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 			"subnetName",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.vnetSubnet)
 
 	m.prometheus.vnetSubnetAddress = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -79,6 +83,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 			"addressRange",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.vnetSubnetAddress)
 
 	m.prometheus.nic = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -99,6 +104,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.nic)
 
 	m.prometheus.nicIp = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -115,6 +121,7 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 			"allocationMethod",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.nicIp)
 
 	m.prometheus.publicIp = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -129,18 +136,11 @@ func (m *MetricsCollectorAzureRmNetwork) Setup(collector *CollectorGeneral) {
 				"location",
 				"ipAddress",
 				"ipAllocationMethod",
-				"ipAdressVersion",
+				"ipAddressVersion",
 			},
 			azureResourceTags.prometheusLabels...,
 		),
 	)
-
-	prometheus.MustRegister(m.prometheus.vnet)
-	prometheus.MustRegister(m.prometheus.vnetAddress)
-	prometheus.MustRegister(m.prometheus.vnetSubnet)
-	prometheus.MustRegister(m.prometheus.vnetSubnetAddress)
-	prometheus.MustRegister(m.prometheus.nic)
-	prometheus.MustRegister(m.prometheus.nicIp)
 	prometheus.MustRegister(m.prometheus.publicIp)
 }
 
@@ -181,10 +181,10 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 
 		// VNET
 		infoLabels := prometheus.Labels{
-			"vnetID":         *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
-			"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
-			"vnetName":       stringPtrToString(val.Name),
+			"vnetID":         to.String(val.ID),
+			"subscriptionID": to.String(subscription.SubscriptionID),
+			"resourceGroup":  extractResourceGroupFromAzureId(to.String(val.ID)),
+			"vnetName":       to.String(val.Name),
 		}
 		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		vnetMetric.AddInfo(infoLabels)
@@ -192,8 +192,8 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 		if val.AddressSpace != nil && val.AddressSpace.AddressPrefixes != nil {
 			for _, addressRange := range *val.AddressSpace.AddressPrefixes {
 				vnetAddressMetric.AddInfo(prometheus.Labels{
-					"vnetID":         *val.ID,
-					"subscriptionID": *subscription.SubscriptionID,
+					"vnetID":         to.String(val.ID),
+					"subscriptionID": to.String(subscription.SubscriptionID),
 					"addressRange":   addressRange,
 				})
 			}
@@ -203,27 +203,27 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 		if val.Subnets != nil {
 			for _, subnet := range *val.Subnets {
 				vnetSubnetMetric.AddInfo(prometheus.Labels{
-					"vnetID":         *val.ID,
-					"subnetID":       *subnet.ID,
-					"subscriptionID": *subscription.SubscriptionID,
-					"subnetName":     stringPtrToString(subnet.Name),
+					"vnetID":         to.String(val.ID),
+					"subnetID":       to.String(subnet.ID),
+					"subscriptionID": to.String(subscription.SubscriptionID),
+					"subnetName":     to.String(subnet.Name),
 				})
 
 				if subnet.AddressPrefix != nil {
 					vnetSubnetAddressMetric.AddInfo(prometheus.Labels{
-						"vnetID":         *val.ID,
-						"subnetID":       *subnet.ID,
-						"subscriptionID": *subscription.SubscriptionID,
-						"addressRange":   *subnet.AddressPrefix,
+						"vnetID":         to.String(val.ID),
+						"subnetID":       to.String(subnet.ID),
+						"subscriptionID": to.String(subscription.SubscriptionID),
+						"addressRange":   to.String(subnet.AddressPrefix),
 					})
 				}
 
 				if subnet.AddressPrefixes != nil {
 					for _, addressRange := range *subnet.AddressPrefixes {
 						vnetSubnetAddressMetric.AddInfo(prometheus.Labels{
-							"vnetID":         *val.ID,
-							"subnetID":       *subnet.ID,
-							"subscriptionID": *subscription.SubscriptionID,
+							"vnetID":         to.String(val.ID),
+							"subnetID":       to.String(subnet.ID),
+							"subscriptionID": to.String(subscription.SubscriptionID),
 							"addressRange":   addressRange,
 						})
 					}
@@ -262,11 +262,11 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, l
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"resourceID":                  *val.ID,
-			"subscriptionID":              *subscription.SubscriptionID,
+			"resourceID":                  to.String(val.ID),
+			"subscriptionID":              to.String(subscription.SubscriptionID),
 			"resourceGroup":               extractResourceGroupFromAzureId(*val.ID),
-			"name":                        stringPtrToString(val.Name),
-			"macAddress":                  stringPtrToString(val.MacAddress),
+			"name":                        to.String(val.Name),
+			"macAddress":                  to.String(val.MacAddress),
 			"isPrimary":                   boolPtrToString(val.Primary),
 			"enableIPForwarding":          boolPtrToString(val.EnableIPForwarding),
 			"enableAcceleratedNetworking": boolPtrToString(val.EnableAcceleratedNetworking),
@@ -282,11 +282,11 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureNics(ctx context.Context, l
 				}
 
 				ipConfigMetric.AddInfo(prometheus.Labels{
-					"resourceID":       *val.ID,
-					"subscriptionID":   *subscription.SubscriptionID,
+					"resourceID":       to.String(val.ID),
+					"subscriptionID":   to.String(subscription.SubscriptionID),
 					"subnetID":         vnetSubnetID,
 					"isPrimary":        boolPtrToString(ipconf.Primary),
-					"ipAddress":        stringPtrToString(ipconf.PrivateIPAddress),
+					"ipAddress":        to.String(ipconf.PrivateIPAddress),
 					"ipAddressVersion": string(ipconf.PrivateIPAddressVersion),
 					"allocationMethod": string(ipconf.PrivateIPAllocationMethod),
 				})
@@ -318,27 +318,27 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzurePublicIp(ctx context.Contex
 	infoMetric := prometheusCommon.NewMetricsList()
 
 	for _, val := range list.Values() {
-		location := *val.Location
+		location := to.String(val.Location)
 		ipAddress := ""
 		ipAllocationMethod := string(val.PublicIPAllocationMethod)
-		ipAdressVersion := string(val.PublicIPAddressVersion)
+		ipAddressVersion := string(val.PublicIPAddressVersion)
 		gaugeValue := float64(1)
 
 		if val.IPAddress != nil {
-			ipAddress = stringPtrToString(val.IPAddress)
+			ipAddress = to.String(val.IPAddress)
 		} else {
 			ipAddress = "not allocated"
 			gaugeValue = 0
 		}
 
 		infoLabels := prometheus.Labels{
-			"resourceID":         *val.ID,
+			"resourceID":         to.String(val.ID),
 			"subscriptionID":     *subscription.SubscriptionID,
-			"resourceGroup":      extractResourceGroupFromAzureId(*val.ID),
+			"resourceGroup":      extractResourceGroupFromAzureId(to.String(val.ID)),
 			"location":           location,
 			"ipAddress":          ipAddress,
 			"ipAllocationMethod": ipAllocationMethod,
-			"ipAdressVersion":    ipAdressVersion,
+			"ipAddressVersion":   ipAddressVersion,
 		}
 		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 

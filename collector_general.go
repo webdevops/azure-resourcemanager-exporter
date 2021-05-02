@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	log "github.com/sirupsen/logrus"
 	"sync"
 	"time"
@@ -42,7 +43,7 @@ func (m *CollectorGeneral) Collect() {
 		go func(ctx context.Context, callback chan<- func(), subscription subscriptions.Subscription) {
 			defer wg.Done()
 			contextLogger := m.logger.WithFields(log.Fields{
-				"azureSubscription": *subscription.SubscriptionID,
+				"azureSubscription": to.String(subscription.SubscriptionID),
 			})
 			m.Processor.Collect(ctx, contextLogger, callbackChannel, subscription)
 		}(ctx, callbackChannel, subscription)

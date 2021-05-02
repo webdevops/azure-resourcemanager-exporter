@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerregistry/mgmt/containerregistry"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -41,6 +42,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.containerRegistry)
 
 	m.prometheus.containerRegistryQuotaCurrent = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -54,6 +56,7 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 			"quotaUnit",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.containerRegistryQuotaCurrent)
 
 	m.prometheus.containerRegistryQuotaLimit = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -67,9 +70,6 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Setup(collector *CollectorGen
 			"quotaUnit",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.containerRegistry)
-	prometheus.MustRegister(m.prometheus.containerRegistryQuotaCurrent)
 	prometheus.MustRegister(m.prometheus.containerRegistryQuotaLimit)
 }
 
@@ -112,11 +112,11 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		}
 
 		infoLabels := prometheus.Labels{
-			"resourceID":       *val.ID,
-			"subscriptionID":   *subscription.SubscriptionID,
-			"location":         stringPtrToString(val.Location),
-			"registryName":     stringPtrToString(val.Name),
-			"resourceGroup":    extractResourceGroupFromAzureId(*val.ID),
+			"resourceID":       to.String(val.ID),
+			"subscriptionID":   to.String(subscription.SubscriptionID),
+			"location":         to.String(val.Location),
+			"registryName":     to.String(val.Name),
+			"resourceGroup":    extractResourceGroupFromAzureId(to.String(val.ID)),
 			"adminUserEnabled": boolPtrToString(val.AdminUserEnabled),
 			"skuName":          skuName,
 			"skuTier":          skuTier,
@@ -127,10 +127,10 @@ func (m *MetricsCollectorAzureRmContainerRegistry) Collect(ctx context.Context, 
 		if arcUsage.Value != nil {
 			for _, usage := range *arcUsage.Value {
 				quotaLabels := prometheus.Labels{
-					"subscriptionID": *subscription.SubscriptionID,
-					"registryName":   stringPtrToString(val.Name),
+					"subscriptionID": to.String(subscription.SubscriptionID),
+					"registryName":   to.String(val.Name),
 					"quotaUnit":      string(usage.Unit),
-					"quotaName":      stringPtrToString(usage.Name),
+					"quotaName":      to.String(usage.Name),
 				}
 
 				quotaCurrentMetric.Add(quotaLabels, float64(*usage.CurrentValue))

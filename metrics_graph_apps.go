@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/graphrbac/graphrbac"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -44,6 +45,7 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 			"appObjectType",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.apps)
 
 	m.prometheus.appsCredentials = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -57,8 +59,6 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 			"type",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.apps)
 	prometheus.MustRegister(m.prometheus.appsCredentials)
 }
 
@@ -73,9 +73,9 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Ent
 
 	for _, row := range list.Values() {
 		appsMetrics.AddInfo(prometheus.Labels{
-			"appAppID":       stringPtrToString(row.AppID),
-			"appObjectID":    stringPtrToString(row.ObjectID),
-			"appDisplayName": stringPtrToString(row.DisplayName),
+			"appAppID":       to.String(row.AppID),
+			"appObjectID":    to.String(row.ObjectID),
+			"appDisplayName": to.String(row.DisplayName),
 			"appObjectType":  string(row.ObjectType),
 		})
 
@@ -84,8 +84,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Ent
 			for _, credential := range *row.PasswordCredentials {
 				if credential.StartDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID":       stringPtrToString(row.AppID),
-						"credentialID":   stringPtrToString(credential.KeyID),
+						"appAppID":       to.String(row.AppID),
+						"credentialID":   to.String(credential.KeyID),
 						"credentialType": "password",
 						"type":           "startDate",
 					}, (*credential.StartDate).ToTime())
@@ -93,8 +93,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Ent
 
 				if credential.EndDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID":       stringPtrToString(row.AppID),
-						"credentialID":   stringPtrToString(credential.KeyID),
+						"appAppID":       to.String(row.AppID),
+						"credentialID":   to.String(credential.KeyID),
 						"credentialType": "password",
 						"type":           "endDate",
 					}, (*credential.EndDate).ToTime())
@@ -107,8 +107,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Ent
 			for _, credential := range *row.KeyCredentials {
 				if credential.StartDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID":       stringPtrToString(row.AppID),
-						"credentialID":   stringPtrToString(credential.KeyID),
+						"appAppID":       to.String(row.AppID),
+						"credentialID":   to.String(credential.KeyID),
 						"credentialType": "key",
 						"type":           "startDate",
 					}, (*credential.StartDate).ToTime())
@@ -116,8 +116,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Ent
 
 				if credential.EndDate != nil {
 					appsCredentialMetrics.AddTime(prometheus.Labels{
-						"appAppID":       stringPtrToString(row.AppID),
-						"credentialID":   stringPtrToString(credential.KeyID),
+						"appAppID":       to.String(row.AppID),
+						"credentialID":   to.String(credential.KeyID),
 						"credentialType": "key",
 						"type":           "endDate",
 					}, (*credential.EndDate).ToTime())

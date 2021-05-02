@@ -6,6 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/advisor/mgmt/advisor"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/security/mgmt/security"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -34,6 +35,7 @@ func (m *MetricsCollectorAzureRmSecurity) Setup(collector *CollectorGeneral) {
 			"assessmentType",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.securitycenterCompliance)
 
 	m.prometheus.advisorRecommendations = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -51,8 +53,6 @@ func (m *MetricsCollectorAzureRmSecurity) Setup(collector *CollectorGeneral) {
 			"risk",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.securitycenterCompliance)
 	prometheus.MustRegister(m.prometheus.advisorRecommendations)
 }
 
@@ -84,16 +84,11 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 
 	if complienceResult.AssessmentResult != nil {
 		for _, result := range *complienceResult.AssessmentResult {
-			segmentType := ""
-			if result.SegmentType != nil {
-				segmentType = *result.SegmentType
-			}
-
 			infoLabels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"assessmentType": segmentType,
+				"subscriptionID": to.String(subscription.SubscriptionID),
+				"assessmentType": to.String(result.SegmentType),
 			}
-			infoMetric.Add(infoLabels, *result.Percentage)
+			infoMetric.Add(infoLabels, to.Float64(result.Percentage))
 		}
 	}
 
@@ -117,12 +112,12 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 	for _, item := range *recommendationResult.Response().Value {
 
 		infoLabels := prometheus.Labels{
-			"subscriptionID": *subscription.SubscriptionID,
+			"subscriptionID": to.String(subscription.SubscriptionID),
 			"category":       string(item.RecommendationProperties.Category),
-			"resourceType":   stringPtrToString(item.RecommendationProperties.ImpactedField),
-			"resourceName":   stringPtrToString(item.RecommendationProperties.ImpactedValue),
-			"resourceGroup":  extractResourceGroupFromAzureId(*item.ID),
-			"problem":        stringPtrToString(item.RecommendationProperties.ShortDescription.Problem),
+			"resourceType":   to.String(item.RecommendationProperties.ImpactedField),
+			"resourceName":   to.String(item.RecommendationProperties.ImpactedValue),
+			"resourceGroup":  extractResourceGroupFromAzureId(to.String(item.ID)),
+			"problem":        to.String(item.RecommendationProperties.ShortDescription.Problem),
 			"impact":         string(item.Impact),
 			"risk":           string(item.Risk),
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/eventhub/mgmt/eventhub"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -44,6 +45,7 @@ func (m *MetricsCollectorAzureRmEventhub) Setup(collector *CollectorGeneral) {
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.namespace)
 
 	m.prometheus.namespaceStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -55,6 +57,7 @@ func (m *MetricsCollectorAzureRmEventhub) Setup(collector *CollectorGeneral) {
 			"type",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.namespaceStatus)
 
 	m.prometheus.namespaceEventhub = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -70,6 +73,7 @@ func (m *MetricsCollectorAzureRmEventhub) Setup(collector *CollectorGeneral) {
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.namespaceEventhub)
 
 	m.prometheus.namespaceEventhubStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -83,10 +87,6 @@ func (m *MetricsCollectorAzureRmEventhub) Setup(collector *CollectorGeneral) {
 			"type",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.namespace)
-	prometheus.MustRegister(m.prometheus.namespaceStatus)
-	prometheus.MustRegister(m.prometheus.namespaceEventhub)
 	prometheus.MustRegister(m.prometheus.namespaceEventhubStatus)
 }
 
@@ -117,14 +117,14 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, logger *l
 	for namespaceResult.NotDone() {
 		namespace := namespaceResult.Value()
 
-		resourceGroup := extractResourceGroupFromAzureId(*namespace.ID)
+		resourceGroup := extractResourceGroupFromAzureId(to.String(namespace.ID))
 
 		infoLabels := prometheus.Labels{
-			"resourceID":           *namespace.ID,
-			"subscriptionID":       *subscription.SubscriptionID,
+			"resourceID":           to.String(namespace.ID),
+			"subscriptionID":       to.String(subscription.SubscriptionID),
 			"resourceGroup":        resourceGroup,
-			"location":             stringPtrToString(namespace.Location),
-			"namespace":            stringPtrToString(namespace.Name),
+			"location":             to.String(namespace.Location),
+			"namespace":            to.String(namespace.Name),
 			"skuName":              string(namespace.Sku.Name),
 			"skuTier":              string(namespace.Sku.Tier),
 			"skuCapacity":          int32ToString(*namespace.Sku.Capacity),
@@ -136,7 +136,7 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, logger *l
 
 		if namespace.MaximumThroughputUnits != nil {
 			statusLabels := prometheus.Labels{
-				"resourceID": *namespace.ID,
+				"resourceID": to.String(namespace.ID),
 				"type":       "maximumThroughputUnits",
 			}
 			namespaceStatusMetric.Add(statusLabels, float64(*namespace.MaximumThroughputUnits))
@@ -151,18 +151,18 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, logger *l
 			eventhub := eventhubResult.Value()
 
 			infoLabels := prometheus.Labels{
-				"resourceID": *eventhub.ID,
-				"namespace":  stringPtrToString(namespace.Name),
-				"name":       stringPtrToString(eventhub.Name),
+				"resourceID": to.String(eventhub.ID),
+				"namespace":  to.String(namespace.Name),
+				"name":       to.String(eventhub.Name),
 			}
 			infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, namespace.Tags)
 			namespaceEventhubMetric.AddInfo(infoLabels)
 
 			if eventhub.PartitionCount != nil {
 				statusLabels := prometheus.Labels{
-					"resourceID": *eventhub.ID,
-					"namespace":  stringPtrToString(namespace.Name),
-					"name":       stringPtrToString(eventhub.Name),
+					"resourceID": to.String(eventhub.ID),
+					"namespace":  to.String(namespace.Name),
+					"name":       to.String(eventhub.Name),
 					"type":       "partitionCount",
 				}
 				namespaceEventhubStatusMetric.Add(statusLabels, float64(*eventhub.PartitionCount))
@@ -170,9 +170,9 @@ func (m *MetricsCollectorAzureRmEventhub) Collect(ctx context.Context, logger *l
 
 			if eventhub.MessageRetentionInDays != nil {
 				statusLabels := prometheus.Labels{
-					"resourceID": *eventhub.ID,
-					"namespace":  stringPtrToString(namespace.Name),
-					"name":       stringPtrToString(eventhub.Name),
+					"resourceID": to.String(eventhub.ID),
+					"namespace":  to.String(namespace.Name),
+					"name":       to.String(eventhub.Name),
 					"type":       "messageRetentionInDays",
 				}
 				namespaceEventhubStatusMetric.Add(statusLabels, float64(*eventhub.MessageRetentionInDays))

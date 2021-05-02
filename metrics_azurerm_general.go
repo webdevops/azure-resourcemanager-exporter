@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -78,12 +79,12 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 
 	subscriptionMetric := prometheusCommon.NewMetricsList()
 	subscriptionMetric.AddInfo(prometheus.Labels{
-		"resourceID":          *sub.ID,
-		"subscriptionID":      *sub.SubscriptionID,
-		"subscriptionName":    stringPtrToString(sub.DisplayName),
+		"resourceID":          to.String(sub.ID),
+		"subscriptionID":      to.String(sub.SubscriptionID),
+		"subscriptionName":    to.String(sub.DisplayName),
 		"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
-		"quotaID":             stringPtrToString(sub.SubscriptionPolicies.QuotaID),
-		"locationPlacementID": stringPtrToString(sub.SubscriptionPolicies.LocationPlacementID),
+		"quotaID":             to.String(sub.SubscriptionPolicies.QuotaID),
+		"locationPlacementID": to.String(sub.SubscriptionPolicies.LocationPlacementID),
 	})
 
 	callback <- func() {
@@ -106,10 +107,10 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.C
 
 	for _, item := range *resourceGroupResult.Response().Value {
 		infoLabels := azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
-			"resourceID":     *item.ID,
-			"subscriptionID": *subscription.SubscriptionID,
-			"resourceGroup":  stringPtrToString(item.Name),
-			"location":       stringPtrToString(item.Location),
+			"resourceID":     to.String(item.ID),
+			"subscriptionID": to.String(subscription.SubscriptionID),
+			"resourceGroup":  to.String(item.Name),
+			"location":       to.String(item.Location),
 		}, item.Tags)
 		infoMetric.AddInfo(infoLabels)
 	}

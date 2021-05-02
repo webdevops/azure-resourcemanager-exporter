@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/containerinstance/mgmt/containerinstance"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -41,6 +42,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 			azureResourceTags.prometheusLabels...,
 		),
 	)
+	prometheus.MustRegister(m.prometheus.containerInstance)
 
 	m.prometheus.containerInstanceContainer = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -55,6 +57,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 			"readinessProbe",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.containerInstanceContainer)
 
 	m.prometheus.containerInstanceContainerResource = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -68,6 +71,7 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 			"resource",
 		},
 	)
+	prometheus.MustRegister(m.prometheus.containerInstanceContainerResource)
 
 	m.prometheus.containerInstanceContainerPort = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -80,10 +84,6 @@ func (m *MetricsCollectorAzureRmContainerInstances) Setup(collector *CollectorGe
 			"protocol",
 		},
 	)
-
-	prometheus.MustRegister(m.prometheus.containerInstance)
-	prometheus.MustRegister(m.prometheus.containerInstanceContainer)
-	prometheus.MustRegister(m.prometheus.containerInstanceContainerResource)
 	prometheus.MustRegister(m.prometheus.containerInstanceContainerPort)
 }
 
@@ -114,13 +114,13 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"resourceID":     *val.ID,
-			"subscriptionID": *subscription.SubscriptionID,
-			"location":       *val.Location,
-			"instanceName":   *val.Name,
-			"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
+			"resourceID":     to.String(val.ID),
+			"subscriptionID": to.String(subscription.SubscriptionID),
+			"location":       to.String(val.Location),
+			"instanceName":   to.String(val.Name),
+			"resourceGroup":  extractResourceGroupFromAzureId(to.String(val.ID)),
 			"osType":         string(val.OsType),
-			"ipAdress":       *val.IPAddress.IP,
+			"ipAdress":       to.String(val.IPAddress.IP),
 		}
 		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
@@ -128,9 +128,9 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 		if val.Containers != nil {
 			for _, container := range *val.Containers {
 				containerMetric.AddInfo(prometheus.Labels{
-					"resourceID":     *val.ID,
-					"containerName":  stringPtrToString(container.Name),
-					"containerImage": stringPtrToString(container.Image),
+					"resourceID":     to.String(val.ID),
+					"containerName":  to.String(container.Name),
+					"containerImage": to.String(container.Image),
 					"livenessProbe":  boolToString(container.LivenessProbe != nil),
 					"readinessProbe": boolToString(container.ReadinessProbe != nil),
 				})
@@ -139,8 +139,8 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 				if container.Ports != nil {
 					for _, port := range *container.Ports {
 						containerPortMetric.Add(prometheus.Labels{
-							"resourceID":    *val.ID,
-							"containerName": stringPtrToString(container.Name),
+							"resourceID":    to.String(val.ID),
+							"containerName": to.String(container.Name),
 							"protocol":      string(port.Protocol),
 						}, float64(*port.Port))
 					}
@@ -151,8 +151,8 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 					if container.Resources.Requests != nil {
 						if container.Resources.Requests.CPU != nil {
 							containerResourceMetric.Add(prometheus.Labels{
-								"resourceID":    *val.ID,
-								"containerName": stringPtrToString(container.Name),
+								"resourceID":    to.String(val.ID),
+								"containerName": to.String(container.Name),
 								"type":          "request",
 								"resource":      "cpu",
 							}, *container.Resources.Requests.CPU)
@@ -160,8 +160,8 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 
 						if container.Resources.Requests.MemoryInGB != nil {
 							containerResourceMetric.Add(prometheus.Labels{
-								"resourceID":    *val.ID,
-								"containerName": stringPtrToString(container.Name),
+								"resourceID":    to.String(val.ID),
+								"containerName": to.String(container.Name),
 								"type":          "request",
 								"resource":      "memory",
 							}, *container.Resources.Requests.MemoryInGB*1073741824)
@@ -171,8 +171,8 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 					if container.Resources.Limits != nil {
 						if container.Resources.Limits.CPU != nil {
 							containerResourceMetric.Add(prometheus.Labels{
-								"resourceID":    *val.ID,
-								"containerName": stringPtrToString(container.Name),
+								"resourceID":    to.String(val.ID),
+								"containerName": to.String(container.Name),
 								"type":          "limit",
 								"resource":      "cpu",
 							}, *container.Resources.Limits.CPU)
@@ -180,8 +180,8 @@ func (m *MetricsCollectorAzureRmContainerInstances) Collect(ctx context.Context,
 
 						if container.Resources.Limits.MemoryInGB != nil {
 							containerResourceMetric.Add(prometheus.Labels{
-								"resourceID":    *val.ID,
-								"containerName": stringPtrToString(container.Name),
+								"resourceID":    to.String(val.ID),
+								"containerName": to.String(container.Name),
 								"type":          "limit",
 								"resource":      "memory",
 							}, *container.Resources.Limits.MemoryInGB*1073741824)

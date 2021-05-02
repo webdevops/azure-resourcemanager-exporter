@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
@@ -143,26 +144,26 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, log
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"resourceID":          *val.ID,
-			"subscriptionID":      *subscription.SubscriptionID,
-			"location":            stringPtrToString(val.Location),
-			"resourceGroup":       extractResourceGroupFromAzureId(*val.ID),
-			"vmID":                stringPtrToString(val.VMID),
-			"vmName":              stringPtrToString(val.Name),
-			"vmType":              stringPtrToString(val.Type),
+			"resourceID":          to.String(val.ID),
+			"subscriptionID":      to.String(subscription.SubscriptionID),
+			"location":            to.String(val.Location),
+			"resourceGroup":       extractResourceGroupFromAzureId(to.String(val.ID)),
+			"vmID":                to.String(val.VMID),
+			"vmName":              to.String(val.Name),
+			"vmType":              to.String(val.Type),
 			"vmSize":              string(val.VirtualMachineProperties.HardwareProfile.VMSize),
-			"vmProvisioningState": stringPtrToString(val.ProvisioningState),
+			"vmProvisioningState": to.String(val.ProvisioningState),
 		}
 		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if val.StorageProfile != nil {
 			osMetric.AddInfo(prometheus.Labels{
-				"vmID":           *val.VMID,
-				"imagePublisher": stringPtrToString(val.StorageProfile.ImageReference.Publisher),
-				"imageSku":       stringPtrToString(val.StorageProfile.ImageReference.Sku),
-				"imageOffer":     stringPtrToString(val.StorageProfile.ImageReference.Offer),
-				"imageVersion":   stringPtrToString(val.StorageProfile.ImageReference.Version),
+				"vmID":           to.String(val.VMID),
+				"imagePublisher": to.String(val.StorageProfile.ImageReference.Publisher),
+				"imageSku":       to.String(val.StorageProfile.ImageReference.Sku),
+				"imageOffer":     to.String(val.StorageProfile.ImageReference.Offer),
+				"imageVersion":   to.String(val.StorageProfile.ImageReference.Version),
 			})
 		}
 
@@ -174,8 +175,8 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVm(ctx context.Context, log
 				}
 
 				nicMetric.AddInfo(prometheus.Labels{
-					"vmID":       *val.VMID,
-					"resourceID": stringPtrToString(nic.ID),
+					"vmID":       to.String(val.VMID),
+					"resourceID": to.String(nic.ID),
 					"isPrimary":  boolPtrToString(nicIsPrimary),
 				})
 			}
@@ -211,24 +212,24 @@ func (m *MetricsCollectorAzureRmCompute) collectAzureVmss(ctx context.Context, l
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"resourceID":            *val.ID,
-			"subscriptionID":        *subscription.SubscriptionID,
-			"location":              stringPtrToString(val.Location),
-			"resourceGroup":         extractResourceGroupFromAzureId(*val.ID),
-			"vmssName":              stringPtrToString(val.Name),
-			"vmssType":              stringPtrToString(val.Type),
-			"vmssProvisioningState": stringPtrToString(val.ProvisioningState),
+			"resourceID":            to.String(val.ID),
+			"subscriptionID":        to.String(subscription.SubscriptionID),
+			"location":              to.String(val.Location),
+			"resourceGroup":         extractResourceGroupFromAzureId(to.String(val.ID)),
+			"vmssName":              to.String(val.Name),
+			"vmssType":              to.String(val.Type),
+			"vmssProvisioningState": to.String(val.ProvisioningState),
 		}
 		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		infoMetric.AddInfo(infoLabels)
 
 		if val.Sku != nil && val.Sku.Capacity != nil {
 			capacityMetric.Add(prometheus.Labels{
-				"resourceID":     *val.ID,
-				"subscriptionID": *subscription.SubscriptionID,
-				"location":       stringPtrToString(val.Location),
-				"resourceGroup":  extractResourceGroupFromAzureId(*val.ID),
-				"vmssName":       stringPtrToString(val.Name),
+				"resourceID":     to.String(val.ID),
+				"subscriptionID": to.String(subscription.SubscriptionID),
+				"location":       to.String(val.Location),
+				"resourceGroup":  extractResourceGroupFromAzureId(to.String(val.ID)),
+				"vmssName":       to.String(val.Name),
 			}, float64(*val.Sku.Capacity))
 		}
 
