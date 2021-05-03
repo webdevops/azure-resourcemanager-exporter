@@ -32,6 +32,7 @@ func (m *MetricsCollectorAzureRmSecurity) Setup(collector *CollectorGeneral) {
 		},
 		[]string{
 			"subscriptionID",
+			"location",
 			"assessmentType",
 		},
 	)
@@ -86,6 +87,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 		for _, result := range *complienceResult.AssessmentResult {
 			infoLabels := prometheus.Labels{
 				"subscriptionID": to.String(subscription.SubscriptionID),
+				"location"      : location,
 				"assessmentType": to.String(result.SegmentType),
 			}
 			infoMetric.Add(infoLabels, to.Float64(result.Percentage))
