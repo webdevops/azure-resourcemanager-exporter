@@ -71,7 +71,7 @@ func (m *MetricsCollectorAzureRmSecurity) Collect(ctx context.Context, logger *l
 
 func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, location string) {
 	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", *subscription.SubscriptionID)
-	client := security.NewCompliancesClientWithBaseURI(subscriptionResourceId, location, azureEnvironment.ResourceManagerEndpoint)
+	client := security.NewCompliancesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, subscriptionResourceId, location)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
@@ -87,7 +87,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 		for _, result := range *complienceResult.AssessmentResult {
 			infoLabels := prometheus.Labels{
 				"subscriptionID": to.String(subscription.SubscriptionID),
-				"location"      : location,
+				"location":       location,
 				"assessmentType": to.String(result.SegmentType),
 			}
 			infoMetric.Add(infoLabels, to.Float64(result.Percentage))
