@@ -344,7 +344,7 @@ func initMetricCollector() {
 	}
 
 	collectorName = "EventHub"
-	if opts.Scrape.TimeDatabase.Seconds() > 0 {
+	if opts.Scrape.TimeEventhub.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmEventhub{})
 		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeEventhub)
 	} else {
