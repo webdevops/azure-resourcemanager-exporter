@@ -24,7 +24,7 @@ func (m *MetricsCollectorAzureRmRateLimitWrite) Collect(ctx context.Context, log
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	params := resources.TagsPatchResource{
-		Operation:  "Merge",
+		Operation: "Merge",
 		Properties: &resources.Tags{
 			Tags: map[string]*string{},
 		},
