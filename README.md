@@ -12,14 +12,16 @@ Configuration
 
 Normally no configuration is needed but can be customized using environment variables.
 
+(to disable specific scrape collectors set them to `0` or set `SCRAPE_TIME` to `0` to disable all by default)
+
 | Environment variable              | DefaultValue                | Description                                                       |
 |-----------------------------------|-----------------------------|-------------------------------------------------------------------|
 | `AZURE_SUBSCRIPTION_ID`           | `empty`                     | Azure Subscription IDs (empty for auto lookup)                    |
 | `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
 | `SCRAPE_TIME`                     | `5m`                        | Default scrape time (time.Duration) between Azure API collections |
 | `SCRAPE_TIME_GENERAL`             | -> SCRAPE_TIME              | Scrape time for General metrics                                   |
-| `SCRAPE_RATELIMIT_READ`           | `2m`                        | Scrape time for Azure ratelimit read metrics                      |
-| `SCRAPE_RATELIMIT_WRITE`          | `5m`                        | Scrape time for Azure ratelimit write metrics (needs tag permissions on subscriptions) |
+| `SCRAPE_RATELIMIT_READ`           | `2m`                        | Scrape time for Azure rate limit read metrics                     |
+| `SCRAPE_RATELIMIT_WRITE`          | `5m`                        | Scrape time for Azure rate limit write metrics (needs tag permissions on subscriptions, see below) |
 | `SCRAPE_TIME_RESOURCE`            | -> SCRAPE_TIME              | Scrape time for Resource metrics [*Deprecated*](README.md#Deprecations) |
 | `SCRAPE_TIME_STORAGE`             | -> SCRAPE_TIME              | Scrape time for Storage metrics [*Deprecated*](README.md#Deprecations) |
 | `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
@@ -50,6 +52,16 @@ Please use [`azure-resourcegraph-exporter`](https://github.com/webdevops/azure-r
 This exporter is using Azure ResourceGraph queries and not wasting Azure API calls for fetching metrics.
 
 `azure-resourcegraph-exporter` provides a way how metrics can be build by using Kusto querys.
+
+Azure permissions
+-----------------
+
+This exporter needs `Reader` permissions on subscription level.
+
+For Azure write rate limits it tries to tag the subscription with an empty tag set (actually no changes).
+For this operation it needs `Microsoft.Resources/tags/write` on scope `/subscription/*`.
+
+To disable write rate limits set `SCRAPE_RATELIMIT_WRITE` to `0`.
 
 Metrics
 -------
