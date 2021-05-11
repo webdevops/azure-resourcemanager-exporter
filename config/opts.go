@@ -38,7 +38,7 @@ type (
 			TimeResourceHealth    *time.Duration `long:"scrape-time-resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
 			TimeCompute           *time.Duration `long:"scrape-time-compute"            env:"SCRAPE_TIME_COMPUTE"            description:"Scrape time for Compute metrics (time.duration)"`
 			TimeNetwork           *time.Duration `long:"scrape-time-network"            env:"SCRAPE_TIME_NETWORK"            description:"Scrape time for Network metrics (time.duration)"`
-			TimeEventhub          *time.Duration `long:"scrape-time-eventhub"           env:"SCRAPE_TIME_EVENTHUB"           description:"Scrape time for Eventhub metrics (time.duration)"         default:"30m"`
+			TimeEventhub          *time.Duration `long:"scrape-time-eventhub"           env:"SCRAPE_TIME_EVENTHUB"           description:"Scrape time for Eventhub metrics (time.duration)"`
 			TimeStorage           *time.Duration `long:"scrape-time-storage"            env:"SCRAPE_TIME_STORAGE"            description:"Scrape time for Storage metrics (time.duration)"`
 			TimeIam               *time.Duration `long:"scrape-time-iam"                env:"SCRAPE_TIME_IAM"                description:"Scrape time for IAM metrics (time.duration)"`
 			TimeGraph             *time.Duration `long:"scrape-time-graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
