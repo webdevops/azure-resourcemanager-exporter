@@ -15,7 +15,11 @@ type CollectorGeneral struct {
 }
 
 func (m *CollectorGeneral) Run(scrapeTime time.Duration) {
-	m.SetScrapeTime(scrapeTime)
+	if scrapeTime.Seconds() > 0 {
+		m.SetScrapeTime(scrapeTime)
+	} else {
+		m.logger.Panic("invalid scrape time detected")
+	}
 
 	m.Processor.Setup(m)
 	go func() {
