@@ -150,6 +150,14 @@ func initArgparser() {
 		opts.Scrape.TimeGeneral = &opts.Scrape.Time
 	}
 
+	if opts.Scrape.TimeRateLimitRead == nil {
+		opts.Scrape.TimeRateLimitRead = &opts.Scrape.Time
+	}
+
+	if opts.Scrape.TimeRateLimitWrite == nil {
+		opts.Scrape.TimeRateLimitWrite = &opts.Scrape.Time
+	}
+
 	if opts.Scrape.TimeResource == nil {
 		opts.Scrape.TimeResource = &opts.Scrape.Time
 	}
@@ -275,6 +283,21 @@ func initMetricCollector() {
 	if opts.Scrape.TimeGeneral.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmGeneral{})
 		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeGeneral)
+	} else {
+		log.WithField("collector", collectorName).Infof("collector disabled")
+	}
+
+	collectorName = "RateLimitRead"
+	if opts.Scrape.TimeRateLimitRead.Seconds() > 0 {
+		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmRateLimitRead{})
+		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeRateLimitRead)
+	} else {
+		log.WithField("collector", collectorName).Infof("collector disabled")
+	}
+	collectorName = "RateLimitWrite"
+	if opts.Scrape.TimeRateLimitWrite.Seconds() > 0 {
+		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmRateLimitWrite{})
+		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeRateLimitWrite)
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
@@ -425,11 +448,13 @@ func azureResponseInspector(subscription *subscriptions.Subscription) autorest.R
 		return autorest.ResponderFunc(func(r *http.Response) error {
 			// subscription rate limits
 			apiQuotaMetric(r, "x-ms-ratelimit-remaining-subscription-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "read"})
+			apiQuotaMetric(r, "x-ms-ratelimit-remaining-subscription-writes", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "write"})
 			apiQuotaMetric(r, "x-ms-ratelimit-remaining-subscription-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-requests"})
 			apiQuotaMetric(r, "x-ms-ratelimit-remaining-subscription-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "subscription", "type": "resource-entities-read"})
 
 			// tenant rate limits
 			apiQuotaMetric(r, "x-ms-ratelimit-remaining-tenant-reads", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "read"})
+			apiQuotaMetric(r, "x-ms-ratelimit-remaining-tenant-writes", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "write"})
 			apiQuotaMetric(r, "x-ms-ratelimit-remaining-tenant-resource-requests", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-requests"})
 			apiQuotaMetric(r, "x-ms-ratelimit-remaining-tenant-resource-entities-read", prometheus.Labels{"subscriptionID": subscriptionId, "scope": "tenant", "type": "resource-entities-read"})
 			return nil

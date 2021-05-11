@@ -18,6 +18,8 @@ Normally no configuration is needed but can be customized using environment vari
 | `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
 | `SCRAPE_TIME`                     | `5m`                        | Default scrape time (time.Duration) between Azure API collections |
 | `SCRAPE_TIME_GENERAL`             | -> SCRAPE_TIME              | Scrape time for General metrics                                   |
+| `SCRAPE_RATELIMIT_READ`           | `2m`                        | Scrape time for Azure ratelimit read metrics                      |
+| `SCRAPE_RATELIMIT_WRITE`          | `5m`                        | Scrape time for Azure ratelimit write metrics (needs tag permissions on subscriptions) |
 | `SCRAPE_TIME_RESOURCE`            | -> SCRAPE_TIME              | Scrape time for Resource metrics [*Deprecated*](README.md#Deprecations) |
 | `SCRAPE_TIME_STORAGE`             | -> SCRAPE_TIME              | Scrape time for Storage metrics [*Deprecated*](README.md#Deprecations) |
 | `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
