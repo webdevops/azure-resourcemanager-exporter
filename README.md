@@ -7,6 +7,25 @@ Azure ResourceManager Exporter
 
 Prometheus exporter for Azure information.
 
+
+## Features
+
+- Uses of official [Azure SDK for go](https://github.com/Azure/azure-sdk-for-go)
+- Supports all Azure environments (Azure public cloud, Azure governmant cloud, Azure china cloud, ...) via Azure SDK configuration
+
+
+- Docker image is based on [Google's distroless](https://github.com/GoogleContainerTools/distroless) static image to reduce attack surface (no shell, no other binaries inside image)
+- Available via Docker Hub and Quay (see badges on top)
+- Can run non-root and with readonly root filesystem, doesn't need any capabilities (you can safely use `drop: ["All"]`)
+- Publishes Azure API rate limit metrics (when exporter sends Azure API requests)
+
+useful with additional exporters:
+
+- [azure-resourcegraph-exporter](https://github.com/webdevops/azure-resourcegraph-exporter) for exporting Azure resource information from Azure ResourceGraph API with custom Kusto queries (get the tags from resources and ResourceGroups with this exporter)
+- [azure-metrics-exporter](https://github.com/webdevops/azure-metrics-exporter) for exporting Azure Monitor metrics
+- [azure-keyvault-exporter](https://github.com/webdevops/azure-keyvault-exporter) for exporting Azure KeyVault information (eg expiry date for secrets, certificates and keys)
+- [azure-loganalytics-exporter](https://github.com/webdevops/azure-loganalytics-exporter) for exporting Azure LogAnalytics workspace information with custom Kusto queries (eg ingestion rate or application error count)
+
 Configuration
 -------------
 
