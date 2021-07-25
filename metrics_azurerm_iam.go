@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	"os"
 )
 
 type MetricsCollectorAzureRmIam struct {
@@ -33,7 +32,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 	if err != nil {
 		m.logger().Panic(err)
 	}
-	graphclient := graphrbac.NewObjectsClientWithBaseURI(azureEnvironment.GraphEndpoint, os.Getenv("AZURE_TENANT_ID"))
+	graphclient := graphrbac.NewObjectsClientWithBaseURI(azureEnvironment.GraphEndpoint, *opts.Azure.Tenant)
 	graphclient.Authorizer = auth
 	graphclient.ResponseInspector = azureResponseInspector(nil)
 

@@ -8,7 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	"os"
 )
 
 type MetricsCollectorGraphApps struct {
@@ -27,7 +26,7 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 
 	// init azure client
 	auth, _ := auth.NewAuthorizerFromEnvironmentWithResource(azureEnvironment.GraphEndpoint)
-	client := graphrbac.NewApplicationsClientWithBaseURI(azureEnvironment.GraphEndpoint, os.Getenv("AZURE_TENANT_ID"))
+	client := graphrbac.NewApplicationsClientWithBaseURI(azureEnvironment.GraphEndpoint, *opts.Azure.Tenant)
 	client.Authorizer = auth
 	client.ResponseInspector = azureResponseInspector(nil)
 

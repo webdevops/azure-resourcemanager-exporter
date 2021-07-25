@@ -35,6 +35,7 @@ Normally no configuration is needed but can be customized using environment vari
 
 | Environment variable              | DefaultValue                | Description                                                       |
 |-----------------------------------|-----------------------------|-------------------------------------------------------------------|
+| `AZURE_TENANT_ID`                 | `empty`                     | Azure Tenant IDs (**required**)                                   |
 | `AZURE_SUBSCRIPTION_ID`           | `empty`                     | Azure Subscription IDs (empty for auto lookup)                    |
 | `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
 | `SCRAPE_TIME`                     | `5m`                        | Default scrape time (time.Duration) between Azure API collections |
@@ -52,7 +53,7 @@ Normally no configuration is needed but can be customized using environment vari
 | `SCRAPE_TIME_IAM`                 | -> SCRAPE_TIME              | Scrape time for AzurAD IAM (roledefinitions, rolebindings, principals) metrics  |
 | `SCRAPE_TIME_GRAPH`               | -> SCRAPE_TIME              | Scrape time for AzurAD Graph metrics                              |
 | `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
-| `AZURE_RESOURCE_GROUP_TAG`        | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
+| `AZURE_RESOURCEGROUP_TAG`         | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
 | `AZURE_RESOURCE_TAG`              | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
 | `PORTSCAN`                        | `0`                         | Enables portscanner for public IPs (experimental)                 |
 | `PORTSCAN_RANGE`                  | `1-65535`                   | Port range to scan (single port or range, mutliple ranges possible -> space as seperator)  |
