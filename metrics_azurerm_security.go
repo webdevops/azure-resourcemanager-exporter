@@ -109,10 +109,9 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 		logger.Panic(err)
 	}
 
-	infoMetric := prometheusCommon.NewMetricsList()
+	infoMetric := prometheusCommon.NewHashedMetricsList()
 
 	for _, item := range *recommendationResult.Response().Value {
-
 		infoLabels := prometheus.Labels{
 			"subscriptionID": to.String(subscription.SubscriptionID),
 			"category":       string(item.RecommendationProperties.Category),
@@ -124,7 +123,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 			"risk":           string(item.Risk),
 		}
 
-		infoMetric.AddInfo(infoLabels)
+		infoMetric.Inc(infoLabels)
 	}
 
 	callback <- func() {

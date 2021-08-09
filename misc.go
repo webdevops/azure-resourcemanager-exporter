@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,6 +12,17 @@ var (
 	providerFromResourceIdRegExp      = regexp.MustCompile("/subscriptions/[^/]+/resourceGroups/[^/]+/providers/([^/]*)")
 	roleDefinitionIdRegExp            = regexp.MustCompile("/Microsoft.Authorization/roleDefinitions/([^/]*)")
 )
+
+type (
+	MetricRow struct {
+		Labels prometheus.Labels
+		Value  float64
+	}
+)
+
+func (m *MetricRow) Inc() {
+	m.Value++
+}
 
 func extractResourceGroupFromAzureId(azureId string) (resourceGroup string) {
 	if subMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {

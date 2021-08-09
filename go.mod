@@ -12,11 +12,13 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/prometheus/client_golang v1.10.0
-	github.com/prometheus/common v0.23.0 // indirect
+	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/common v0.30.0 // indirect
+	github.com/prometheus/procfs v0.7.2 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/webdevops/go-prometheus-common v0.0.0-20200601190815-465c9d5d262b
+	github.com/webdevops/go-prometheus-common v0.0.0-20210809194707-405356861065
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
-	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
+	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
 )

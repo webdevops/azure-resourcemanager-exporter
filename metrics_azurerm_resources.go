@@ -14,7 +14,7 @@ type MetricsCollectorAzureRmResources struct {
 	CollectorProcessorGeneral
 
 	prometheus struct {
-		resource *prometheus.GaugeVec
+		resource      *prometheus.GaugeVec
 		resourceGroup *prometheus.GaugeVec
 	}
 }
