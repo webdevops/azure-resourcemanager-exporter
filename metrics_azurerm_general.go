@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
@@ -38,32 +37,14 @@ func (m *MetricsCollectorAzureRmGeneral) Setup(collector *CollectorGeneral) {
 	)
 	prometheus.MustRegister(m.prometheus.subscription)
 
-	m.prometheus.resourceGroup = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_resourcegroup_info",
-			Help: "Azure ResourceManager resourcegroups",
-		},
-		append(
-			[]string{
-				"resourceID",
-				"subscriptionID",
-				"resourceGroup",
-				"location",
-			},
-			azureResourceGroupTags.prometheusLabels...,
-		),
-	)
-	prometheus.MustRegister(m.prometheus.resourceGroup)
 }
 
 func (m *MetricsCollectorAzureRmGeneral) Reset() {
 	m.prometheus.subscription.Reset()
-	m.prometheus.resourceGroup.Reset()
 }
 
 func (m *MetricsCollectorAzureRmGeneral) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	m.collectAzureSubscription(ctx, logger, callback, subscription)
-	m.collectAzureResourceGroup(ctx, logger, callback, subscription)
 }
 
 // Collect Azure Subscription metrics
@@ -89,33 +70,5 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 
 	callback <- func() {
 		subscriptionMetric.GaugeSet(m.prometheus.subscription)
-	}
-}
-
-// Collect Azure ResourceGroup metrics
-func (m *MetricsCollectorAzureRmGeneral) collectAzureResourceGroup(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := resources.NewGroupsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
-
-	resourceGroupResult, err := client.ListComplete(ctx, "", nil)
-	if err != nil {
-		logger.Panic(err)
-	}
-
-	infoMetric := prometheusCommon.NewMetricsList()
-
-	for _, item := range *resourceGroupResult.Response().Value {
-		infoLabels := azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
-			"resourceID":     to.String(item.ID),
-			"subscriptionID": to.String(subscription.SubscriptionID),
-			"resourceGroup":  to.String(item.Name),
-			"location":       to.String(item.Location),
-		}, item.Tags)
-		infoMetric.AddInfo(infoLabels)
-	}
-
-	callback <- func() {
-		infoMetric.GaugeSet(m.prometheus.resourceGroup)
 	}
 }

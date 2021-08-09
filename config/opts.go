@@ -34,15 +34,10 @@ type (
 			TimeGeneral           *time.Duration `long:"scrape-time-general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
 			TimeResource          *time.Duration `long:"scrape-time-resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`
 			TimeQuota             *time.Duration `long:"scrape-time-quota"              env:"SCRAPE_TIME_QUOTA"              description:"Scrape time for quota metrics  (time.duration)"`
-			TimeContainerRegistry *time.Duration `long:"scrape-time-containerregistry"  env:"SCRAPE_TIME_CONTAINERREGISTRY"  description:"Scrape time for ContainerRegistry metrics (time.duration)"`
-			TimeContainerInstance *time.Duration `long:"scrape-time-containerinstance"  env:"SCRAPE_TIME_CONTAINERINSTANCE"  description:"Scrape time for ContainerInstance metrics (time.duration)"`
 			TimeDatabase          *time.Duration `long:"scrape-time-database"           env:"SCRAPE_TIME_DATABASE"           description:"Scrape time for Database metrics (time.duration)"`
 			TimeSecurity          *time.Duration `long:"scrape-time-security"           env:"SCRAPE_TIME_SECURITY"           description:"Scrape time for Security metrics (time.duration)"`
 			TimeResourceHealth    *time.Duration `long:"scrape-time-resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
-			TimeCompute           *time.Duration `long:"scrape-time-compute"            env:"SCRAPE_TIME_COMPUTE"            description:"Scrape time for Compute metrics (time.duration)"`
 			TimeNetwork           *time.Duration `long:"scrape-time-network"            env:"SCRAPE_TIME_NETWORK"            description:"Scrape time for Network metrics (time.duration)"`
-			TimeEventhub          *time.Duration `long:"scrape-time-eventhub"           env:"SCRAPE_TIME_EVENTHUB"           description:"Scrape time for Eventhub metrics (time.duration)"`
-			TimeStorage           *time.Duration `long:"scrape-time-storage"            env:"SCRAPE_TIME_STORAGE"            description:"Scrape time for Storage metrics (time.duration)"`
 			TimeIam               *time.Duration `long:"scrape-time-iam"                env:"SCRAPE_TIME_IAM"                description:"Scrape time for IAM metrics (time.duration)"`
 			TimeGraph             *time.Duration `long:"scrape-time-graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
 		}

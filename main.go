@@ -166,36 +166,16 @@ func initArgparser() {
 		opts.Scrape.TimeQuota = &opts.Scrape.Time
 	}
 
-	if opts.Scrape.TimeCompute == nil {
-		opts.Scrape.TimeCompute = &opts.Scrape.Time
-	}
-
 	if opts.Scrape.TimeNetwork == nil {
 		opts.Scrape.TimeNetwork = &opts.Scrape.Time
-	}
-
-	if opts.Scrape.TimeStorage == nil {
-		opts.Scrape.TimeStorage = &opts.Scrape.Time
 	}
 
 	if opts.Scrape.TimeIam == nil {
 		opts.Scrape.TimeIam = &opts.Scrape.Time
 	}
 
-	if opts.Scrape.TimeContainerRegistry == nil {
-		opts.Scrape.TimeContainerRegistry = &opts.Scrape.Time
-	}
-
-	if opts.Scrape.TimeContainerInstance == nil {
-		opts.Scrape.TimeContainerInstance = &opts.Scrape.Time
-	}
-
 	if opts.Scrape.TimeDatabase == nil {
 		opts.Scrape.TimeDatabase = &opts.Scrape.Time
-	}
-
-	if opts.Scrape.TimeEventhub == nil {
-		opts.Scrape.TimeEventhub = &opts.Scrape.Time
 	}
 
 	if opts.Scrape.TimeSecurity == nil {
@@ -214,8 +194,18 @@ func initArgparser() {
 	azureResourceTags = NewAzureTagFilter(AZURE_RESOURCE_TAG_PREFIX, opts.Azure.ResourceTags)
 
 	// check deprecated env vars
-	if os.Getenv("SCRAPE_TIME_COMPUTING") != "" {
-		log.Panic("env var SCRAPE_TIME_COMPUTING is now SCRAPE_TIME_COMPUTE")
+	deprecatedEnvVars := map[string]string{
+		"SCRAPE_TIME_CONTAINERREGISTRY": "not supported anymore",
+		"SCRAPE_TIME_CONTAINERINSTANCE": "not supported anymore",
+		"SCRAPE_TIME_EVENTHUB": "not supported anymore",
+		"SCRAPE_TIME_STORAGE": "not supported anymore",
+		"SCRAPE_TIME_COMPUTE": "not supported anymore",
+		"SCRAPE_TIME_COMPUTING": "deprecated, please use SCRAPE_TIME_COMPUTE",
+	}
+	for envVar, reason := range deprecatedEnvVars {
+		if os.Getenv(envVar) != "" {
+			log.Panic("env var %v is %v", envVar, reason)
+		}
 	}
 }
 
@@ -318,14 +308,6 @@ func initMetricCollector() {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
-	collectorName = "Compute"
-	if opts.Scrape.TimeCompute.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmCompute{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeCompute)
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
-
 	collectorName = "Network"
 	if opts.Scrape.TimeNetwork.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmNetwork{})
@@ -334,42 +316,10 @@ func initMetricCollector() {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
-	collectorName = "Storage"
-	if opts.Scrape.TimeStorage.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmStorage{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeStorage)
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
-
-	collectorName = "ContainerRegistry"
-	if opts.Scrape.TimeContainerRegistry.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmContainerRegistry{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeContainerRegistry)
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
-
-	collectorName = "ContainerInstance"
-	if opts.Scrape.TimeContainerInstance.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmContainerInstances{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeContainerInstance)
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
-
 	collectorName = "Database"
 	if opts.Scrape.TimeDatabase.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmDatabase{})
 		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeDatabase)
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
-
-	collectorName = "EventHub"
-	if opts.Scrape.TimeEventhub.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmEventhub{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeEventhub)
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}

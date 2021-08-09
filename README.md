@@ -90,6 +90,8 @@ Metrics
 |------------------------------------------------|---------------------|---------------------------------------------------------------------------------------|
 | `azurerm_stats`                                | Exporter            | General exporter stats                                                                |
 | `azurerm_subscription_info`                    | General             | Azure Subscription details (ID, name, ...)                                            |
+| `azurerm_resourcegroup_info`                   | Resource            | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
+| `azurerm_resource_info`                        | Resource            | Azure Resource information                                                            |
 | `azurerm_ratelimit`                            | *all* (if detected) | Azure API ratelimit (left calls)                                                      |
 | `azurerm_quota`                                | Quota               | Azure RM quota details (readable name, scope, ...)                                    |
 | `azurerm_quota_current`                        | Quota               | Azure RM quota current (current value)                                                |
@@ -104,34 +106,3 @@ Metrics
 | `azurerm_iam_principal_info`                   | IAM                 | Azure IAM Principal information                                                       |
 | `azurerm_graph_app_info`                       | Graph               | AzureAD graph application information                                                 |
 | `azurerm_graph_app_credential`                 | Graph               | AzureAD graph application credentials (create,expiry) information                     |
-
-Metrics (deprecated)
---------------------
-
-see [*Deprecations*](README.md#Deprecations)
-
-| Metric                                         | Collector         | Description                                                                           |
-|------------------------------------------------|-------------------|---------------------------------------------------------------------------------------|
-| `azurerm_resourcegroup_info`                   | General           | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
-| `azurerm_resource_info`                        | Resource          | Azure Resource information                                                            |
-| `azurerm_vm_info`                              | Computing         | Azure VM information                                                                  |
-| `azurerm_vm_os`                                | Computing         | Azure VM base image information                                                       |
-| `azurerm_vm_nic`                               | Computing         | Azure VM network card information                                                     |
-| `azurerm_vmss_info`                            | Computing         | Azure VMSS base image information                                                     |
-| `azurerm_vmss_capacity`                        | Computing         | Azure VMSS capacity (number of instances)                                             |
-| `azurerm_publicip_info`                        | Computing         | Azure Public IPs details (subscriptionID, resourceGroup, ipAdress, ipVersion, ...)    |
-| `azurerm_containerregistry_info`               | ContainerRegistry | List of Container registries                                                          |
-| `azurerm_containerregistry_quota_current`      | ContainerRegistry | Quota usage of Container registries                                                   |
-| `azurerm_containerregistry_quota_limit`        | ContainerRegistry | Quota limit of Container registries                                                   |
-| `azurerm_containerinstance_info`               | ContainerInstance | List of Container instances                                                           |
-| `azurerm_containerinstance_container`          | ContainerInstance | List of containers of container instances (container groups)                          |
-| `azurerm_containerinstance_container_resource` | ContainerInstance | Container resource (request / limit) per container                                    |
-| `azurerm_containerinstance_container_port`     | ContainerInstance | Container ports per container                                                         |
-| `azurerm_eventhub_namespace_info`              | Eventhub          | Eventhub namespace info                                                               |
-| `azurerm_eventhub_namespace_status`            | Eventhub          | Eventhub namespace status (maximumThroughputUnits)                                    |
-| `azurerm_eventhub_namespace_eventhub_info`     | Eventhub          | Eventhub namespace eventhub info                                                      |
-| `azurerm_eventhub_namespace_eventhub_status`   | Eventhub          | Eventhub namespace eventhub status (partitionCount, messageRetentionInDays)           |
-| `azurerm_storageaccount_info`                  | Storage           | Azure StorageAccount information                                                      |
-| `azurerm_manageddisk_info`                     | Storage           | Azure ManagedDisk information                                                         |
-| `azurerm_manageddisk_size`                     | Storage           | Azure ManagedDisk size                                                                |
-| `azurerm_manageddisk_status`                   | Storage           | Azure ManagedDisk stats information                                                   |
