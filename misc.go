@@ -2,9 +2,7 @@ package main
 
 import (
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/prometheus/client_golang/prometheus"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -13,17 +11,6 @@ var (
 	providerFromResourceIdRegExp      = regexp.MustCompile("/subscriptions/[^/]+/resourceGroups/[^/]+/providers/([^/]*)")
 	roleDefinitionIdRegExp            = regexp.MustCompile("/Microsoft.Authorization/roleDefinitions/([^/]*)")
 )
-
-type (
-	MetricRow struct {
-		Labels prometheus.Labels
-		Value  float64
-	}
-)
-
-func (m *MetricRow) Inc() {
-	m.Value++
-}
 
 func toResourceId(val *string) (resourceId string) {
 	resourceId = to.String(val)
@@ -67,28 +54,6 @@ func extractRoleDefinitionIdFromAzureId(azureId string) (roleDefinitionId string
 	}
 
 	return
-}
-
-func boolPtrToString(b *bool) string {
-	if b == nil {
-		return ""
-	}
-
-	if *b {
-		return "true"
-	}
-	return "false"
-}
-
-func boolToString(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
-}
-
-func int32ToString(v int32) string {
-	return strconv.FormatInt(int64(v), 10)
 }
 
 func stringsTrimSuffixCI(str, suffix string) string {

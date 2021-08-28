@@ -206,7 +206,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 				"resourceID":     toResourceId(val.ID),
 				"subscriptionID": to.String(subscription.SubscriptionID),
 				"budgetName":     to.String(val.Name),
-			}, budgetCurrentSpend / limitAmount)
+			}, budgetCurrentSpend/limitAmount)
 		}
 
 		if result.NextWithContext(ctx) != nil {

@@ -19,6 +19,7 @@ type MetricsCollectorAzureRmQuota struct {
 		quota        *prometheus.GaugeVec
 		quotaCurrent *prometheus.GaugeVec
 		quotaLimit   *prometheus.GaugeVec
+		quotaUsage   *prometheus.GaugeVec
 	}
 }
 
@@ -65,6 +66,19 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *CollectorGeneral) {
 		},
 	)
 
+	m.prometheus.quotaUsage = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_quota_usage",
+			Help: "Azure ResourceManager quota usage in percent",
+		},
+		[]string{
+			"subscriptionID",
+			"location",
+			"scope",
+			"quota",
+		},
+	)
+
 	prometheus.MustRegister(m.prometheus.quota)
 	prometheus.MustRegister(m.prometheus.quotaCurrent)
 	prometheus.MustRegister(m.prometheus.quotaLimit)
@@ -86,10 +100,12 @@ func (m *MetricsCollectorAzureRmQuota) Collect(ctx context.Context, logger *log.
 func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := compute.NewUsageClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	quotaMetric := prometheusCommon.NewMetricsList()
 	quotaCurrentMetric := prometheusCommon.NewMetricsList()
 	quotaLimitMetric := prometheusCommon.NewMetricsList()
+	quotaUsageMetric := prometheusCommon.NewMetricsList()
 
 	for _, location := range m.CollectorReference.AzureLocations {
 		list, err := client.List(ctx, location)
@@ -122,6 +138,9 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 			quotaMetric.Add(infoLabels, 1)
 			quotaCurrentMetric.Add(labels, currentValue)
 			quotaLimitMetric.Add(labels, limitValue)
+			if limitValue != 0 {
+				quotaUsageMetric.Add(labels, currentValue/limitValue)
+			}
 		}
 	}
 
@@ -129,6 +148,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 		quotaMetric.GaugeSet(m.prometheus.quota)
 		quotaCurrentMetric.GaugeSet(m.prometheus.quotaCurrent)
 		quotaLimitMetric.GaugeSet(m.prometheus.quotaLimit)
+		quotaUsageMetric.GaugeSet(m.prometheus.quotaUsage)
 	}
 }
 
@@ -136,6 +156,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := network.NewUsagesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
+	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	quotaMetric := prometheusCommon.NewMetricsList()
 	quotaCurrentMetric := prometheusCommon.NewMetricsList()

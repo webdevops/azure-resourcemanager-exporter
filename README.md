@@ -63,6 +63,8 @@ Application Options:
       --scrape-time-network=          Scrape time for Network metrics (time.duration) [$SCRAPE_TIME_NETWORK]
       --scrape-time-iam=              Scrape time for IAM metrics (time.duration) [$SCRAPE_TIME_IAM]
       --scrape-time-graph=            Scrape time for Graph metrics (time.duration) [$SCRAPE_TIME_GRAPH]
+      --scrape-time-costs=            Scrape time for costs/consumtion metrics (time.duration; BETA) (default: 0)
+                                      [$SCRAPE_TIME_COSTS]
       --graph-application-filter=     Graph application filter query eg: startswith(displayName,'A')
                                       [$GRAPH_APPLICATION_FILTER]
       --portscan                      Enable portscan for public IPs [$PORTSCAN]
@@ -107,20 +109,27 @@ Metrics
 | Metric                                         | Collector           | Description                                                                           |
 |------------------------------------------------|---------------------|---------------------------------------------------------------------------------------|
 | `azurerm_stats`                                | Exporter            | General exporter stats                                                                |
+| `azurerm_consumtion_bugdet_info`               | Costs               | Azure Costmanagement bugdet information                                               |
+| `azurerm_consumtion_bugdet_limit`              | Costs               | Limit of CostManagemnet budget                                                        |
+| `azurerm_consumtion_bugdet_current`            | Costs               | Current costs of CostManagement budget                                                |
+| `azurerm_consumtion_bugdet_usage`              | Costs               | Current budget usage in percentage                                                    |
+| `azurerm_costmanagement_usage`                 | Costs               | CostManagement "usage" metric with timeframe "MonthToDay"                             |
+| `azurerm_costmanagement_actualcost`            | Costs               | CostManagement "actualcosts" metric with timeframe "MonthToDay"                       |
 | `azurerm_subscription_info`                    | General             | Azure Subscription details (ID, name, ...)                                            |
-| `azurerm_resourcegroup_info`                   | Resource            | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
-| `azurerm_resource_info`                        | Resource            | Azure Resource information                                                            |
-| `azurerm_ratelimit`                            | *all* (if detected) | Azure API ratelimit (left calls)                                                      |
-| `azurerm_quota`                                | Quota               | Azure RM quota details (readable name, scope, ...)                                    |
-| `azurerm_quota_current`                        | Quota               | Azure RM quota current (current value)                                                |
-| `azurerm_quota_limit`                          | Quota               | Azure RM quota limit (maximum limited value)                                          |
-| `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
-| `azurerm_publicip_portscan_port`               | Portscan            | List of opend ports per IP                                                            |
-| `azurerm_securitycenter_compliance`            | Security            | Azure SecurityCenter compliance status                                                |
-| `azurerm_advisor_recommendation`               | Security            | Azure Adisor recommendations (eg. security findings)                                  |
 | `azurerm_resource_health`                      | Health              | Azure Resource health information                                                     |
 | `azurerm_iam_roleassignment_info`              | IAM                 | Azure IAM RoleAssignment information                                                  |
 | `azurerm_iam_roledefinition_info`              | IAM                 | Azure IAM RoleDefinition information                                                  |
 | `azurerm_iam_principal_info`                   | IAM                 | Azure IAM Principal information                                                       |
+| `azurerm_quota_info`                           | Quota               | Azure RM quota details (readable name, scope, ...)                                    |
+| `azurerm_quota_current`                        | Quota               | Azure RM quota current (current value)                                                |
+| `azurerm_quota_limit`                          | Quota               | Azure RM quota limit (maximum limited value)                                          |
+| `azurerm_quota_usage`                          | Quota               | Azure RM quota usage in percent                                                       |
+| `azurerm_resourcegroup_info`                   | Resource            | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
+| `azurerm_resource_info`                        | Resource            | Azure Resource information                                                            |
+| `azurerm_securitycenter_compliance`            | Security            | Azure SecurityCenter compliance status                                                |
+| `azurerm_advisor_recommendation`               | Security            | Azure Adisor recommendations (eg. security findings)                                  |
 | `azurerm_graph_app_info`                       | Graph               | AzureAD graph application information                                                 |
 | `azurerm_graph_app_credential`                 | Graph               | AzureAD graph application credentials (create,expiry) information                     |
+| `azurerm_ratelimit`                            | *all* (if detected) | Azure API ratelimit (left calls)                                                      |
+| `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
+| `azurerm_publicip_portscan_port`               | Portscan            | List of opend ports per IP                                                            |
