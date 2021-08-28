@@ -135,7 +135,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
-	list, err := client.ListComplete(ctx, "")
+	list, err := client.ListComplete(ctx, "", "")
 
 	if err != nil {
 		logger.Panic(err)
