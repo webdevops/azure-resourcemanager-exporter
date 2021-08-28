@@ -33,35 +33,53 @@ Normally no configuration is needed but can be customized using environment vari
 
 (to disable specific scrape collectors set them to `0` or set `SCRAPE_TIME` to `0` to disable all by default)
 
-| Environment variable              | DefaultValue                | Description                                                       |
-|-----------------------------------|-----------------------------|-------------------------------------------------------------------|
-| `AZURE_TENANT_ID`                 | `empty`                     | Azure Tenant IDs (**required**)                                   |
-| `AZURE_SUBSCRIPTION_ID`           | `empty`                     | Azure Subscription IDs (empty for auto lookup)                    |
-| `AZURE_LOCATION`                  | `westeurope`, `northeurope` | Azure location for usage statitics                                |
-| `SCRAPE_TIME`                     | `5m`                        | Default scrape time (time.Duration) between Azure API collections |
-| `SCRAPE_TIME_GENERAL`             | -> SCRAPE_TIME              | Scrape time for General metrics                                   |
-| `SCRAPE_RATELIMIT_READ`           | `2m`                        | Scrape time for Azure rate limit read metrics                     |
-| `SCRAPE_RATELIMIT_WRITE`          | `5m`                        | Scrape time for Azure rate limit write metrics (needs tag permissions on subscriptions, see below) |
-| `SCRAPE_TIME_RESOURCE`            | -> SCRAPE_TIME              | Scrape time for Resource metrics [*Deprecated*](README.md#Deprecations) |
-| `SCRAPE_TIME_STORAGE`             | -> SCRAPE_TIME              | Scrape time for Storage metrics [*Deprecated*](README.md#Deprecations) |
-| `SCRAPE_TIME_QUOTA`               | -> SCRAPE_TIME              | Scrape time for Quota metrics                                     |
-| `SCRAPE_TIME_CONTAINERREGISTRY`   | -> SCRAPE_TIME              | Scrape time for ContainerRegistry metrics [*Deprecated*](README.md#Deprecations) |
-| `SCRAPE_TIME_CONTAINERINSTANCE`   | -> SCRAPE_TIME              | Scrape time for ContainerInstance metrics [*Deprecated*](README.md#Deprecations) |
-| `SCRAPE_TIME_EVENTHUB`            | `30m`        `              | Scrape time for Eventhub metrics [*Deprecated*](README.md#Deprecations) |
-| `SCRAPE_TIME_SECURITY`            | -> SCRAPE_TIME              | Scrape time for Security metrics                                  |
-| `SCRAPE_TIME_HEALTH`              | -> SCRAPE_TIME              | Scrape time for Health metrics                                    |
-| `SCRAPE_TIME_IAM`                 | -> SCRAPE_TIME              | Scrape time for AzurAD IAM (roledefinitions, rolebindings, principals) metrics  |
-| `SCRAPE_TIME_GRAPH`               | -> SCRAPE_TIME              | Scrape time for AzurAD Graph metrics                              |
-| `SERVER_BIND`                     | `:8080`                     | IP/Port binding                                                   |
-| `AZURE_RESOURCEGROUP_TAG`         | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
-| `AZURE_RESOURCE_TAG`              | `owner`                     | Tags which should be included (methods available eg. `owner:lower` will transform content lowercase, methods: `lower`, `upper`, `title`)  |
-| `PORTSCAN`                        | `0`                         | Enables portscanner for public IPs (experimental)                 |
-| `PORTSCAN_RANGE`                  | `1-65535`                   | Port range to scan (single port or range, mutliple ranges possible -> space as seperator)  |
-| `PORTSCAN_TIME`                   | `3h`                        | Time (time.Duration) between portscanner runs                     |
-| `PORTSCAN_PARALLEL`               | `2`                         | Parallel IPs which are scanned at the same time                   |
-| `PORTSCAN_THREADS`                | `1000`                      | Number of threads per IP (parallel scanned ports)                 |
-| `PORTSCAN_TIMEOUT`                | `5`                         | Timeout (seconds) for each port                                   |
-| `GRAPH_APPLICATION_FILTER`        | `empty`                     | AzureAD graph application filter, eg. `startswith(displayName,'foo')` |
+```
+Usage:
+  azure-resourcemanager-exporter [OPTIONS]
+
+Application Options:
+      --debug                         debug mode [$DEBUG]
+  -v, --verbose                       verbose mode [$VERBOSE]
+      --log.json                      Switch log output to json format [$LOG_JSON]
+      --azure-tenant=                 Azure tenant id [$AZURE_TENANT_ID]
+      --azure-environment=            Azure environment name (default: AZUREPUBLICCLOUD) [$AZURE_ENVIRONMENT]
+      --azure-subscription=           Azure subscription ID [$AZURE_SUBSCRIPTION_ID]
+      --azure-location=               Azure locations (default: westeurope, northeurope) [$AZURE_LOCATION]
+      --azure-resourcegroup-tag=      Azure ResourceGroup tags (default: owner) [$AZURE_RESOURCEGROUP_TAG]
+      --azure-resource-tag=           Azure Resource tags (default: owner) [$AZURE_RESOURCE_TAG]
+      --scrape-time=                  Default scrape time (time.duration) (default: 5m) [$SCRAPE_TIME]
+      --scrape-ratelimit-read=        Scrape time for ratelimit read metrics (time.duration) (default: 2m)
+                                      [$SCRAPE_RATELIMIT_READ]
+      --scrape-ratelimit-write=       Scrape time for ratelimit write metrics (time.duration) (default: 5m)
+                                      [$SCRAPE_RATELIMIT_WRITE]
+      --scrape-time-exporter=         Scrape time for exporter metrics (time.duration) (default: 10s)
+                                      [$SCRAPE_TIME_EXPORTER]
+      --scrape-time-general=          Scrape time for general metrics (time.duration) [$SCRAPE_TIME_GENERAL]
+      --scrape-time-resource=         Scrape time for resource metrics  (time.duration) [$SCRAPE_TIME_RESOURCE]
+      --scrape-time-quota=            Scrape time for quota metrics  (time.duration) [$SCRAPE_TIME_QUOTA]
+      --scrape-time-security=         Scrape time for Security metrics (time.duration) [$SCRAPE_TIME_SECURITY]
+      --scrape-time-resourcehealth=   Scrape time for ResourceHealth metrics (time.duration)
+                                      [$SCRAPE_TIME_RESOURCEHEALTH]
+      --scrape-time-network=          Scrape time for Network metrics (time.duration) [$SCRAPE_TIME_NETWORK]
+      --scrape-time-iam=              Scrape time for IAM metrics (time.duration) [$SCRAPE_TIME_IAM]
+      --scrape-time-graph=            Scrape time for Graph metrics (time.duration) [$SCRAPE_TIME_GRAPH]
+      --graph-application-filter=     Graph application filter query eg: startswith(displayName,'A')
+                                      [$GRAPH_APPLICATION_FILTER]
+      --portscan                      Enable portscan for public IPs [$PORTSCAN]
+      --portscan-time=                Portscan time (time.duration) (default: 3h) [$PORTSCAN_TIME]
+      --portscan-parallel=            Portscan parallel scans (parallel * threads = concurrent gofuncs) (default: 2)
+                                      [$PORTSCAN_PARALLEL]
+      --portscan-threads=             Portscan threads (concurrent port scans per IP) (default: 1000)
+                                      [$PORTSCAN_THREADS]
+      --portscan-timeout=             Portscan timeout (seconds) (default: 5) [$PORTSCAN_TIMEOUT]
+      --portscan-range=               Portscan port range (first-last) (default: 1-65535) [$PORTSCAN_RANGE]
+      --metrics.resourceid.lowercase  Publish lowercase Azure Resoruce ID in metrics [$METRIC_RESOURCEID_LOWERCASE]
+      --cache-path=                   Cache path [$CACHE_PATH]
+      --bind=                         Server address (default: :8080) [$SERVER_BIND]
+
+Help Options:
+  -h, --help                          Show this help message
+```
 
 for Azure API authentication (using ENV vars) see https://github.com/Azure/azure-sdk-for-go#authentication
 
