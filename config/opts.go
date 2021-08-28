@@ -39,6 +39,7 @@ type (
 			TimeNetwork        *time.Duration `long:"scrape-time-network"            env:"SCRAPE_TIME_NETWORK"            description:"Scrape time for Network metrics (time.duration)"`
 			TimeIam            *time.Duration `long:"scrape-time-iam"                env:"SCRAPE_TIME_IAM"                description:"Scrape time for IAM metrics (time.duration)"`
 			TimeGraph          *time.Duration `long:"scrape-time-graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
+			TimeCosts          *time.Duration `long:"scrape-time-costs"              env:"SCRAPE_TIME_COSTS"              description:"Scrape time for costs/consumtion metrics (time.duration; BETA)" default:"0"`
 		}
 
 		// graph settings

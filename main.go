@@ -166,6 +166,10 @@ func initArgparser() {
 		opts.Scrape.TimeQuota = &opts.Scrape.Time
 	}
 
+	if opts.Scrape.TimeCosts == nil {
+		opts.Scrape.TimeCosts = &opts.Scrape.Time
+	}
+
 	if opts.Scrape.TimeNetwork == nil {
 		opts.Scrape.TimeNetwork = &opts.Scrape.Time
 	}
@@ -300,6 +304,14 @@ func initMetricCollector() {
 	if opts.Scrape.TimeQuota.Seconds() > 0 {
 		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmQuota{})
 		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeQuota)
+	} else {
+		log.WithField("collector", collectorName).Infof("collector disabled")
+	}
+
+	collectorName = "Costs"
+	if opts.Scrape.TimeCosts.Seconds() > 0 {
+		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmCosts{})
+		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeCosts)
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
