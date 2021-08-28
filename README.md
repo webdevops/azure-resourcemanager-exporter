@@ -60,7 +60,6 @@ Application Options:
       --scrape-time-security=         Scrape time for Security metrics (time.duration) [$SCRAPE_TIME_SECURITY]
       --scrape-time-resourcehealth=   Scrape time for ResourceHealth metrics (time.duration)
                                       [$SCRAPE_TIME_RESOURCEHEALTH]
-      --scrape-time-network=          Scrape time for Network metrics (time.duration) [$SCRAPE_TIME_NETWORK]
       --scrape-time-iam=              Scrape time for IAM metrics (time.duration) [$SCRAPE_TIME_IAM]
       --scrape-time-graph=            Scrape time for Graph metrics (time.duration) [$SCRAPE_TIME_GRAPH]
       --scrape-time-costs=            Scrape time for costs/consumtion metrics (time.duration; BETA) (default: 0)
@@ -85,13 +84,13 @@ Help Options:
 
 for Azure API authentication (using ENV vars) see https://github.com/Azure/azure-sdk-for-go#authentication
 
-Deprecations
-------------
+Deprecations/old resource metrics
+---------------------------------
 
 Please use [`azure-resourcegraph-exporter`](https://github.com/webdevops/azure-resourcegraph-exporter) for exporting resources.
 This exporter is using Azure ResourceGraph queries and not wasting Azure API calls for fetching metrics.
 
-`azure-resourcegraph-exporter` provides a way how metrics can be build by using Kusto querys.
+`azure-resourcegraph-exporter` provides a way how metrics can be build by using Kusto queries.
 
 Azure permissions
 -----------------
