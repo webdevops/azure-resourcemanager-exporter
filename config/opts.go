@@ -34,7 +34,6 @@ type (
 			TimeGeneral        *time.Duration `long:"scrape-time-general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
 			TimeResource       *time.Duration `long:"scrape-time-resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`
 			TimeQuota          *time.Duration `long:"scrape-time-quota"              env:"SCRAPE_TIME_QUOTA"              description:"Scrape time for quota metrics  (time.duration)"`
-			TimeDatabase       *time.Duration `long:"scrape-time-database"           env:"SCRAPE_TIME_DATABASE"           description:"Scrape time for Database metrics (time.duration)"`
 			TimeSecurity       *time.Duration `long:"scrape-time-security"           env:"SCRAPE_TIME_SECURITY"           description:"Scrape time for Security metrics (time.duration)"`
 			TimeResourceHealth *time.Duration `long:"scrape-time-resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
 			TimeNetwork        *time.Duration `long:"scrape-time-network"            env:"SCRAPE_TIME_NETWORK"            description:"Scrape time for Network metrics (time.duration)"`
