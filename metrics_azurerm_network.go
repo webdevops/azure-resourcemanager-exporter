@@ -181,7 +181,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 
 		// VNET
 		infoLabels := prometheus.Labels{
-			"vnetID":         to.String(val.ID),
+			"vnetID":         toResourceId(val.ID),
 			"subscriptionID": to.String(subscription.SubscriptionID),
 			"resourceGroup":  extractResourceGroupFromAzureId(to.String(val.ID)),
 			"vnetName":       to.String(val.Name),
@@ -192,7 +192,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 		if val.AddressSpace != nil && val.AddressSpace.AddressPrefixes != nil {
 			for _, addressRange := range *val.AddressSpace.AddressPrefixes {
 				vnetAddressMetric.AddInfo(prometheus.Labels{
-					"vnetID":         to.String(val.ID),
+					"vnetID":         toResourceId(val.ID),
 					"subscriptionID": to.String(subscription.SubscriptionID),
 					"addressRange":   addressRange,
 				})
@@ -203,7 +203,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 		if val.Subnets != nil {
 			for _, subnet := range *val.Subnets {
 				vnetSubnetMetric.AddInfo(prometheus.Labels{
-					"vnetID":         to.String(val.ID),
+					"vnetID":         toResourceId(val.ID),
 					"subnetID":       to.String(subnet.ID),
 					"subscriptionID": to.String(subscription.SubscriptionID),
 					"subnetName":     to.String(subnet.Name),
@@ -211,7 +211,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 
 				if subnet.AddressPrefix != nil {
 					vnetSubnetAddressMetric.AddInfo(prometheus.Labels{
-						"vnetID":         to.String(val.ID),
+						"vnetID":         toResourceId(val.ID),
 						"subnetID":       to.String(subnet.ID),
 						"subscriptionID": to.String(subscription.SubscriptionID),
 						"addressRange":   to.String(subnet.AddressPrefix),
@@ -221,7 +221,7 @@ func (m *MetricsCollectorAzureRmNetwork) collectAzureVnet(ctx context.Context, l
 				if subnet.AddressPrefixes != nil {
 					for _, addressRange := range *subnet.AddressPrefixes {
 						vnetSubnetAddressMetric.AddInfo(prometheus.Labels{
-							"vnetID":         to.String(val.ID),
+							"vnetID":         toResourceId(val.ID),
 							"subnetID":       to.String(subnet.ID),
 							"subscriptionID": to.String(subscription.SubscriptionID),
 							"addressRange":   addressRange,

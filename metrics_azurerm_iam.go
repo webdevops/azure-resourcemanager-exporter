@@ -151,9 +151,9 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 
 		infoLabels := prometheus.Labels{
 			"subscriptionID":   to.String(subscription.SubscriptionID),
-			"roleAssignmentID": to.String(val.ID),
+			"roleAssignmentID": toResourceId(val.ID),
 			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(to.String(val.RoleDefinitionID)),
-			"resourceID":       to.String(val.Scope),
+			"resourceID":       toResourceId(val.Scope),
 			"resourceGroup":    extractResourceGroupFromAzureId(to.String(val.Scope)),
 			"principalID":      principalId,
 		}

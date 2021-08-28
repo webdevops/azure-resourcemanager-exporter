@@ -60,7 +60,7 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 
 	subscriptionMetric := prometheusCommon.NewMetricsList()
 	subscriptionMetric.AddInfo(prometheus.Labels{
-		"resourceID":          to.String(sub.ID),
+		"resourceID":          toResourceId(sub.ID),
 		"subscriptionID":      to.String(sub.SubscriptionID),
 		"subscriptionName":    to.String(sub.DisplayName),
 		"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),

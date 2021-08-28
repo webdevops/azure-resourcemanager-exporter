@@ -82,7 +82,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context
 
 	for _, item := range *resourceGroupResult.Response().Value {
 		infoLabels := azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
-			"resourceID":     to.String(item.ID),
+			"resourceID":     toResourceId(item.ID),
 			"subscriptionID": to.String(subscription.SubscriptionID),
 			"resourceGroup":  to.String(item.Name),
 			"location":       to.String(item.Location),
@@ -113,7 +113,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Con
 
 		infoLabels := prometheus.Labels{
 			"subscriptionID": to.String(subscription.SubscriptionID),
-			"resourceID":     to.String(val.ID),
+			"resourceID":     toResourceId(val.ID),
 			"resourceGroup":  extractResourceGroupFromAzureId(to.String(val.ID)),
 			"provider":       extractProviderFromAzureId(to.String(val.ID)),
 		}

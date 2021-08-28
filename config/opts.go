@@ -54,6 +54,10 @@ type (
 			PortRange []string      `long:"portscan-range"                env:"PORTSCAN_RANGE"            env-delim:" "  description:"Portscan port range (first-last)"                 default:"1-65535"`
 		}
 
+		Metrics struct {
+			ResourceIdLowercase bool   `long:"metrics.resourceid.lowercase"   env:"METRIC_RESOURCEID_LOWERCASE"       description:"Publish lowercase Azure Resoruce ID in metrics"`
+		}
+
 		// caching
 		Cache struct {
 			Path string `long:"cache-path"                    env:"CACHE_PATH"                               description:"Cache path"`

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	"regexp"
 	"strconv"
@@ -24,9 +25,21 @@ func (m *MetricRow) Inc() {
 	m.Value++
 }
 
+func toResourceId(val *string) (resourceId string) {
+	resourceId = to.String(val)
+	if opts.Metrics.ResourceIdLowercase {
+		resourceId = strings.ToLower(resourceId)
+	}
+	return
+}
+
 func extractResourceGroupFromAzureId(azureId string) (resourceGroup string) {
 	if subMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
 		resourceGroup = strings.ToLower(subMatch[1])
+	}
+
+	if opts.Metrics.ResourceIdLowercase {
+		resourceGroup = strings.ToLower(resourceGroup)
 	}
 
 	return
@@ -37,12 +50,20 @@ func extractProviderFromAzureId(azureId string) (provider string) {
 		provider = subMatch[1]
 	}
 
+	if opts.Metrics.ResourceIdLowercase {
+		provider = strings.ToLower(provider)
+	}
+
 	return
 }
 
-func extractRoleDefinitionIdFromAzureId(azureId string) (provider string) {
+func extractRoleDefinitionIdFromAzureId(azureId string) (roleDefinitionId string) {
 	if subMatch := roleDefinitionIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
-		provider = subMatch[1]
+		roleDefinitionId = subMatch[1]
+	}
+
+	if opts.Metrics.ResourceIdLowercase {
+		roleDefinitionId = strings.ToLower(roleDefinitionId)
 	}
 
 	return

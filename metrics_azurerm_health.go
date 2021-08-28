@@ -68,7 +68,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 		for _, availabilityState := range availabilityStateValues {
 			labels := prometheus.Labels{
 				"subscriptionID":    to.String(subscription.SubscriptionID),
-				"resourceID":        resourceId,
+				"resourceID":        toResourceId(&resourceId),
 				"availabilityState": string(availabilityState),
 			}
 
