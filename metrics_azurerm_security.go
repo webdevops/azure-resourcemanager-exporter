@@ -75,7 +75,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
-	complienceResult, err := client.Get(ctx, subscriptionResourceId, time.Now().Format("2006-01-02Z"))
+	complienceResult, err := client.Get(ctx, subscriptionResourceId, time.Now().UTC().Format("2006-01-02Z"))
 	if err != nil {
 		logger.Error(err)
 		return
