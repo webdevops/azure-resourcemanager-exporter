@@ -82,6 +82,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 			"subscriptionID",
 			"budgetName",
 			"unit",
+			"timeframe",
 		},
 	)
 	prometheus.MustRegister(m.prometheus.consumptionBudgetCurrent)
@@ -95,6 +96,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 			"subscriptionID",
 			"resourceGroup",
 			"currency",
+			"timeframe",
 		},
 	)
 	prometheus.MustRegister(m.prometheus.costmanagementUsage)
@@ -108,6 +110,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 			"subscriptionID",
 			"resourceGroup",
 			"currency",
+			"timeframe",
 		},
 	)
 	prometheus.MustRegister(m.prometheus.costmanagementActualCost)
@@ -123,23 +126,27 @@ func (m *MetricsCollectorAzureRmCosts) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectCostManagementMetrics(
-		ctx,
-		logger.WithField("costreport", "Usage"),
-		callback,
-		subscription,
-		"Usage",
-		m.prometheus.costmanagementUsage,
-	)
+	for _, timeframe := range opts.Costs.Timeframe {
+		m.collectCostManagementMetrics(
+			ctx,
+			logger.WithField("costreport", "Usage"),
+			callback,
+			subscription,
+			"Usage",
+			timeframe,
+			m.prometheus.costmanagementUsage,
+		)
 
-	m.collectCostManagementMetrics(
-		ctx,
-		logger.WithField("costreport", "ActualCost"),
-		callback,
-		subscription,
-		"ActualCost",
-		m.prometheus.costmanagementActualCost,
-	)
+		m.collectCostManagementMetrics(
+			ctx,
+			logger.WithField("costreport", "ActualCost"),
+			callback,
+			subscription,
+			"ActualCost",
+			timeframe,
+			m.prometheus.costmanagementActualCost,
+		)
+	}
 
 	m.collectBugdetMetrics(
 		ctx,
@@ -222,7 +229,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, costType string, metric *prometheus.GaugeVec) {
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, costType, timeframe string, metric *prometheus.GaugeVec) {
 	client := costmanagement.NewQueryClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
@@ -231,7 +238,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 
 	params := costmanagement.QueryDefinition{}
 	params.Type = to.StringPtr(costType)
-	params.Timeframe = "MonthToDate"
+	params.Timeframe = costmanagement.TimeframeType(timeframe)
 	params.Dataset = &costmanagement.QueryDataset{}
 	params.Dataset.Grouping = &[]costmanagement.QueryGrouping{
 		{
@@ -301,6 +308,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 			"subscriptionID": to.String(subscription.SubscriptionID),
 			"resourceGroup":  row[columnNumberResourceGroup].(string),
 			"currency":       row[columnNumberCurrency].(string),
+			"timeframe":      timeframe,
 		}, usage)
 	}
 

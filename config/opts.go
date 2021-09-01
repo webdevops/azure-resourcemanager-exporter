@@ -46,6 +46,12 @@ type (
 			ApplicationFilter string `long:"graph-application-filter"    env:"GRAPH_APPLICATION_FILTER"               description:"Graph application filter query eg: startswith(displayName,'A')"`
 		}
 
+		// costs
+
+		Costs struct {
+			Timeframe []string `long:"costs-timeframe" env:"COSTS_TIMEFRAME"  env-delim:" " default:"MonthToDate" default:"YearToDate"` //nolint:staticcheck
+		}
+
 		// portscan settings
 		Portscan struct {
 			Enabled   bool          `long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
