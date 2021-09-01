@@ -42,7 +42,9 @@ type (
 		}
 
 		// graph settings
-		GraphApplicationFilter string `long:"graph-application-filter"    env:"GRAPH_APPLICATION_FILTER"               description:"Graph application filter query eg: startswith(displayName,'A')"`
+		Graph struct {
+			ApplicationFilter string `long:"graph-application-filter"    env:"GRAPH_APPLICATION_FILTER"               description:"Graph application filter query eg: startswith(displayName,'A')"`
+		}
 
 		// portscan settings
 		Portscan struct {

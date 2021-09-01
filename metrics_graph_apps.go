@@ -65,7 +65,7 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Ent
 	appsMetrics := prometheusCommon.NewMetricsList()
 	appsCredentialMetrics := prometheusCommon.NewMetricsList()
 
-	list, err := m.client.List(context.Background(), opts.GraphApplicationFilter)
+	list, err := m.client.List(context.Background(), opts.Graph.ApplicationFilter)
 	if err != nil {
 		logger.Panic(err)
 	}
