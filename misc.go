@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	subscriptionFromResourceIdRegExp  = regexp.MustCompile("/subscriptions/([^/]+)")
 	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/subscriptions/[^/]+/resourceGroups/([^/]*)")
 	providerFromResourceIdRegExp      = regexp.MustCompile("/subscriptions/[^/]+/resourceGroups/[^/]+/providers/([^/]*)")
 	roleDefinitionIdRegExp            = regexp.MustCompile("/Microsoft.Authorization/roleDefinitions/([^/]*)")
@@ -16,6 +17,13 @@ func toResourceId(val *string) (resourceId string) {
 	resourceId = to.String(val)
 	if opts.Metrics.ResourceIdLowercase {
 		resourceId = strings.ToLower(resourceId)
+	}
+	return
+}
+
+func extractSubscriptionIdFromAzureId(azureId string) (subscriptionId string) {
+	if subMatch := subscriptionFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
+		subscriptionId = strings.ToLower(subMatch[1])
 	}
 	return
 }

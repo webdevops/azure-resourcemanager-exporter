@@ -16,6 +16,7 @@ type MetricsCollectorPortscanner struct {
 	portscanner *Portscanner
 
 	prometheus struct {
+		publicIpInfo            *prometheus.GaugeVec
 		publicIpPortscanStatus  *prometheus.GaugeVec
 		publicIpPortscanUpdated *prometheus.GaugeVec
 		publicIpPortscanPort    *prometheus.GaugeVec
@@ -27,6 +28,22 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 
 	m.portscanner = &Portscanner{}
 	m.portscanner.Init()
+
+	m.prometheus.publicIpInfo = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_publicip_info",
+			Help: "Azure ResourceManager public ip information",
+		},
+		[]string{
+			"subscriptionID",
+			"resourceID",
+			"resourceGroup",
+			"name",
+			"ipAddressVersion",
+			"ipAddress",
+		},
+	)
+	prometheus.MustRegister(m.prometheus.publicIpInfo)
 
 	m.prometheus.publicIpPortscanStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -76,7 +93,9 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 		m.prometheus.publicIpPortscanStatus.Reset()
 	}
 
-	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {
+	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress) {
+		ipAddress := to.String(pip.IPAddress)
+
 		m.logger().WithField("ipAddress", ipAddress).Infof("start port scanning")
 
 		// set the ipAdress to be scanned
@@ -86,7 +105,9 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 		}).Set(0)
 	}
 
-	m.portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string, elapsed float64) {
+	m.portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress, elapsed float64) {
+		ipAddress := to.String(pip.IPAddress)
+
 		// set ipAddess to be finsihed
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
 			"ipAddress": ipAddress,
@@ -123,16 +144,16 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 }
 
 func (m *MetricsCollectorPortscanner) Collect(ctx context.Context, logger *log.Entry) {
-	ipAdressList := m.fetchPublicIpAdresses(ctx, logger, m.CollectorReference.AzureSubscriptions)
+	publicIpList := m.fetchPublicIpAdresses(ctx, logger, m.CollectorReference.AzureSubscriptions)
 
-	m.portscanner.SetIps(ipAdressList)
+	m.portscanner.SetAzurePublicIpList(publicIpList)
 
-	if len(ipAdressList) > 0 {
+	if len(publicIpList) > 0 {
 		m.portscanner.Start()
 	}
 }
 
-func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context, logger *log.Entry, subscriptions []subscriptions.Subscription) (ipAddressList []string) {
+func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context, logger *log.Entry, subscriptions []subscriptions.Subscription) (pipList []network.PublicIPAddress) {
 	logger.Info("collecting public ips")
 
 	for _, val := range subscriptions {
@@ -150,10 +171,22 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context,
 
 		for _, val := range list.Values() {
 			if val.IPAddress != nil {
-				ipAddressList = append(ipAddressList, to.String(val.IPAddress))
+				pipList = append(pipList, val)
 			}
 		}
 	}
 
-	return ipAddressList
+	m.prometheus.publicIpInfo.Reset()
+	for _, pip := range pipList {
+		m.prometheus.publicIpInfo.With(prometheus.Labels{
+			"subscriptionID":   extractSubscriptionIdFromAzureId(to.String(pip.ID)),
+			"resourceID":       toResourceId(pip.ID),
+			"resourceGroup":    extractResourceGroupFromAzureId(to.String(pip.ID)),
+			"name":             to.String(pip.Name),
+			"ipAddressVersion": string(pip.PublicIPAddressVersion),
+			"ipAddress":        to.String(pip.IPAddress),
+		}).Set(1)
+	}
+
+	return pipList
 }

@@ -130,5 +130,6 @@ Metrics
 | `azurerm_graph_app_info`                       | Graph               | AzureAD graph application information                                                 |
 | `azurerm_graph_app_credential`                 | Graph               | AzureAD graph application credentials (create,expiry) information                     |
 | `azurerm_ratelimit`                            | *all* (if detected) | Azure API ratelimit (left calls)                                                      |
+| `azurerm_publicip_info`                        | Portscan            | Azure PublicIP information                                                            |
 | `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
 | `azurerm_publicip_portscan_port`               | Portscan            | List of opend ports per IP                                                            |

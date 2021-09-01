@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
+	"github.com/Azure/go-autorest/autorest/to"
 	scanner "github.com/anvie/port-scanner"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/remeh/sizedwaitgroup"
@@ -21,7 +23,7 @@ type PortscannerResult struct {
 
 type Portscanner struct {
 	List      map[string][]PortscannerResult
-	PublicIps map[string]string
+	PublicIps map[string]network.PublicIPAddress
 	Enabled   bool `json:"-"`
 	mux       sync.Mutex
 
@@ -30,8 +32,8 @@ type Portscanner struct {
 	Callbacks struct {
 		StartupScan        func(c *Portscanner)
 		FinishScan         func(c *Portscanner)
-		StartScanIpAdress  func(c *Portscanner, ipAddress string)
-		FinishScanIpAdress func(c *Portscanner, ipAddress string, elapsed float64)
+		StartScanIpAdress  func(c *Portscanner, pip network.PublicIPAddress)
+		FinishScanIpAdress func(c *Portscanner, pip network.PublicIPAddress, elapsed float64)
 		ResultCleanup      func(c *Portscanner)
 		ResultPush         func(c *Portscanner, result PortscannerResult)
 	} `json:"-"`
@@ -40,14 +42,14 @@ type Portscanner struct {
 func (c *Portscanner) Init() {
 	c.Enabled = false
 	c.List = map[string][]PortscannerResult{}
-	c.PublicIps = map[string]string{}
+	c.PublicIps = map[string]network.PublicIPAddress{}
 
 	c.logger = log.WithField("component", "portscanner")
 
 	c.Callbacks.StartupScan = func(c *Portscanner) {}
 	c.Callbacks.FinishScan = func(c *Portscanner) {}
-	c.Callbacks.StartScanIpAdress = func(c *Portscanner, ipAddress string) {}
-	c.Callbacks.FinishScanIpAdress = func(c *Portscanner, ipAddress string, elapsed float64) {}
+	c.Callbacks.StartScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress) {}
+	c.Callbacks.FinishScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress, elapsed float64) {}
 	c.Callbacks.ResultCleanup = func(c *Portscanner) {}
 	c.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {}
 }
@@ -94,20 +96,22 @@ func (c *Portscanner) CacheSave(path string) {
 	c.mux.Unlock()
 }
 
-func (c *Portscanner) SetIps(ipAddresses []string) {
+func (c *Portscanner) SetAzurePublicIpList(pipList []network.PublicIPAddress) {
 	c.mux.Lock()
 
 	// build map
-	ipAddressList := map[string]string{}
-	for _, ipAddress := range ipAddresses {
-		ipAddressList[ipAddress] = ipAddress
+	ipAddressList := map[string]network.PublicIPAddress{}
+	for _, pip := range pipList {
+		ipAddress := to.String(pip.IPAddress)
+		ipAddressList[ipAddress] = pip
 	}
 
 	c.PublicIps = ipAddressList
 	c.mux.Unlock()
 }
 
-func (c *Portscanner) addResults(ipAddress string, results []PortscannerResult) {
+func (c *Portscanner) addResults(pip network.PublicIPAddress, results []PortscannerResult) {
+	ipAddress := to.String(pip.IPAddress)
 	// update result cache and update prometheus
 	c.mux.Lock()
 	c.List[ipAddress] = results
@@ -159,19 +163,19 @@ func (c *Portscanner) Start() {
 	c.Publish()
 
 	swg := sizedwaitgroup.New(opts.Portscan.Parallel)
-	for _, ipAddress := range c.PublicIps {
+	for _, pip := range c.PublicIps {
 		swg.Add()
-		go func(ipAddress string, portscanTimeout time.Duration) {
+		go func(pip network.PublicIPAddress, portscanTimeout time.Duration) {
 			defer swg.Done()
 
-			c.Callbacks.StartScanIpAdress(c, ipAddress)
+			c.Callbacks.StartScanIpAdress(c, pip)
 
-			results, elapsed := c.scanIp(ipAddress, portscanTimeout)
+			results, elapsed := c.scanIp(pip, portscanTimeout)
 
-			c.Callbacks.FinishScanIpAdress(c, ipAddress, elapsed)
+			c.Callbacks.FinishScanIpAdress(c, pip, elapsed)
 
-			c.addResults(ipAddress, results)
-		}(ipAddress, portscanTimeout)
+			c.addResults(pip, results)
+		}(pip, portscanTimeout)
 	}
 
 	// wait for all port scanners
@@ -184,7 +188,8 @@ func (c *Portscanner) Start() {
 	c.Callbacks.FinishScan(c)
 }
 
-func (c *Portscanner) scanIp(ipAddress string, portscanTimeout time.Duration) (result []PortscannerResult, elapsed float64) {
+func (c *Portscanner) scanIp(pip network.PublicIPAddress, portscanTimeout time.Duration) (result []PortscannerResult, elapsed float64) {
+	ipAddress := to.String(pip.IPAddress)
 	startTime := time.Now().Unix()
 
 	contextLogger := c.logger.WithField("ipAddress", ipAddress)
