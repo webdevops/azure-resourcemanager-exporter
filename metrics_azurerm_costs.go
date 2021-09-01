@@ -82,7 +82,6 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 			"subscriptionID",
 			"budgetName",
 			"unit",
-			"timeframe",
 		},
 	)
 	prometheus.MustRegister(m.prometheus.consumptionBudgetCurrent)
