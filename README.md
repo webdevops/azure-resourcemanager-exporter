@@ -52,26 +52,31 @@ Application Options:
                                       [$SCRAPE_RATELIMIT_READ]
       --scrape-ratelimit-write=       Scrape time for ratelimit write metrics (time.duration) (default: 5m)
                                       [$SCRAPE_RATELIMIT_WRITE]
-      --scrape-time-exporter=         Scrape time for exporter metrics (time.duration) (default: 10s)
-                                      [$SCRAPE_TIME_EXPORTER]
+      --scrape-time-exporter=         Scrape time for exporter metrics (time.duration) (default: 10s) [$SCRAPE_TIME_EXPORTER]
       --scrape-time-general=          Scrape time for general metrics (time.duration) [$SCRAPE_TIME_GENERAL]
       --scrape-time-resource=         Scrape time for resource metrics  (time.duration) [$SCRAPE_TIME_RESOURCE]
       --scrape-time-quota=            Scrape time for quota metrics  (time.duration) [$SCRAPE_TIME_QUOTA]
       --scrape-time-security=         Scrape time for Security metrics (time.duration) [$SCRAPE_TIME_SECURITY]
-      --scrape-time-resourcehealth=   Scrape time for ResourceHealth metrics (time.duration)
-                                      [$SCRAPE_TIME_RESOURCEHEALTH]
+      --scrape-time-resourcehealth=   Scrape time for ResourceHealth metrics (time.duration) [$SCRAPE_TIME_RESOURCEHEALTH]
       --scrape-time-iam=              Scrape time for IAM metrics (time.duration) [$SCRAPE_TIME_IAM]
       --scrape-time-graph=            Scrape time for Graph metrics (time.duration) [$SCRAPE_TIME_GRAPH]
       --scrape-time-costs=            Scrape time for costs/consumtion metrics (time.duration; BETA) (default: 0)
                                       [$SCRAPE_TIME_COSTS]
-      --graph-application-filter=     Graph application filter query eg: startswith(displayName,'A')
-                                      [$GRAPH_APPLICATION_FILTER]
+      --graph-application-filter=     Graph application filter query eg: startswith(displayName,'A') [$GRAPH_APPLICATION_FILTER]
+      --costs-timeframe=              Timeframe for cost reportings (default: MonthToDate, YearToDate) [$COSTS_TIMEFRAME]
+      --costs-dimension=              Dimensions for detailed cost metrics (eg
+                                      'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType',
+                                      'ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName',
+                                      'DepartmentName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier',
+                                      'EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber',
+                                      'ChargeType','PublisherType','ReservationId','ReservationName','Frequency','PartNumber',
+                                      'CostAllocationRuleName','MarkupRuleName','PricingModel') (default: ResourceType, ResourceLocation)
+                                      [$COSTS_DIMENSION]
       --portscan                      Enable portscan for public IPs [$PORTSCAN]
       --portscan-time=                Portscan time (time.duration) (default: 3h) [$PORTSCAN_TIME]
       --portscan-parallel=            Portscan parallel scans (parallel * threads = concurrent gofuncs) (default: 2)
                                       [$PORTSCAN_PARALLEL]
-      --portscan-threads=             Portscan threads (concurrent port scans per IP) (default: 1000)
-                                      [$PORTSCAN_THREADS]
+      --portscan-threads=             Portscan threads (concurrent port scans per IP) (default: 1000) [$PORTSCAN_THREADS]
       --portscan-timeout=             Portscan timeout (seconds) (default: 5) [$PORTSCAN_TIMEOUT]
       --portscan-range=               Portscan port range (first-last) (default: 1-65535) [$PORTSCAN_RANGE]
       --metrics.resourceid.lowercase  Publish lowercase Azure Resoruce ID in metrics [$METRIC_RESOURCEID_LOWERCASE]
@@ -108,12 +113,14 @@ Metrics
 | Metric                                         | Collector           | Description                                                                           |
 |------------------------------------------------|---------------------|---------------------------------------------------------------------------------------|
 | `azurerm_stats`                                | Exporter            | General exporter stats                                                                |
-| `azurerm_consumtion_bugdet_info`               | Costs               | Azure Costmanagement bugdet information                                               |
+| `azurerm_consumtion_bugdet_info`               | Costs               | Azure CostManagement bugdet information                                               |
 | `azurerm_consumtion_bugdet_limit`              | Costs               | Limit of CostManagemnet budget                                                        |
 | `azurerm_consumtion_bugdet_current`            | Costs               | Current costs of CostManagement budget                                                |
 | `azurerm_consumtion_bugdet_usage`              | Costs               | Current budget usage in percentage                                                    |
-| `azurerm_costmanagement_usage`                 | Costs               | CostManagement "usage" metric with timeframe "MonthToDay"                             |
-| `azurerm_costmanagement_actualcost`            | Costs               | CostManagement "actualcosts" metric with timeframe "MonthToDay"                       |
+| `azurerm_costmanagement_overall_usage`         | Costs               | CostManagement "usage" metric with timeframes by Subscription and ResourceGroup       |
+| `azurerm_costmanagement_overall_actualcost`    | Costs               | CostManagement "actualcosts" metric with timeframes by Subscription and ResourceGroup |
+| `azurerm_costmanagement_detail_usage`          | Costs               | CostManagement "usage" metric with timeframes by Subscription and ResourceGroup and cost dimensions (see `COSTS_DIMENSION`) |
+| `azurerm_costmanagement_detail_actualcost`     | Costs               | CostManagement "actualcosts" metric with timeframes by Subscription and ResourceGroup and cost dimensions (see `COSTS_DIMENSION`) |
 | `azurerm_subscription_info`                    | General             | Azure Subscription details (ID, name, ...)                                            |
 | `azurerm_resource_health`                      | Health              | Azure Resource health information                                                     |
 | `azurerm_iam_roleassignment_info`              | IAM                 | Azure IAM RoleAssignment information                                                  |
@@ -126,10 +133,10 @@ Metrics
 | `azurerm_resourcegroup_info`                   | Resource            | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
 | `azurerm_resource_info`                        | Resource            | Azure Resource information                                                            |
 | `azurerm_securitycenter_compliance`            | Security            | Azure SecurityCenter compliance status                                                |
-| `azurerm_advisor_recommendation`               | Security            | Azure Adisor recommendations (eg. security findings)                                  |
+| `azurerm_advisor_recommendation`               | Security            | Azure Advisory recommendations (eg. security findings)                                 |
 | `azurerm_graph_app_info`                       | Graph               | AzureAD graph application information                                                 |
 | `azurerm_graph_app_credential`                 | Graph               | AzureAD graph application credentials (create,expiry) information                     |
 | `azurerm_ratelimit`                            | *all* (if detected) | Azure API ratelimit (left calls)                                                      |
 | `azurerm_publicip_info`                        | Portscan            | Azure PublicIP information                                                            |
 | `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
-| `azurerm_publicip_portscan_port`               | Portscan            | List of opend ports per IP                                                            |
+| `azurerm_publicip_portscan_port`               | Portscan            | List of opened ports per IP                                                           |

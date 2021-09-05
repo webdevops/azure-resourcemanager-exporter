@@ -22,8 +22,11 @@ type MetricsCollectorAzureRmCosts struct {
 		consumptionBudgetCurrent *prometheus.GaugeVec
 		consumptionBudgetUsage   *prometheus.GaugeVec
 
-		costmanagementUsage      *prometheus.GaugeVec
-		costmanagementActualCost *prometheus.GaugeVec
+		costmanagementOverallUsage      *prometheus.GaugeVec
+		costmanagementOverallActualCost *prometheus.GaugeVec
+
+		costmanagementDetailUsage      *prometheus.GaugeVec
+		costmanagementDetailActualCost *prometheus.GaugeVec
 	}
 }
 
@@ -86,10 +89,10 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 	)
 	prometheus.MustRegister(m.prometheus.consumptionBudgetCurrent)
 
-	m.prometheus.costmanagementUsage = prometheus.NewGaugeVec(
+	m.prometheus.costmanagementOverallUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_costmanagement_usage",
-			Help: "Azure ResourceManager costmanagement usage",
+			Name: "azurerm_costmanagement_overall_usage",
+			Help: "Azure ResourceManager costmanagement overall usage",
 		},
 		[]string{
 			"subscriptionID",
@@ -98,12 +101,12 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 			"timeframe",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.costmanagementUsage)
+	prometheus.MustRegister(m.prometheus.costmanagementOverallUsage)
 
-	m.prometheus.costmanagementActualCost = prometheus.NewGaugeVec(
+	m.prometheus.costmanagementOverallActualCost = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_costmanagement_actualcost",
-			Help: "Azure ResourceManager costmanagement actualcost",
+			Name: "azurerm_costmanagement_overall_actualcost",
+			Help: "Azure ResourceManager costmanagement overall actualcost",
 		},
 		[]string{
 			"subscriptionID",
@@ -112,7 +115,39 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 			"timeframe",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.costmanagementActualCost)
+	prometheus.MustRegister(m.prometheus.costmanagementOverallActualCost)
+
+	m.prometheus.costmanagementDetailUsage = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_costmanagement_detail_usage",
+			Help: "Azure ResourceManager costmanagement detail usage report by dimensions",
+		},
+		[]string{
+			"subscriptionID",
+			"resourceGroup",
+			"dimensionName",
+			"dimensionValue",
+			"currency",
+			"timeframe",
+		},
+	)
+	prometheus.MustRegister(m.prometheus.costmanagementDetailUsage)
+
+	m.prometheus.costmanagementDetailActualCost = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_costmanagement_detail_actualcost",
+			Help: "Azure ResourceManager costmanagement detail actualcost report by dimensions",
+		},
+		[]string{
+			"subscriptionID",
+			"resourceGroup",
+			"dimensionName",
+			"dimensionValue",
+			"currency",
+			"timeframe",
+		},
+	)
+	prometheus.MustRegister(m.prometheus.costmanagementDetailActualCost)
 }
 
 func (m *MetricsCollectorAzureRmCosts) Reset() {
@@ -120,8 +155,8 @@ func (m *MetricsCollectorAzureRmCosts) Reset() {
 	m.prometheus.consumptionBudgetLimit.Reset()
 	m.prometheus.consumptionBudgetCurrent.Reset()
 
-	m.prometheus.costmanagementUsage.Reset()
-	m.prometheus.costmanagementActualCost.Reset()
+	m.prometheus.costmanagementDetailUsage.Reset()
+	m.prometheus.costmanagementDetailActualCost.Reset()
 }
 
 func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
@@ -132,8 +167,9 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 			callback,
 			subscription,
 			"Usage",
+			nil,
 			timeframe,
-			m.prometheus.costmanagementUsage,
+			m.prometheus.costmanagementOverallUsage,
 		)
 
 		m.collectCostManagementMetrics(
@@ -142,9 +178,35 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 			callback,
 			subscription,
 			"ActualCost",
+			nil,
 			timeframe,
-			m.prometheus.costmanagementActualCost,
+			m.prometheus.costmanagementOverallActualCost,
 		)
+
+		for _, val := range opts.Costs.Dimension {
+			dimension := val
+			m.collectCostManagementMetrics(
+				ctx,
+				logger.WithField("costreport", "Usage"),
+				callback,
+				subscription,
+				"Usage",
+				&dimension,
+				timeframe,
+				m.prometheus.costmanagementDetailUsage,
+			)
+
+			m.collectCostManagementMetrics(
+				ctx,
+				logger.WithField("costreport", "ActualCost"),
+				callback,
+				subscription,
+				"ActualCost",
+				&dimension,
+				timeframe,
+				m.prometheus.costmanagementDetailActualCost,
+			)
+		}
 	}
 
 	m.collectBugdetMetrics(
@@ -228,27 +290,35 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, costType, timeframe string, metric *prometheus.GaugeVec) {
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, costType string, dimension *string, timeframe string, metric *prometheus.GaugeVec) {
 	client := costmanagement.NewQueryClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
 	scope := fmt.Sprintf("/subscriptions/%s/", *subscription.SubscriptionID)
 
-	params := costmanagement.QueryDefinition{}
-	params.Type = to.StringPtr(costType)
-	params.Timeframe = costmanagement.TimeframeType(timeframe)
-	params.Dataset = &costmanagement.QueryDataset{}
-	params.Dataset.Grouping = &[]costmanagement.QueryGrouping{
+	queryGrouping := []costmanagement.QueryGrouping{
 		{
 			Name: to.StringPtr("ResourceGroupName"),
 			Type: "Dimension",
 		},
-		{
-			Name: to.StringPtr("ChargeType"),
-			Type: "Dimension",
-		},
 	}
+
+	if dimension != nil {
+		queryGrouping = append(
+			queryGrouping,
+			costmanagement.QueryGrouping{
+				Name: dimension,
+				Type: "Dimension",
+			},
+		)
+	}
+
+	params := costmanagement.QueryDefinition{}
+	params.Type = to.StringPtr(costType)
+	params.Timeframe = costmanagement.TimeframeType(timeframe)
+	params.Dataset = &costmanagement.QueryDataset{}
+	params.Dataset.Grouping = &queryGrouping
 	params.Dataset.Granularity = "None"
 	params.Dataset.Aggregation = map[string]*costmanagement.QueryAggregation{}
 
@@ -273,8 +343,14 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 	}
 
 	columnNumberCost := -1
-	columnNumberResourceGroup := -1
+	columnNumberResourceGroupName := -1
+	columnNumberDimension := -1
 	columnNumberCurrency := -1
+
+	dimensionColName := ""
+	if dimension != nil {
+		dimensionColName = *dimension
+	}
 
 	for num, col := range *list.Columns {
 		if col.Name == nil {
@@ -285,15 +361,24 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 		case "pretaxcost":
 			columnNumberCost = num
 		case "resourcegroupname":
-			columnNumberResourceGroup = num
+			columnNumberResourceGroupName = num
+		case strings.ToLower(dimensionColName):
+			columnNumberDimension = num
 		case "currency":
 			columnNumberCurrency = num
 		}
 	}
 
-	if columnNumberCost == -1 || columnNumberResourceGroup == -1 || columnNumberCurrency == -1 {
+	if columnNumberCost == -1 || columnNumberResourceGroupName == -1 || columnNumberCurrency == -1 {
 		logger.Warnln("unable to detect columns")
 		return
+	}
+
+	if dimension != nil {
+		if columnNumberDimension == -1 {
+			logger.Warnln("unable to detect columns")
+			return
+		}
 	}
 
 	costMetric := prometheusCommon.NewMetricsList()
@@ -303,12 +388,19 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 			usage = v
 		}
 
-		costMetric.Add(prometheus.Labels{
+		labels := prometheus.Labels{
 			"subscriptionID": to.String(subscription.SubscriptionID),
-			"resourceGroup":  row[columnNumberResourceGroup].(string),
+			"resourceGroup":  row[columnNumberResourceGroupName].(string),
 			"currency":       row[columnNumberCurrency].(string),
 			"timeframe":      timeframe,
-		}, usage)
+		}
+
+		if dimension != nil {
+			labels["dimensionName"] = *dimension
+			labels["dimensionValue"] = row[columnNumberDimension].(string)
+		}
+
+		costMetric.Add(labels, usage)
 	}
 
 	callback <- func() {

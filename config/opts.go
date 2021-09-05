@@ -49,7 +49,8 @@ type (
 		// costs
 
 		Costs struct {
-			Timeframe []string `long:"costs-timeframe" env:"COSTS_TIMEFRAME"  env-delim:" " default:"MonthToDate" default:"YearToDate"` //nolint:staticcheck
+			Timeframe []string `long:"costs-timeframe" env:"COSTS_TIMEFRAME"  env-delim:" " description:"Timeframe for cost reportings" default:"MonthToDate" default:"YearToDate"`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       //nolint:staticcheck
+			Dimension []string `long:"costs-dimension" env:"COSTS_DIMENSION"  env-delim:" " description:"Dimensions for detailed cost metrics (eg 'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType','ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName','DepartmentName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier','EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber','ChargeType','PublisherType','ReservationId','ReservationName','Frequency','PartNumber','CostAllocationRuleName','MarkupRuleName','PricingModel')" default:"ResourceType" default:"ResourceLocation"` //nolint:staticcheck
 		}
 
 		// portscan settings
