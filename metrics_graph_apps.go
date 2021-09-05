@@ -35,7 +35,7 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 	m.prometheus.apps = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_graph_app_info",
-			Help: "Azure GraphQL applications",
+			Help: "Azure GraphQL applications information",
 		},
 		[]string{
 			"appAppID",
@@ -49,7 +49,7 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 	m.prometheus.appsCredentials = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_graph_app_credential",
-			Help: "Azure GraphQL application credentials",
+			Help: "Azure GraphQL application credentials status",
 		},
 		[]string{
 			"appAppID",

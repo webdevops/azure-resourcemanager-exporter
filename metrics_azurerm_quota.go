@@ -29,7 +29,7 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *CollectorGeneral) {
 	m.prometheus.quota = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_quota_info",
-			Help: "Azure ResourceManager quota info",
+			Help: "Azure ResourceManager quota information",
 		},
 		[]string{
 			"subscriptionID",

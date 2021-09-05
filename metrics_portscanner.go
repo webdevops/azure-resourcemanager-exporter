@@ -32,7 +32,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 	m.prometheus.publicIpInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_publicip_info",
-			Help: "Azure ResourceManager public ip information",
+			Help: "Azure ResourceManager public ip resource information",
 		},
 		[]string{
 			"subscriptionID",
@@ -60,7 +60,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 	m.prometheus.publicIpPortscanPort = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_publicip_portscan_port",
-			Help: "Azure ResourceManager public ip port",
+			Help: "Azure ResourceManager public ip open port",
 		},
 		[]string{
 			"ipAddress",

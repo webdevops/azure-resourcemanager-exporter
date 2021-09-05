@@ -24,7 +24,7 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *CollectorGeneral) {
 	m.prometheus.resourceHealth = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_resource_health",
-			Help: "Azure Resource health info",
+			Help: "Azure Resource health status information",
 		},
 		[]string{
 			"subscriptionID",

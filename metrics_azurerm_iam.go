@@ -41,7 +41,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 	m.prometheus.roleAssignment = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_iam_roleassignment_info",
-			Help: "Azure IAM RoleAssignment info",
+			Help: "Azure IAM RoleAssignment information",
 		},
 		[]string{
 			"subscriptionID",
@@ -57,7 +57,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 	m.prometheus.roleDefinition = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_iam_roledefinition_info",
-			Help: "Azure IAM RoleDefinition info",
+			Help: "Azure IAM RoleDefinition information",
 		},
 		[]string{
 			"subscriptionID",
@@ -72,7 +72,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 	m.prometheus.principal = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_iam_principal_info",
-			Help: "Azure IAM Principal info",
+			Help: "Azure IAM Principal information",
 		},
 		[]string{
 			"subscriptionID",

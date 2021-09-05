@@ -25,7 +25,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 	m.prometheus.resource = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_resource_info",
-			Help: "Azure Resource info",
+			Help: "Azure Resource information",
 		},
 		append(
 			[]string{
@@ -42,7 +42,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 	m.prometheus.resourceGroup = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_resourcegroup_info",
-			Help: "Azure ResourceManager resourcegroups",
+			Help: "Azure ResourceManager resourcegroup information",
 		},
 		append(
 			[]string{
