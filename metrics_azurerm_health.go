@@ -44,7 +44,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
-	list, err := client.ListBySubscriptionIDComplete(ctx, *subscription.SubscriptionID, "")
+	list, err := client.ListBySubscriptionIDComplete(ctx, "", "")
 
 	if err != nil {
 		logger.Panic(err)
