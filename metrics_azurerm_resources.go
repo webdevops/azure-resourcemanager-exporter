@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
+	"strings"
 )
 
 type MetricsCollectorAzureRmResources struct {
@@ -30,9 +31,12 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 		append(
 			[]string{
 				"resourceID",
+				"resourceName",
 				"subscriptionID",
 				"resourceGroup",
 				"provider",
+				"location",
+				"provisioningState",
 			},
 			azureResourceTags.prometheusLabels...,
 		),
@@ -50,6 +54,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 				"subscriptionID",
 				"resourceGroup",
 				"location",
+				"provisioningState",
 			},
 			azureResourceGroupTags.prometheusLabels...,
 		),
@@ -82,10 +87,11 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context
 
 	for _, item := range *resourceGroupResult.Response().Value {
 		infoLabels := azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
-			"resourceID":     toResourceId(item.ID),
-			"subscriptionID": to.String(subscription.SubscriptionID),
-			"resourceGroup":  to.String(item.Name),
-			"location":       to.String(item.Location),
+			"resourceID":        toResourceId(item.ID),
+			"subscriptionID":    to.String(subscription.SubscriptionID),
+			"resourceGroup":     to.String(item.Name),
+			"location":          to.String(item.Location),
+			"provisioningState": strings.ToLower(to.String(item.Properties.ProvisioningState)),
 		}, item.Tags)
 		infoMetric.AddInfo(infoLabels)
 	}
@@ -100,7 +106,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Con
 	client.Authorizer = AzureAuthorizer
 	client.ResponseInspector = azureResponseInspector(&subscription)
 
-	list, err := client.ListComplete(ctx, "", "", nil)
+	list, err := client.ListComplete(ctx, "", "createdTime,changedTime,provisioningState", nil)
 
 	if err != nil {
 		logger.Panic(err)
@@ -112,10 +118,13 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Con
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"subscriptionID": to.String(subscription.SubscriptionID),
-			"resourceID":     toResourceId(val.ID),
-			"resourceGroup":  extractResourceGroupFromAzureId(to.String(val.ID)),
-			"provider":       extractProviderFromAzureId(to.String(val.ID)),
+			"subscriptionID":    to.String(subscription.SubscriptionID),
+			"resourceID":        toResourceId(val.ID),
+			"resourceName":      to.String(val.Name),
+			"resourceGroup":     extractResourceGroupFromAzureId(to.String(val.ID)),
+			"provider":          extractProviderFromAzureId(to.String(val.ID)),
+			"location":          to.String(val.Location),
+			"provisioningState": strings.ToLower(to.String(val.ProvisioningState)),
 		}
 		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		resourceMetric.AddInfo(infoLabels)
