@@ -82,6 +82,7 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *CollectorGeneral) {
 	prometheus.MustRegister(m.prometheus.quota)
 	prometheus.MustRegister(m.prometheus.quotaCurrent)
 	prometheus.MustRegister(m.prometheus.quotaLimit)
+	prometheus.MustRegister(m.prometheus.quotaUsage)
 }
 
 func (m *MetricsCollectorAzureRmQuota) Reset() {
