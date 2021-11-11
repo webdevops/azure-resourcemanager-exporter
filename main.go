@@ -3,6 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -12,14 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -217,7 +218,13 @@ func initAzureConnection() {
 	if err != nil {
 		log.Panic(err)
 	}
-	subscriptionsClient := subscriptions.NewClient()
+
+	azureEnvironment, err = azure.EnvironmentFromName(*opts.Azure.Environment)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	subscriptionsClient := subscriptions.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint)
 	subscriptionsClient.Authorizer = AzureAuthorizer
 
 	if len(opts.Azure.Subscription) == 0 {
@@ -241,11 +248,6 @@ func initAzureConnection() {
 			}
 			AzureSubscriptions = append(AzureSubscriptions, result)
 		}
-	}
-
-	azureEnvironment, err = azure.EnvironmentFromName(*opts.Azure.Environment)
-	if err != nil {
-		log.Panic(err)
 	}
 }
 
