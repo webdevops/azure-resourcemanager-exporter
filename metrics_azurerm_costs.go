@@ -35,8 +35,8 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 
 	m.prometheus.consumptionBudgetInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_consumtion_bugdet_info",
-			Help: "Azure ResourceManager consumtion budget info",
+			Name: "azurerm_consumption_bugdet_info",
+			Help: "Azure ResourceManager consumption budget info",
 		},
 		[]string{
 			"resourceID",
@@ -51,8 +51,8 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 
 	m.prometheus.consumptionBudgetLimit = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_consumtion_bugdet_limit",
-			Help: "Azure ResourceManager consumtion budget limit",
+			Name: "azurerm_consumption_bugdet_limit",
+			Help: "Azure ResourceManager consumption budget limit",
 		},
 		[]string{
 			"resourceID",
@@ -64,8 +64,8 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 
 	m.prometheus.consumptionBudgetUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_consumtion_bugdet_usage",
-			Help: "Azure ResourceManager consumtion budget usage percentage",
+			Name: "azurerm_consumption_bugdet_usage",
+			Help: "Azure ResourceManager consumption budget usage percentage",
 		},
 		[]string{
 			"resourceID",
@@ -77,8 +77,8 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
 
 	m.prometheus.consumptionBudgetCurrent = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_consumtion_bugdet_current",
-			Help: "Azure ResourceManager consumtion budget current",
+			Name: "azurerm_consumption_bugdet_current",
+			Help: "Azure ResourceManager consumption budget current",
 		},
 		[]string{
 			"resourceID",
@@ -211,7 +211,7 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 
 	m.collectBugdetMetrics(
 		ctx,
-		logger.WithField("consumtion", "Budgets"),
+		logger.WithField("consumption", "Budgets"),
 		callback,
 		subscription,
 	)
