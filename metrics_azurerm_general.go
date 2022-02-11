@@ -50,8 +50,7 @@ func (m *MetricsCollectorAzureRmGeneral) Collect(ctx context.Context, logger *lo
 // Collect Azure Subscription metrics
 func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := subscriptions.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	sub, err := client.Get(ctx, *subscription.SubscriptionID)
 	if err != nil {

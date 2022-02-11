@@ -41,8 +41,7 @@ func (m *MetricsCollectorAzureRmHealth) Reset() {
 
 func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := resourcehealth.NewAvailabilityStatusesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	list, err := client.ListBySubscriptionIDComplete(ctx, "", "")
 

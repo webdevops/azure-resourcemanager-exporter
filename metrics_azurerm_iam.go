@@ -33,8 +33,8 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 		m.logger().Panic(err)
 	}
 	graphclient := graphrbac.NewObjectsClientWithBaseURI(azureEnvironment.GraphEndpoint, *opts.Azure.Tenant)
+	decorateAzureAutorest(&graphclient.Client)
 	graphclient.Authorizer = auth
-	graphclient.ResponseInspector = azureResponseInspector(nil)
 
 	m.graphclient = &graphclient
 
@@ -97,8 +97,7 @@ func (m *MetricsCollectorAzureRmIam) Collect(ctx context.Context, logger *log.En
 
 func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := authorization.NewRoleDefinitionsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	list, err := client.ListComplete(ctx, *subscription.ID, "")
 
@@ -132,8 +131,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 
 func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := authorization.NewRoleAssignmentsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	list, err := client.ListComplete(ctx, "", "")
 

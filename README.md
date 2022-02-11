@@ -110,33 +110,51 @@ To disable write rate limits set `SCRAPE_RATELIMIT_WRITE` to `0`.
 Metrics
 -------
 
-| Metric                                         | Collector           | Description                                                                           |
-|------------------------------------------------|---------------------|---------------------------------------------------------------------------------------|
-| `azurerm_stats`                                | Exporter            | General exporter stats                                                                |
-| `azurerm_consumtion_bugdet_info`               | Costs               | Azure CostManagement bugdet information                                               |
-| `azurerm_consumtion_bugdet_limit`              | Costs               | Limit of CostManagemnet budget                                                        |
-| `azurerm_consumtion_bugdet_current`            | Costs               | Current costs of CostManagement budget                                                |
-| `azurerm_consumtion_bugdet_usage`              | Costs               | Current budget usage in percentage                                                    |
-| `azurerm_costmanagement_overall_usage`         | Costs               | CostManagement "usage" metric with timeframes by Subscription and ResourceGroup       |
-| `azurerm_costmanagement_overall_actualcost`    | Costs               | CostManagement "actualcosts" metric with timeframes by Subscription and ResourceGroup |
-| `azurerm_costmanagement_detail_usage`          | Costs               | CostManagement "usage" metric with timeframes by Subscription and ResourceGroup and cost dimensions (see `COSTS_DIMENSION`) |
+| Metric                                         | Collector           | Description                                                                                                                       |
+|------------------------------------------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `azurerm_stats`                                | Exporter            | General exporter stats                                                                                                            |
+| `azurerm_consumtion_bugdet_info`               | Costs               | Azure CostManagement bugdet information                                                                                           |
+| `azurerm_consumtion_bugdet_limit`              | Costs               | Limit of CostManagemnet budget                                                                                                    |
+| `azurerm_consumtion_bugdet_current`            | Costs               | Current costs of CostManagement budget                                                                                            |
+| `azurerm_consumtion_bugdet_usage`              | Costs               | Current budget usage in percentage                                                                                                |
+| `azurerm_costmanagement_overall_usage`         | Costs               | CostManagement "usage" metric with timeframes by Subscription and ResourceGroup                                                   |
+| `azurerm_costmanagement_overall_actualcost`    | Costs               | CostManagement "actualcosts" metric with timeframes by Subscription and ResourceGroup                                             |
+| `azurerm_costmanagement_detail_usage`          | Costs               | CostManagement "usage" metric with timeframes by Subscription and ResourceGroup and cost dimensions (see `COSTS_DIMENSION`)       |
 | `azurerm_costmanagement_detail_actualcost`     | Costs               | CostManagement "actualcosts" metric with timeframes by Subscription and ResourceGroup and cost dimensions (see `COSTS_DIMENSION`) |
-| `azurerm_subscription_info`                    | General             | Azure Subscription details (ID, name, ...)                                            |
-| `azurerm_resource_health`                      | Health              | Azure Resource health information                                                     |
-| `azurerm_iam_roleassignment_info`              | IAM                 | Azure IAM RoleAssignment information                                                  |
-| `azurerm_iam_roledefinition_info`              | IAM                 | Azure IAM RoleDefinition information                                                  |
-| `azurerm_iam_principal_info`                   | IAM                 | Azure IAM Principal information                                                       |
-| `azurerm_quota_info`                           | Quota               | Azure RM quota details (readable name, scope, ...)                                    |
-| `azurerm_quota_current`                        | Quota               | Azure RM quota current (current value)                                                |
-| `azurerm_quota_limit`                          | Quota               | Azure RM quota limit (maximum limited value)                                          |
-| `azurerm_quota_usage`                          | Quota               | Azure RM quota usage in percent                                                       |
-| `azurerm_resourcegroup_info`                   | Resource            | Azure ResourceGroup details (subscriptionID, name, various tags ...)                  |
-| `azurerm_resource_info`                        | Resource            | Azure Resource information                                                            |
-| `azurerm_securitycenter_compliance`            | Security            | Azure SecurityCenter compliance status                                                |
-| `azurerm_advisor_recommendation`               | Security            | Azure Advisory recommendations (eg. security findings)                                 |
-| `azurerm_graph_app_info`                       | Graph               | AzureAD graph application information                                                 |
-| `azurerm_graph_app_credential`                 | Graph               | AzureAD graph application credentials (create,expiry) information                     |
-| `azurerm_ratelimit`                            | *all* (if detected) | Azure API ratelimit (left calls)                                                      |
-| `azurerm_publicip_info`                        | Portscan            | Azure PublicIP information                                                            |
-| `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)              |
-| `azurerm_publicip_portscan_port`               | Portscan            | List of opened ports per IP                                                           |
+| `azurerm_subscription_info`                    | General             | Azure Subscription details (ID, name, ...)                                                                                        |
+| `azurerm_resource_health`                      | Health              | Azure Resource health information                                                                                                 |
+| `azurerm_iam_roleassignment_info`              | IAM                 | Azure IAM RoleAssignment information                                                                                              |
+| `azurerm_iam_roledefinition_info`              | IAM                 | Azure IAM RoleDefinition information                                                                                              |
+| `azurerm_iam_principal_info`                   | IAM                 | Azure IAM Principal information                                                                                                   |
+| `azurerm_quota_info`                           | Quota               | Azure RM quota details (readable name, scope, ...)                                                                                |
+| `azurerm_quota_current`                        | Quota               | Azure RM quota current (current value)                                                                                            |
+| `azurerm_quota_limit`                          | Quota               | Azure RM quota limit (maximum limited value)                                                                                      |
+| `azurerm_quota_usage`                          | Quota               | Azure RM quota usage in percent                                                                                                   |
+| `azurerm_resourcegroup_info`                   | Resource            | Azure ResourceGroup details (subscriptionID, name, various tags ...)                                                              |
+| `azurerm_resource_info`                        | Resource            | Azure Resource information                                                                                                        |
+| `azurerm_securitycenter_compliance`            | Security            | Azure SecurityCenter compliance status                                                                                            |
+| `azurerm_advisor_recommendation`               | Security            | Azure Advisory recommendations (eg. security findings)                                                                            |
+| `azurerm_graph_app_info`                       | Graph               | AzureAD graph application information                                                                                             |
+| `azurerm_graph_app_credential`                 | Graph               | AzureAD graph application credentials (create,expiry) information                                                                 |
+| `azurerm_publicip_info`                        | Portscan            | Azure PublicIP information                                                                                                        |
+| `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)                                                          |
+| `azurerm_publicip_portscan_port`               | Portscan            | List of opened ports per IP                                                                                                       |
+
+### Azuretracing metrics
+
+(with 22.2.0 and later)
+
+Azuretracing metrics collects latency and latency from azure-sdk-for-go and creates metrics and is controllable using
+environment variables (eg. setting buckets, disabling metrics or disable autoreset).
+
+| Metric                                   | Description                                                                            |
+|------------------------------------------|----------------------------------------------------------------------------------------|
+| `azurerm_api_ratelimit`                  | Azure ratelimit metrics (only on /metrics, resets after query due to limited validity) |
+| `azurerm_api_request_*`                  | Azure request count and latency as histogram                                           |
+
+| Environment variable                     | Example                          | Description                                              |
+|------------------------------------------|----------------------------------|----------------------------------------------------------|
+| `METRIC_AZURERM_API_REQUEST_BUCKETS`     | `1, 2.5, 5, 10, 30, 60, 90, 120` | Sets buckets for `azurerm_api_request` histogram metric  |
+| `METRIC_AZURERM_API_REQUEST_DISABLE`     | `false`                          | Disables `azurerm_api_request_*` metric                  |
+| `METRIC_AZURERM_API_RATELIMIT_DISABLE`   | `false`                          | Disables `azurerm_api_ratelimit` metric                  |
+| `METRIC_AZURERM_API_RATELIMIT_AUTORESET` | `false`                          | Disables `azurerm_api_ratelimit` autoreset after fetch   |

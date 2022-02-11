@@ -72,8 +72,7 @@ func (m *MetricsCollectorAzureRmSecurity) Collect(ctx context.Context, logger *l
 func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, location string) {
 	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", *subscription.SubscriptionID)
 	client := security.NewCompliancesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, subscriptionResourceId, location)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	complienceResult, err := client.Get(ctx, subscriptionResourceId, time.Now().UTC().Format("2006-01-02Z"))
 	if err != nil {
@@ -101,8 +100,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 
 func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := advisor.NewRecommendationsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	recommendationResult, err := client.ListComplete(ctx, "", nil, "")
 	if err != nil {

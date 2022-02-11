@@ -161,8 +161,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context,
 		contextLogger := logger.WithField("azureSubscription", subscription)
 
 		client := network.NewPublicIPAddressesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-		client.Authorizer = AzureAuthorizer
-		client.ResponseInspector = azureResponseInspector(&subscription)
+		decorateAzureAutorest(&client.Client)
 
 		list, err := client.ListAll(ctx)
 		if err != nil {

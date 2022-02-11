@@ -220,8 +220,7 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 
 func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := consumption.NewBudgetsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	scope := fmt.Sprintf("/subscriptions/%s/", *subscription.SubscriptionID)
 
@@ -292,8 +291,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 
 func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, costType string, dimension *string, timeframe string, metric *prometheus.GaugeVec) {
 	client := costmanagement.NewQueryClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	scope := fmt.Sprintf("/subscriptions/%s/", *subscription.SubscriptionID)
 

@@ -75,8 +75,7 @@ func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, logger *
 // Collect Azure ResourceGroup metrics
 func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := resources.NewGroupsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	resourceGroupResult, err := client.ListComplete(ctx, "", nil)
 	if err != nil {
@@ -103,8 +102,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context
 
 func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
 	client := resources.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	client.Authorizer = AzureAuthorizer
-	client.ResponseInspector = azureResponseInspector(&subscription)
+	decorateAzureAutorest(&client.Client)
 
 	list, err := client.ListComplete(ctx, "", "createdTime,changedTime,provisioningState", nil)
 
