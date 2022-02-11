@@ -17,9 +17,9 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/webdevops/go-prometheus-common v0.0.0-20211017140456-946c9fc11a58
-	golang.org/x/crypto v0.0.0-20220128200615-198e4374d7ed // indirect
-	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27 // indirect
+	github.com/webdevops/go-prometheus-common v0.0.0-20220211101814-4c9913788fe1
+	golang.org/x/crypto v0.0.0-20220210151621-f4118a5b28e2 // indirect
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
 
@@ -33,7 +33,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
-	github.com/golang-jwt/jwt/v4 v4.2.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.3.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
