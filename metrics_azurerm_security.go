@@ -74,22 +74,47 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 	client := security.NewCompliancesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, subscriptionResourceId, location)
 	decorateAzureAutorest(&client.Client)
 
-	complienceResult, err := client.Get(ctx, subscriptionResourceId, time.Now().UTC().Format("2006-01-02Z"))
+	infoMetric := prometheusCommon.NewMetricsList()
+
+	// try to find latest
+	result, err := client.ListComplete(ctx, subscriptionResourceId)
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
-	infoMetric := prometheusCommon.NewMetricsList()
+	lastReportName := ""
+	var lastReportTimestamp *time.Time
+	for result.NotDone() {
+		row := result.Value()
 
-	if complienceResult.AssessmentResult != nil {
-		for _, result := range *complienceResult.AssessmentResult {
-			infoLabels := prometheus.Labels{
-				"subscriptionID": to.String(subscription.SubscriptionID),
-				"location":       location,
-				"assessmentType": to.String(result.SegmentType),
+		if lastReportTimestamp == nil || row.AssessmentTimestampUtcDate.UTC().After(*lastReportTimestamp) {
+			timestamp := row.AssessmentTimestampUtcDate.UTC()
+			lastReportTimestamp = &timestamp
+			lastReportName = to.String(row.Name)
+		}
+
+		if result.NextWithContext(ctx) != nil {
+			break
+		}
+	}
+
+	if lastReportName != "" {
+		complienceResult, err := client.Get(ctx, subscriptionResourceId, lastReportName)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+
+		if complienceResult.AssessmentResult != nil {
+			for _, result := range *complienceResult.AssessmentResult {
+				infoLabels := prometheus.Labels{
+					"subscriptionID": to.String(subscription.SubscriptionID),
+					"location":       location,
+					"assessmentType": to.String(result.SegmentType),
+				}
+				infoMetric.Add(infoLabels, to.Float64(result.Percentage))
 			}
-			infoMetric.Add(infoLabels, to.Float64(result.Percentage))
 		}
 	}
 
