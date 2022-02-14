@@ -1,5 +1,4 @@
-Azure ResourceManager Exporter
-==============================
+# Azure ResourceManager Exporter
 
 [![license](https://img.shields.io/github/license/webdevops/azure-resourcemanager-exporter.svg)](https://github.com/webdevops/azure-resourcemanager-exporter/blob/master/LICENSE)
 [![DockerHub](https://img.shields.io/badge/DockerHub-webdevops%2Fazure--resourcemanager--exporter-blue)](https://hub.docker.com/r/webdevops/azure-resourcemanager-exporter/)
@@ -27,8 +26,7 @@ useful with additional exporters:
 - [azure-keyvault-exporter](https://github.com/webdevops/azure-keyvault-exporter) for exporting Azure KeyVault information (eg expiry date for secrets, certificates and keys)
 - [azure-loganalytics-exporter](https://github.com/webdevops/azure-loganalytics-exporter) for exporting Azure LogAnalytics workspace information with custom Kusto queries (eg ingestion rate or application error count)
 
-Configuration
--------------
+## Configuration
 
 Normally no configuration is needed but can be customized using environment variables.
 
@@ -90,16 +88,14 @@ Help Options:
 
 for Azure API authentication (using ENV vars) see https://docs.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
 
-Deprecations/old resource metrics
----------------------------------
+## Deprecations/old resource metrics
 
 Please use [`azure-resourcegraph-exporter`](https://github.com/webdevops/azure-resourcegraph-exporter) for exporting resources.
 This exporter is using Azure ResourceGraph queries and not wasting Azure API calls for fetching metrics.
 
 `azure-resourcegraph-exporter` provides a way how metrics can be build by using Kusto queries.
 
-Azure permissions
------------------
+## Azure permissions
 
 This exporter needs `Reader` permissions on subscription level.
 
@@ -108,8 +104,7 @@ For this operation it needs `Microsoft.Resources/tags/write` on scope `/subscrip
 
 To disable write rate limits set `SCRAPE_RATELIMIT_WRITE` to `0`.
 
-Metrics
--------
+## Metrics
 
 | Metric                                         | Collector           | Description                                                                                                                       |
 |------------------------------------------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------|
@@ -141,7 +136,7 @@ Metrics
 | `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)                                                          |
 | `azurerm_publicip_portscan_port`               | Portscan            | List of opened ports per IP                                                                                                       |
 
-### Azuretracing metrics
+### AzureTracing metrics
 
 (with 22.2.0 and later)
 
@@ -153,9 +148,23 @@ environment variables (eg. setting buckets, disabling metrics or disable autores
 | `azurerm_api_ratelimit`                  | Azure ratelimit metrics (only on /metrics, resets after query due to limited validity) |
 | `azurerm_api_request_*`                  | Azure request count and latency as histogram                                           |
 
-| Environment variable                     | Example                          | Description                                              |
-|------------------------------------------|----------------------------------|----------------------------------------------------------|
-| `METRIC_AZURERM_API_REQUEST_BUCKETS`     | `1, 2.5, 5, 10, 30, 60, 90, 120` | Sets buckets for `azurerm_api_request` histogram metric  |
-| `METRIC_AZURERM_API_REQUEST_DISABLE`     | `false`                          | Disables `azurerm_api_request_*` metric                  |
-| `METRIC_AZURERM_API_RATELIMIT_DISABLE`   | `false`                          | Disables `azurerm_api_ratelimit` metric                  |
-| `METRIC_AZURERM_API_RATELIMIT_AUTORESET` | `false`                          | Disables `azurerm_api_ratelimit` autoreset after fetch   |
+### Settings
+
+| Environment variable                     | Example                            | Description                                                    |
+|------------------------------------------|------------------------------------|----------------------------------------------------------------|
+| `METRIC_AZURERM_API_REQUEST_BUCKETS`     | `1, 2.5, 5, 10, 30, 60, 90, 120`   | Sets buckets for `azurerm_api_request` histogram metric        |
+| `METRIC_AZURERM_API_REQUEST_ENABLE`      | `false`                            | Enables/disables `azurerm_api_request_*` metric                |
+| `METRIC_AZURERM_API_REQUEST_LABELS`      | `apiEndpoint, method, statusCode`  | Controls labels of `azurerm_api_request_*` metric              |
+| `METRIC_AZURERM_API_RATELIMIT_ENABLE`    | `false`                            | Enables/disables `azurerm_api_ratelimit` metric                |
+| `METRIC_AZURERM_API_RATELIMIT_AUTORESET` | `false`                            | Enables/disables `azurerm_api_ratelimit` autoreset after fetch |
+
+
+| `azurerm_api_request` label | Status             | Description                                                                                              |
+|-----------------------------|--------------------|----------------------------------------------------------------------------------------------------------|
+| `apiEndpoint`               | enabled by default | hostname of endpoint (max 3 parts)                                                                       |
+| `routingRegion`             | enabled by default | detected region for API call, either routing region from Azure Management API or Azure resource location |
+| `subscriptionID`            | enabled by default | detected subscriptionID                                                                                  |
+| `tenantID`                  | enabled by default | detected tenantID (extracted from jwt auth token)                                                        |
+| `resourceProvider`          | enabled by default | detected Azure Management API provider                                                                   |
+| `method`                    | enabled by default | HTTP method                                                                                              |
+| `statusCode`                | enabled by default | HTTP status code                                                                                         |

@@ -17,7 +17,7 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/webdevops/go-prometheus-common v0.0.0-20220211101814-4c9913788fe1
+	github.com/webdevops/go-prometheus-common v0.0.0-20220214222004-cea8f38b44b7
 	golang.org/x/crypto v0.0.0-20220210151621-f4118a5b28e2 // indirect
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
