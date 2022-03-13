@@ -121,15 +121,15 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 			limitValue := float64(to.Int64(val.Limit))
 
 			labels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"location":       location,
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"location":       stringToAzureResourceInfo(location),
 				"scope":          "compute",
 				"quota":          quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"location":       location,
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"location":       stringToAzureResourceInfo(location),
 				"scope":          "compute",
 				"quota":          quotaName,
 				"quotaName":      quotaNameLocalized,
@@ -175,15 +175,15 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 			limitValue := float64(to.Int64(val.Limit))
 
 			labels := prometheus.Labels{
-				"subscriptionID": to.String(subscription.SubscriptionID),
-				"location":       location,
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"location":       stringToAzureResourceInfo(location),
 				"scope":          "network",
 				"quota":          quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID": to.String(subscription.SubscriptionID),
-				"location":       location,
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"location":       stringToAzureResourceInfo(location),
 				"scope":          "network",
 				"quota":          quotaName,
 				"quotaName":      quotaNameLocalized,
@@ -225,16 +225,16 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 			limitValue := float64(to.Int32(val.Limit))
 
 			quotaMetric.AddInfo(prometheus.Labels{
-				"subscriptionID": to.String(subscription.SubscriptionID),
-				"location":       location,
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"location":       stringToAzureResourceInfo(location),
 				"scope":          "storage",
 				"quota":          quotaName,
 				"quotaName":      quotaNameLocalized,
 			})
 
 			labels := prometheus.Labels{
-				"subscriptionID": *subscription.SubscriptionID,
-				"location":       location,
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"location":       stringToAzureResourceInfo(location),
 				"scope":          "storage",
 				"quota":          quotaName,
 			}

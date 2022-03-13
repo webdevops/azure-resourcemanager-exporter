@@ -7,34 +7,34 @@ import (
 )
 
 var (
-	subscriptionFromResourceIdRegExp  = regexp.MustCompile("/subscriptions/([^/]+)")
-	resourceGroupFromResourceIdRegExp = regexp.MustCompile("/subscriptions/[^/]+/resourceGroups/([^/]*)")
-	providerFromResourceIdRegExp      = regexp.MustCompile("/subscriptions/[^/]+/resourceGroups/[^/]+/providers/([^/]*)")
-	roleDefinitionIdRegExp            = regexp.MustCompile("/Microsoft.Authorization/roleDefinitions/([^/]*)")
+	subscriptionFromResourceIdRegExp  = regexp.MustCompile("(?i)/subscriptions/([^/]+)")
+	resourceGroupFromResourceIdRegExp = regexp.MustCompile("(?i)/subscriptions/[^/]+/resourceGroups/([^/]*)")
+	providerFromResourceIdRegExp      = regexp.MustCompile("(?i)/subscriptions/[^/]+/resourceGroups/[^/]+/providers/([^/]*)")
+	roleDefinitionIdRegExp            = regexp.MustCompile("(?i)/subscriptions/[^/]+/providers/Microsoft.Authorization/roleDefinitions/([^/]*)")
 )
 
-func toResourceId(val *string) (resourceId string) {
-	resourceId = to.String(val)
-	if opts.Metrics.ResourceIdLowercase {
-		resourceId = strings.ToLower(resourceId)
+func stringPtrToAzureResourceInfo(val *string) (ret string) {
+	return stringToAzureResourceInfo(to.String(val))
+}
+
+func stringToAzureResourceInfo(val string) (ret string) {
+	ret = val
+	if *opts.Metrics.ResourceIdLowercase {
+		ret = strings.ToLower(ret)
 	}
 	return
 }
 
 func extractSubscriptionIdFromAzureId(azureId string) (subscriptionId string) {
 	if subMatch := subscriptionFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
-		subscriptionId = strings.ToLower(subMatch[1])
+		subscriptionId = stringToAzureResourceInfo(subMatch[1])
 	}
 	return
 }
 
 func extractResourceGroupFromAzureId(azureId string) (resourceGroup string) {
 	if subMatch := resourceGroupFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
-		resourceGroup = strings.ToLower(subMatch[1])
-	}
-
-	if opts.Metrics.ResourceIdLowercase {
-		resourceGroup = strings.ToLower(resourceGroup)
+		resourceGroup = stringToAzureResourceInfo(subMatch[1])
 	}
 
 	return
@@ -42,11 +42,7 @@ func extractResourceGroupFromAzureId(azureId string) (resourceGroup string) {
 
 func extractProviderFromAzureId(azureId string) (provider string) {
 	if subMatch := providerFromResourceIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
-		provider = subMatch[1]
-	}
-
-	if opts.Metrics.ResourceIdLowercase {
-		provider = strings.ToLower(provider)
+		provider = stringToAzureResourceInfo(subMatch[1])
 	}
 
 	return
@@ -54,11 +50,7 @@ func extractProviderFromAzureId(azureId string) (provider string) {
 
 func extractRoleDefinitionIdFromAzureId(azureId string) (roleDefinitionId string) {
 	if subMatch := roleDefinitionIdRegExp.FindStringSubmatch(azureId); len(subMatch) >= 1 {
-		roleDefinitionId = subMatch[1]
-	}
-
-	if opts.Metrics.ResourceIdLowercase {
-		roleDefinitionId = strings.ToLower(roleDefinitionId)
+		roleDefinitionId = stringToAzureResourceInfo(subMatch[1])
 	}
 
 	return

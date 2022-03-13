@@ -59,12 +59,12 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 
 	subscriptionMetric := prometheusCommon.NewMetricsList()
 	subscriptionMetric.AddInfo(prometheus.Labels{
-		"resourceID":          toResourceId(sub.ID),
-		"subscriptionID":      to.String(sub.SubscriptionID),
+		"resourceID":          stringPtrToAzureResourceInfo(sub.ID),
+		"subscriptionID":      stringPtrToAzureResourceInfo(sub.SubscriptionID),
 		"subscriptionName":    to.String(sub.DisplayName),
 		"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
-		"quotaID":             to.String(sub.SubscriptionPolicies.QuotaID),
-		"locationPlacementID": to.String(sub.SubscriptionPolicies.LocationPlacementID),
+		"quotaID":             stringPtrToAzureResourceInfo(sub.SubscriptionPolicies.QuotaID),
+		"locationPlacementID": stringPtrToAzureResourceInfo(sub.SubscriptionPolicies.LocationPlacementID),
 	})
 
 	callback <- func() {

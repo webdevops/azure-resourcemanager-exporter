@@ -86,10 +86,10 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context
 
 	for _, item := range *resourceGroupResult.Response().Value {
 		infoLabels := azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
-			"resourceID":        toResourceId(item.ID),
-			"subscriptionID":    to.String(subscription.SubscriptionID),
-			"resourceGroup":     to.String(item.Name),
-			"location":          to.String(item.Location),
+			"resourceID":        stringPtrToAzureResourceInfo(item.ID),
+			"subscriptionID":    stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+			"resourceGroup":     stringPtrToAzureResourceInfo(item.Name),
+			"location":          stringPtrToAzureResourceInfo(item.Location),
 			"provisioningState": strings.ToLower(to.String(item.Properties.ProvisioningState)),
 		}, item.Tags)
 		infoMetric.AddInfo(infoLabels)
@@ -116,13 +116,13 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Con
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"subscriptionID":    to.String(subscription.SubscriptionID),
-			"resourceID":        toResourceId(val.ID),
-			"resourceName":      to.String(val.Name),
+			"subscriptionID":    stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+			"resourceID":        stringPtrToAzureResourceInfo(val.ID),
+			"resourceName":      stringPtrToAzureResourceInfo(val.Name),
 			"resourceGroup":     extractResourceGroupFromAzureId(to.String(val.ID)),
 			"provider":          extractProviderFromAzureId(to.String(val.ID)),
-			"location":          to.String(val.Location),
-			"provisioningState": strings.ToLower(to.String(val.ProvisioningState)),
+			"location":          stringPtrToAzureResourceInfo(val.Location),
+			"provisioningState": stringPtrToAzureResourceInfo(val.ProvisioningState),
 		}
 		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
 		resourceMetric.AddInfo(infoLabels)

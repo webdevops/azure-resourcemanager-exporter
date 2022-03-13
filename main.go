@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Azure/go-autorest/autorest/to"
 	"net/http"
 	"os"
 	"path"
@@ -142,6 +143,11 @@ func initArgparser() {
 	// deprecated option
 	if len(opts.Azure.ResourceGroupTags) > 0 {
 		opts.Azure.ResourceTags = opts.Azure.ResourceGroupTags
+	}
+
+	// resourceid lowercase default
+	if opts.Metrics.ResourceIdLowercase == nil {
+		opts.Metrics.ResourceIdLowercase = to.BoolPtr(true)
 	}
 
 	// scrape time

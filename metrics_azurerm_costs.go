@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
 	"strings"
+	"time"
 )
 
 type MetricsCollectorAzureRmCosts struct {
@@ -185,6 +186,10 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 
 		for _, val := range opts.Costs.Dimension {
 			dimension := val
+
+			// avoid ratelimit
+			time.Sleep(5 * time.Second)
+
 			m.collectCostManagementMetrics(
 				ctx,
 				logger.WithField("costreport", "Usage"),
@@ -207,6 +212,9 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 				m.prometheus.costmanagementDetailActualCost,
 			)
 		}
+
+		// avoid ratelimit
+		time.Sleep(5 * time.Second)
 	}
 
 	m.collectBugdetMetrics(
@@ -239,19 +247,19 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 		val := result.Value()
 
 		infoMetric.AddInfo(prometheus.Labels{
-			"resourceID":     toResourceId(val.ID),
-			"subscriptionID": to.String(subscription.SubscriptionID),
+			"resourceID":     stringPtrToAzureResourceInfo(val.ID),
+			"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
 			"budgetName":     to.String(val.Name),
 			"resourceGroup":  extractResourceGroupFromAzureId(to.String(val.ID)),
-			"category":       to.String(val.BudgetProperties.Category),
+			"category":       stringPtrToAzureResourceInfo(val.BudgetProperties.Category),
 			"timeGrain":      string(val.BudgetProperties.TimeGrain),
 		})
 
 		if val.BudgetProperties.Amount != nil {
 			limitAmount, _ := val.BudgetProperties.Amount.Float64()
 			limitMetric.Add(prometheus.Labels{
-				"resourceID":     toResourceId(val.ID),
-				"subscriptionID": to.String(subscription.SubscriptionID),
+				"resourceID":     stringPtrToAzureResourceInfo(val.ID),
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
 				"budgetName":     to.String(val.Name),
 			}, limitAmount)
 		}
@@ -259,10 +267,10 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 		if val.BudgetProperties.CurrentSpend != nil {
 			budgetCurrentSpend, _ := val.BudgetProperties.CurrentSpend.Amount.Float64()
 			currentMetric.Add(prometheus.Labels{
-				"resourceID":     toResourceId(val.ID),
-				"subscriptionID": to.String(subscription.SubscriptionID),
+				"resourceID":     stringPtrToAzureResourceInfo(val.ID),
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
 				"budgetName":     to.String(val.Name),
-				"unit":           to.String(val.BudgetProperties.CurrentSpend.Unit),
+				"unit":           stringPtrToAzureResourceInfo(val.BudgetProperties.CurrentSpend.Unit),
 			}, budgetCurrentSpend)
 		}
 
@@ -270,8 +278,8 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 			budgetCurrentSpend, _ := val.BudgetProperties.CurrentSpend.Amount.Float64()
 			limitAmount, _ := val.BudgetProperties.Amount.Float64()
 			usageMetric.Add(prometheus.Labels{
-				"resourceID":     toResourceId(val.ID),
-				"subscriptionID": to.String(subscription.SubscriptionID),
+				"resourceID":     stringPtrToAzureResourceInfo(val.ID),
+				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
 				"budgetName":     to.String(val.Name),
 			}, budgetCurrentSpend/limitAmount)
 		}
@@ -386,10 +394,12 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 			usage = v
 		}
 
+		resourceGroup := row[columnNumberResourceGroupName].(string)
+
 		labels := prometheus.Labels{
-			"subscriptionID": to.String(subscription.SubscriptionID),
-			"resourceGroup":  row[columnNumberResourceGroupName].(string),
-			"currency":       row[columnNumberCurrency].(string),
+			"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+			"resourceGroup":  stringPtrToAzureResourceInfo(&resourceGroup),
+			"currency":       stringToAzureResourceInfo(row[columnNumberCurrency].(string)),
 			"timeframe":      timeframe,
 		}
 

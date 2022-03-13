@@ -64,7 +64,7 @@ type (
 		}
 
 		Metrics struct {
-			ResourceIdLowercase bool `long:"metrics.resourceid.lowercase"   env:"METRIC_RESOURCEID_LOWERCASE"       description:"Publish lowercase Azure Resoruce ID in metrics"`
+			ResourceIdLowercase *bool `long:"metrics.resourceid.lowercase"   env:"METRIC_RESOURCEID_LOWERCASE"       description:"Publish lowercase Azure Resoruce ID in metrics"`
 		}
 
 		// caching

@@ -109,9 +109,9 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 		if complienceResult.AssessmentResult != nil {
 			for _, result := range *complienceResult.AssessmentResult {
 				infoLabels := prometheus.Labels{
-					"subscriptionID": to.String(subscription.SubscriptionID),
-					"location":       location,
-					"assessmentType": to.String(result.SegmentType),
+					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+					"location":       stringToAzureResourceInfo(location),
+					"assessmentType": stringPtrToAzureResourceInfo(result.SegmentType),
 				}
 				infoMetric.Add(infoLabels, to.Float64(result.Percentage))
 			}
@@ -136,14 +136,14 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 
 	for _, item := range *recommendationResult.Response().Value {
 		infoLabels := prometheus.Labels{
-			"subscriptionID": to.String(subscription.SubscriptionID),
-			"category":       string(item.RecommendationProperties.Category),
-			"resourceType":   to.String(item.RecommendationProperties.ImpactedField),
-			"resourceName":   to.String(item.RecommendationProperties.ImpactedValue),
+			"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+			"category":       stringToAzureResourceInfo(string(item.RecommendationProperties.Category)),
+			"resourceType":   stringPtrToAzureResourceInfo(item.RecommendationProperties.ImpactedField),
+			"resourceName":   stringPtrToAzureResourceInfo(item.RecommendationProperties.ImpactedValue),
 			"resourceGroup":  extractResourceGroupFromAzureId(to.String(item.ID)),
 			"problem":        to.String(item.RecommendationProperties.ShortDescription.Problem),
-			"impact":         string(item.Impact),
-			"risk":           string(item.Risk),
+			"impact":         stringToAzureResourceInfo(string(item.Impact)),
+			"risk":           stringToAzureResourceInfo(string(item.Risk)),
 		}
 
 		infoMetric.Inc(infoLabels)

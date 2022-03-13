@@ -111,11 +111,11 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 		val := list.Value()
 
 		infoLabels := prometheus.Labels{
-			"subscriptionID":   to.String(subscription.SubscriptionID),
+			"subscriptionID":   stringPtrToAzureResourceInfo(subscription.SubscriptionID),
 			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(to.String(val.ID)),
 			"name":             to.String(val.Name),
 			"roleName":         to.String(val.RoleName),
-			"roleType":         to.String(val.RoleType),
+			"roleType":         stringPtrToAzureResourceInfo(val.RoleType),
 		}
 		infoMetric.AddInfo(infoLabels)
 
@@ -148,12 +148,12 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 		principalId := *val.PrincipalID
 
 		infoLabels := prometheus.Labels{
-			"subscriptionID":   to.String(subscription.SubscriptionID),
-			"roleAssignmentID": toResourceId(val.ID),
+			"subscriptionID":   stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+			"roleAssignmentID": stringPtrToAzureResourceInfo(val.ID),
 			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(to.String(val.RoleDefinitionID)),
-			"resourceID":       toResourceId(val.Scope),
+			"resourceID":       stringPtrToAzureResourceInfo(val.Scope),
 			"resourceGroup":    extractResourceGroupFromAzureId(to.String(val.Scope)),
-			"principalID":      principalId,
+			"principalID":      stringToAzureResourceInfo(principalId),
 		}
 		infoMetric.AddInfo(infoLabels)
 
@@ -204,31 +204,31 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, logg
 
 			if object, valid := val.AsADGroup(); valid {
 				infoLabels = &prometheus.Labels{
-					"subscriptionID": to.String(subscription.SubscriptionID),
-					"principalID":    to.String(object.ObjectID),
+					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+					"principalID":    stringPtrToAzureResourceInfo(object.ObjectID),
 					"principalName":  to.String(object.DisplayName),
-					"principalType":  string(object.ObjectType),
+					"principalType":  stringToAzureResourceInfo(string(object.ObjectType)),
 				}
 			} else if object, valid := val.AsApplication(); valid {
 				infoLabels = &prometheus.Labels{
-					"subscriptionID": to.String(subscription.SubscriptionID),
-					"principalID":    to.String(object.ObjectID),
+					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+					"principalID":    stringPtrToAzureResourceInfo(object.ObjectID),
 					"principalName":  to.String(object.DisplayName),
-					"principalType":  string(object.ObjectType),
+					"principalType":  stringToAzureResourceInfo(string(object.ObjectType)),
 				}
 			} else if object, valid := val.AsServicePrincipal(); valid {
 				infoLabels = &prometheus.Labels{
-					"subscriptionID": to.String(subscription.SubscriptionID),
-					"principalID":    to.String(object.ObjectID),
+					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+					"principalID":    stringPtrToAzureResourceInfo(object.ObjectID),
 					"principalName":  to.String(object.DisplayName),
-					"principalType":  string(object.ObjectType),
+					"principalType":  stringToAzureResourceInfo(string(object.ObjectType)),
 				}
 			} else if object, valid := val.AsUser(); valid {
 				infoLabels = &prometheus.Labels{
-					"subscriptionID": to.String(subscription.SubscriptionID),
-					"principalID":    to.String(object.ObjectID),
+					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+					"principalID":    stringPtrToAzureResourceInfo(object.ObjectID),
 					"principalName":  to.String(object.DisplayName),
-					"principalType":  string(object.ObjectType),
+					"principalType":  stringToAzureResourceInfo(string(object.ObjectType)),
 				}
 			}
 
