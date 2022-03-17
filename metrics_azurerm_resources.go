@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	"strings"
+	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
 )
 
 type MetricsCollectorAzureRmResources struct {
@@ -34,11 +35,12 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 				"resourceName",
 				"subscriptionID",
 				"resourceGroup",
+				"resourceType",
 				"provider",
 				"location",
 				"provisioningState",
 			},
-			azureResourceTags.prometheusLabels...,
+			stringListAddPrefix(opts.Azure.ResourceTags, "tag_")...,
 		),
 	)
 	prometheus.MustRegister(m.prometheus.resource)
@@ -56,7 +58,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 				"location",
 				"provisioningState",
 			},
-			azureResourceGroupTags.prometheusLabels...,
+			stringListAddPrefix(opts.Azure.ResourceGroupTags, "tag_")...,
 		),
 	)
 	prometheus.MustRegister(m.prometheus.resourceGroup)
@@ -85,13 +87,17 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context
 	infoMetric := prometheusCommon.NewMetricsList()
 
 	for _, item := range *resourceGroupResult.Response().Value {
-		infoLabels := azureResourceGroupTags.appendPrometheusLabel(prometheus.Labels{
-			"resourceID":        stringPtrToAzureResourceInfo(item.ID),
-			"subscriptionID":    stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-			"resourceGroup":     stringPtrToAzureResourceInfo(item.Name),
-			"location":          stringPtrToAzureResourceInfo(item.Location),
-			"provisioningState": strings.ToLower(to.String(item.Properties.ProvisioningState)),
-		}, item.Tags)
+		resourceId := to.String(item.ID)
+		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+
+		infoLabels := prometheus.Labels{
+			"resourceID":        stringPtrToStringLower(item.ID),
+			"subscriptionID":    azureResource.Subscription,
+			"resourceGroup":     azureResource.ResourceGroup,
+			"location":          stringPtrToStringLower(item.Location),
+			"provisioningState": stringPtrToStringLower(item.Properties.ProvisioningState),
+		}
+		infoLabels = prometheusAzure.AddResourceTagsToPrometheusLabels(infoLabels, item.Tags, opts.Azure.ResourceGroupTags)
 		infoMetric.AddInfo(infoLabels)
 	}
 
@@ -115,16 +121,20 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Con
 	for list.NotDone() {
 		val := list.Value()
 
+		resourceId := to.String(val.ID)
+		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+
 		infoLabels := prometheus.Labels{
-			"subscriptionID":    stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-			"resourceID":        stringPtrToAzureResourceInfo(val.ID),
-			"resourceName":      stringPtrToAzureResourceInfo(val.Name),
-			"resourceGroup":     extractResourceGroupFromAzureId(to.String(val.ID)),
-			"provider":          extractProviderFromAzureId(to.String(val.ID)),
-			"location":          stringPtrToAzureResourceInfo(val.Location),
-			"provisioningState": stringPtrToAzureResourceInfo(val.ProvisioningState),
+			"subscriptionID":    azureResource.Subscription,
+			"resourceID":        stringToStringLower(resourceId),
+			"resourceName":      azureResource.ResourceName,
+			"resourceGroup":     azureResource.ResourceGroup,
+			"provider":          azureResource.ResourceProviderName,
+			"resourceType":      azureResource.ResourceType,
+			"location":          stringPtrToStringLower(val.Location),
+			"provisioningState": stringPtrToStringLower(val.ProvisioningState),
 		}
-		infoLabels = azureResourceTags.appendPrometheusLabel(infoLabels, val.Tags)
+		infoLabels = prometheusAzure.AddResourceTagsToPrometheusLabels(infoLabels, val.Tags, opts.Azure.ResourceTags)
 		resourceMetric.AddInfo(infoLabels)
 
 		if list.NextWithContext(ctx) != nil {

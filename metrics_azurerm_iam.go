@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/graphrbac/graphrbac"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2020-04-01-preview/authorization"
@@ -10,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
+	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
 )
 
 type MetricsCollectorAzureRmIam struct {
@@ -18,9 +20,10 @@ type MetricsCollectorAzureRmIam struct {
 	graphclient *graphrbac.ObjectsClient
 
 	prometheus struct {
-		roleAssignment *prometheus.GaugeVec
-		roleDefinition *prometheus.GaugeVec
-		principal      *prometheus.GaugeVec
+		roleAssignmentCount *prometheus.GaugeVec
+		roleAssignment      *prometheus.GaugeVec
+		roleDefinition      *prometheus.GaugeVec
+		principal           *prometheus.GaugeVec
 	}
 }
 
@@ -37,6 +40,17 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 	graphclient.Authorizer = auth
 
 	m.graphclient = &graphclient
+
+	m.prometheus.roleAssignmentCount = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_iam_roleassignment_count",
+			Help: "Azure IAM RoleAssignment count",
+		},
+		[]string{
+			"subscriptionID",
+		},
+	)
+	prometheus.MustRegister(m.prometheus.roleAssignmentCount)
 
 	m.prometheus.roleAssignment = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -85,6 +99,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
 }
 
 func (m *MetricsCollectorAzureRmIam) Reset() {
+	m.prometheus.roleAssignmentCount.Reset()
 	m.prometheus.roleDefinition.Reset()
 	m.prometheus.roleAssignment.Reset()
 	m.prometheus.principal.Reset()
@@ -110,12 +125,15 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 	for list.NotDone() {
 		val := list.Value()
 
+		resourceId := to.String(val.ID)
+		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+
 		infoLabels := prometheus.Labels{
-			"subscriptionID":   stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(to.String(val.ID)),
+			"subscriptionID":   azureResource.Subscription,
+			"roleDefinitionID": stringToStringLower(resourceId),
 			"name":             to.String(val.Name),
 			"roleName":         to.String(val.RoleName),
-			"roleType":         stringPtrToAzureResourceInfo(val.RoleType),
+			"roleType":         stringPtrToStringLower(val.RoleType),
 		}
 		infoMetric.AddInfo(infoLabels)
 
@@ -143,17 +161,22 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 
 	principalIdMap := map[string]string{}
 
+	count := float64(0)
 	for list.NotDone() {
 		val := list.Value()
 		principalId := *val.PrincipalID
+		count++
+
+		resourceId := to.String(val.Scope)
+		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
 
 		infoLabels := prometheus.Labels{
-			"subscriptionID":   stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-			"roleAssignmentID": stringPtrToAzureResourceInfo(val.ID),
+			"subscriptionID":   azureResource.Subscription,
+			"roleAssignmentID": stringPtrToStringLower(val.ID),
 			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(to.String(val.RoleDefinitionID)),
-			"resourceID":       stringPtrToAzureResourceInfo(val.Scope),
-			"resourceGroup":    extractResourceGroupFromAzureId(to.String(val.Scope)),
-			"principalID":      stringToAzureResourceInfo(principalId),
+			"resourceID":       stringToStringLower(resourceId),
+			"resourceGroup":    azureResource.ResourceGroup,
+			"principalID":      stringToStringLower(principalId),
 		}
 		infoMetric.AddInfo(infoLabels)
 
@@ -172,6 +195,9 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 
 	callback <- func() {
 		infoMetric.GaugeSet(m.prometheus.roleAssignment)
+		m.prometheus.roleAssignmentCount.With(prometheus.Labels{
+			"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+		}).Set(count)
 	}
 }
 
@@ -199,36 +225,35 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, logg
 
 		for list.NotDone() {
 			val := list.Value()
-
 			infoLabels = nil
 
 			if object, valid := val.AsADGroup(); valid {
 				infoLabels = &prometheus.Labels{
-					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-					"principalID":    stringPtrToAzureResourceInfo(object.ObjectID),
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"principalID":    stringPtrToStringLower(object.ObjectID),
 					"principalName":  to.String(object.DisplayName),
-					"principalType":  stringToAzureResourceInfo(string(object.ObjectType)),
+					"principalType":  stringToStringLower(string(object.ObjectType)),
 				}
 			} else if object, valid := val.AsApplication(); valid {
 				infoLabels = &prometheus.Labels{
-					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-					"principalID":    stringPtrToAzureResourceInfo(object.ObjectID),
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"principalID":    stringPtrToStringLower(object.ObjectID),
 					"principalName":  to.String(object.DisplayName),
-					"principalType":  stringToAzureResourceInfo(string(object.ObjectType)),
+					"principalType":  stringToStringLower(string(object.ObjectType)),
 				}
 			} else if object, valid := val.AsServicePrincipal(); valid {
 				infoLabels = &prometheus.Labels{
-					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-					"principalID":    stringPtrToAzureResourceInfo(object.ObjectID),
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"principalID":    stringPtrToStringLower(object.ObjectID),
 					"principalName":  to.String(object.DisplayName),
-					"principalType":  stringToAzureResourceInfo(string(object.ObjectType)),
+					"principalType":  stringToStringLower(string(object.ObjectType)),
 				}
 			} else if object, valid := val.AsUser(); valid {
 				infoLabels = &prometheus.Labels{
-					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-					"principalID":    stringPtrToAzureResourceInfo(object.ObjectID),
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"principalID":    stringPtrToStringLower(object.ObjectID),
 					"principalName":  to.String(object.DisplayName),
-					"principalType":  stringToAzureResourceInfo(string(object.ObjectType)),
+					"principalType":  stringToStringLower(string(object.ObjectType)),
 				}
 			}
 

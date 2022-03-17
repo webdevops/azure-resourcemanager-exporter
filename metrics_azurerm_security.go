@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/advisor/mgmt/advisor"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/security/mgmt/security"
@@ -10,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	"time"
+	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
 )
 
 type MetricsCollectorAzureRmSecurity struct {
@@ -109,9 +111,9 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 		if complienceResult.AssessmentResult != nil {
 			for _, result := range *complienceResult.AssessmentResult {
 				infoLabels := prometheus.Labels{
-					"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-					"location":       stringToAzureResourceInfo(location),
-					"assessmentType": stringPtrToAzureResourceInfo(result.SegmentType),
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"location":       stringToStringLower(location),
+					"assessmentType": stringPtrToStringLower(result.SegmentType),
 				}
 				infoMetric.Add(infoLabels, to.Float64(result.Percentage))
 			}
@@ -135,15 +137,18 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx
 	infoMetric := prometheusCommon.NewHashedMetricsList()
 
 	for _, item := range *recommendationResult.Response().Value {
+		resourceId := to.String(item.ID)
+		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+
 		infoLabels := prometheus.Labels{
-			"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-			"category":       stringToAzureResourceInfo(string(item.RecommendationProperties.Category)),
-			"resourceType":   stringPtrToAzureResourceInfo(item.RecommendationProperties.ImpactedField),
-			"resourceName":   stringPtrToAzureResourceInfo(item.RecommendationProperties.ImpactedValue),
-			"resourceGroup":  extractResourceGroupFromAzureId(to.String(item.ID)),
+			"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+			"category":       stringToStringLower(string(item.RecommendationProperties.Category)),
+			"resourceType":   stringPtrToStringLower(item.RecommendationProperties.ImpactedField),
+			"resourceName":   stringPtrToStringLower(item.RecommendationProperties.ImpactedValue),
+			"resourceGroup":  azureResource.ResourceGroup,
 			"problem":        to.String(item.RecommendationProperties.ShortDescription.Problem),
-			"impact":         stringToAzureResourceInfo(string(item.Impact)),
-			"risk":           stringToAzureResourceInfo(string(item.Risk)),
+			"impact":         stringToStringLower(string(item.Impact)),
+			"risk":           stringToStringLower(string(item.Risk)),
 		}
 
 		infoMetric.Inc(infoLabels)

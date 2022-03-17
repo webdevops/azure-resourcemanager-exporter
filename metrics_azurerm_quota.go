@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"strings"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
@@ -121,15 +123,15 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(ctx context.Cont
 			limitValue := float64(to.Int64(val.Limit))
 
 			labels := prometheus.Labels{
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-				"location":       stringToAzureResourceInfo(location),
+				"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+				"location":       strings.ToLower(location),
 				"scope":          "compute",
 				"quota":          quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-				"location":       stringToAzureResourceInfo(location),
+				"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+				"location":       strings.ToLower(location),
 				"scope":          "compute",
 				"quota":          quotaName,
 				"quotaName":      quotaNameLocalized,
@@ -175,15 +177,15 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(ctx context.Cont
 			limitValue := float64(to.Int64(val.Limit))
 
 			labels := prometheus.Labels{
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-				"location":       stringToAzureResourceInfo(location),
+				"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+				"location":       strings.ToLower(location),
 				"scope":          "network",
 				"quota":          quotaName,
 			}
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-				"location":       stringToAzureResourceInfo(location),
+				"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+				"location":       strings.ToLower(location),
 				"scope":          "network",
 				"quota":          quotaName,
 				"quotaName":      quotaNameLocalized,
@@ -225,16 +227,16 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(ctx context.Cont
 			limitValue := float64(to.Int32(val.Limit))
 
 			quotaMetric.AddInfo(prometheus.Labels{
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-				"location":       stringToAzureResourceInfo(location),
+				"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+				"location":       strings.ToLower(location),
 				"scope":          "storage",
 				"quota":          quotaName,
 				"quotaName":      quotaNameLocalized,
 			})
 
 			labels := prometheus.Labels{
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-				"location":       stringToAzureResourceInfo(location),
+				"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+				"location":       strings.ToLower(location),
 				"scope":          "storage",
 				"quota":          quotaName,
 			}

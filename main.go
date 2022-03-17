@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Azure/go-autorest/autorest/to"
 	"net/http"
 	"os"
 	"path"
@@ -19,14 +18,14 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"github.com/webdevops/azure-resourcemanager-exporter/config"
 	"github.com/webdevops/go-prometheus-common/azuretracing"
+
+	"github.com/webdevops/azure-resourcemanager-exporter/config"
 )
 
 const (
-	Author                    = "webdevops.io"
-	AZURE_RESOURCE_TAG_PREFIX = "tag_"
-	UserAgent                 = "azure-metrics-exporter/"
+	Author    = "webdevops.io"
+	UserAgent = "azure-metrics-exporter/"
 )
 
 var (
@@ -36,10 +35,8 @@ var (
 	AzureAuthorizer    autorest.Authorizer
 	AzureSubscriptions []subscriptions.Subscription
 
-	azureResourceGroupTags AzureTagFilter
-	azureResourceTags      AzureTagFilter
-	azureEnvironment       azure.Environment
-	portscanPortRange      []Portrange
+	azureEnvironment  azure.Environment
+	portscanPortRange []Portrange
 
 	collectorGeneralList map[string]*CollectorGeneral
 	collectorCustomList  map[string]*CollectorCustom
@@ -145,11 +142,6 @@ func initArgparser() {
 		opts.Azure.ResourceTags = opts.Azure.ResourceGroupTags
 	}
 
-	// resourceid lowercase default
-	if opts.Metrics.ResourceIdLowercase == nil {
-		opts.Metrics.ResourceIdLowercase = to.BoolPtr(true)
-	}
-
 	// scrape time
 	if opts.Scrape.TimeGeneral == nil {
 		opts.Scrape.TimeGeneral = &opts.Scrape.Time
@@ -190,9 +182,6 @@ func initArgparser() {
 	if opts.Scrape.TimeGraph == nil {
 		opts.Scrape.TimeGraph = &opts.Scrape.Time
 	}
-
-	azureResourceGroupTags = NewAzureTagFilter(AZURE_RESOURCE_TAG_PREFIX, opts.Azure.ResourceGroupTags)
-	azureResourceTags = NewAzureTagFilter(AZURE_RESOURCE_TAG_PREFIX, opts.Azure.ResourceTags)
 
 	// check deprecated env vars
 	deprecatedEnvVars := map[string]string{

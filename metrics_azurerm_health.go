@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resourcehealth/mgmt/resourcehealth"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
+	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
 )
 
 type MetricsCollectorAzureRmHealth struct {
@@ -29,6 +31,7 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *CollectorGeneral) {
 		[]string{
 			"subscriptionID",
 			"resourceID",
+			"resourceGroup",
 			"availabilityState",
 		},
 	)
@@ -56,7 +59,9 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 	for list.NotDone() {
 		val := list.Value()
 
-		resourceId := stringsTrimSuffixCI(to.String(val.ID), ("/providers/" + *val.Type + "/" + *val.Name))
+		resourceId := to.String(val.ID)
+		resourceId = stringsTrimSuffixCI(resourceId, ("/providers/" + to.String(val.Type) + "/" + to.String(val.Name)))
+		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
 
 		resourceAvailabilityState := resourcehealth.Unknown
 
@@ -65,16 +70,13 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 		}
 
 		for _, availabilityState := range availabilityStateValues {
-			labels := prometheus.Labels{
-				"subscriptionID":    stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-				"resourceID":        stringToAzureResourceInfo(resourceId),
-				"availabilityState": stringToAzureResourceInfo(string(availabilityState)),
-			}
-
 			if availabilityState == resourceAvailabilityState {
-				resourceHealthMetric.Add(labels, 1)
-			} else {
-				resourceHealthMetric.Add(labels, 0)
+				resourceHealthMetric.Add(prometheus.Labels{
+					"subscriptionID":    azureResource.Subscription,
+					"resourceID":        stringToStringLower(resourceId),
+					"resourceGroup":     azureResource.ResourceGroup,
+					"availabilityState": stringToStringLower(string(availabilityState)),
+				}, 1)
 			}
 		}
 

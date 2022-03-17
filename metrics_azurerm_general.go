@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
@@ -59,12 +60,12 @@ func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Co
 
 	subscriptionMetric := prometheusCommon.NewMetricsList()
 	subscriptionMetric.AddInfo(prometheus.Labels{
-		"resourceID":          stringPtrToAzureResourceInfo(sub.ID),
-		"subscriptionID":      stringPtrToAzureResourceInfo(sub.SubscriptionID),
+		"resourceID":          stringPtrToStringLower(sub.ID),
+		"subscriptionID":      stringPtrToStringLower(sub.SubscriptionID),
 		"subscriptionName":    to.String(sub.DisplayName),
 		"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
-		"quotaID":             stringPtrToAzureResourceInfo(sub.SubscriptionPolicies.QuotaID),
-		"locationPlacementID": stringPtrToAzureResourceInfo(sub.SubscriptionPolicies.LocationPlacementID),
+		"quotaID":             stringPtrToStringLower(sub.SubscriptionPolicies.QuotaID),
+		"locationPlacementID": stringPtrToStringLower(sub.SubscriptionPolicies.LocationPlacementID),
 	})
 
 	callback <- func() {

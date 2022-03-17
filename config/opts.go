@@ -2,8 +2,9 @@ package config
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type (
@@ -61,10 +62,6 @@ type (
 			Threads   int           `long:"portscan-threads"              env:"PORTSCAN_THREADS"                         description:"Portscan threads (concurrent port scans per IP)"  default:"1000"`
 			Timeout   int           `long:"portscan-timeout"              env:"PORTSCAN_TIMEOUT"                         description:"Portscan timeout (seconds)"                       default:"5"`
 			PortRange []string      `long:"portscan-range"                env:"PORTSCAN_RANGE"            env-delim:" "  description:"Portscan port range (first-last)"                 default:"1-65535"`
-		}
-
-		Metrics struct {
-			ResourceIdLowercase *bool `long:"metrics.resourceid.lowercase"   env:"METRIC_RESOURCEID_LOWERCASE"       description:"Publish lowercase Azure Resoruce ID in metrics"`
 		}
 
 		// caching

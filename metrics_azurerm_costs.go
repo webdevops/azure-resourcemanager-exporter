@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/consumption/mgmt/consumption"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/services/costmanagement/mgmt/2019-10-01/costmanagement"
@@ -10,8 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	"strings"
-	"time"
+	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
 )
 
 type MetricsCollectorAzureRmCosts struct {
@@ -246,20 +247,23 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 	for result.NotDone() {
 		val := result.Value()
 
+		resourceId := to.String(val.ID)
+		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+
 		infoMetric.AddInfo(prometheus.Labels{
-			"resourceID":     stringPtrToAzureResourceInfo(val.ID),
-			"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+			"resourceID":     stringToStringLower(resourceId),
+			"subscriptionID": azureResource.Subscription,
+			"resourceGroup":  azureResource.ResourceGroup,
 			"budgetName":     to.String(val.Name),
-			"resourceGroup":  extractResourceGroupFromAzureId(to.String(val.ID)),
-			"category":       stringPtrToAzureResourceInfo(val.BudgetProperties.Category),
+			"category":       stringPtrToStringLower(val.BudgetProperties.Category),
 			"timeGrain":      string(val.BudgetProperties.TimeGrain),
 		})
 
 		if val.BudgetProperties.Amount != nil {
 			limitAmount, _ := val.BudgetProperties.Amount.Float64()
 			limitMetric.Add(prometheus.Labels{
-				"resourceID":     stringPtrToAzureResourceInfo(val.ID),
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"resourceID":     stringToStringLower(resourceId),
+				"subscriptionID": azureResource.Subscription,
 				"budgetName":     to.String(val.Name),
 			}, limitAmount)
 		}
@@ -267,10 +271,10 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 		if val.BudgetProperties.CurrentSpend != nil {
 			budgetCurrentSpend, _ := val.BudgetProperties.CurrentSpend.Amount.Float64()
 			currentMetric.Add(prometheus.Labels{
-				"resourceID":     stringPtrToAzureResourceInfo(val.ID),
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"resourceID":     stringToStringLower(resourceId),
+				"subscriptionID": azureResource.Subscription,
 				"budgetName":     to.String(val.Name),
-				"unit":           stringPtrToAzureResourceInfo(val.BudgetProperties.CurrentSpend.Unit),
+				"unit":           stringPtrToStringLower(val.BudgetProperties.CurrentSpend.Unit),
 			}, budgetCurrentSpend)
 		}
 
@@ -278,8 +282,8 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 			budgetCurrentSpend, _ := val.BudgetProperties.CurrentSpend.Amount.Float64()
 			limitAmount, _ := val.BudgetProperties.Amount.Float64()
 			usageMetric.Add(prometheus.Labels{
-				"resourceID":     stringPtrToAzureResourceInfo(val.ID),
-				"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
+				"resourceID":     stringToStringLower(resourceId),
+				"subscriptionID": azureResource.Subscription,
 				"budgetName":     to.String(val.Name),
 			}, budgetCurrentSpend/limitAmount)
 		}
@@ -363,12 +367,12 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 			continue
 		}
 
-		switch strings.ToLower(*col.Name) {
+		switch stringToStringLower(*col.Name) {
 		case "pretaxcost":
 			columnNumberCost = num
 		case "resourcegroupname":
 			columnNumberResourceGroupName = num
-		case strings.ToLower(dimensionColName):
+		case stringToStringLower(dimensionColName):
 			columnNumberDimension = num
 		case "currency":
 			columnNumberCurrency = num
@@ -397,9 +401,9 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 		resourceGroup := row[columnNumberResourceGroupName].(string)
 
 		labels := prometheus.Labels{
-			"subscriptionID": stringPtrToAzureResourceInfo(subscription.SubscriptionID),
-			"resourceGroup":  stringPtrToAzureResourceInfo(&resourceGroup),
-			"currency":       stringToAzureResourceInfo(row[columnNumberCurrency].(string)),
+			"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+			"resourceGroup":  stringPtrToStringLower(&resourceGroup),
+			"currency":       stringToStringLower(row[columnNumberCurrency].(string)),
 			"timeframe":      timeframe,
 		}
 

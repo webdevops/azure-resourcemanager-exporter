@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"os"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	"os"
+	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
 )
 
 type MetricsCollectorPortscanner struct {
@@ -94,7 +96,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 	}
 
 	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress) {
-		ipAddress := stringPtrToAzureResourceInfo(pip.IPAddress)
+		ipAddress := stringPtrToStringLower(pip.IPAddress)
 
 		m.logger().WithField("ipAddress", ipAddress).Infof("start port scanning")
 
@@ -106,7 +108,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 	}
 
 	m.portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress, elapsed float64) {
-		ipAddress := stringPtrToAzureResourceInfo(pip.IPAddress)
+		ipAddress := stringPtrToStringLower(pip.IPAddress)
 
 		// set ipAddess to be finsihed
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
@@ -177,13 +179,16 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context,
 
 	m.prometheus.publicIpInfo.Reset()
 	for _, pip := range pipList {
+		resourceId := to.String(pip.ID)
+		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+
 		m.prometheus.publicIpInfo.With(prometheus.Labels{
-			"subscriptionID":   extractSubscriptionIdFromAzureId(to.String(pip.ID)),
-			"resourceID":       stringPtrToAzureResourceInfo(pip.ID),
-			"resourceGroup":    extractResourceGroupFromAzureId(to.String(pip.ID)),
-			"name":             stringPtrToAzureResourceInfo(pip.Name),
-			"ipAddressVersion": stringToAzureResourceInfo(string(pip.PublicIPAddressVersion)),
-			"ipAddress":        stringPtrToAzureResourceInfo(pip.IPAddress),
+			"subscriptionID":   azureResource.Subscription,
+			"resourceID":       stringPtrToStringLower(pip.ID),
+			"resourceGroup":    azureResource.ResourceGroup,
+			"name":             azureResource.ResourceName,
+			"ipAddressVersion": stringToStringLower(string(pip.PublicIPAddressVersion)),
+			"ipAddress":        stringPtrToStringLower(pip.IPAddress),
 		}).Set(1)
 	}
 
