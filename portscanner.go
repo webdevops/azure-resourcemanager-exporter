@@ -2,17 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/go-autorest/autorest/to"
 	scanner "github.com/anvie/port-scanner"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/remeh/sizedwaitgroup"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
-	"os"
-	"strconv"
-	"sync"
-	"time"
 )
 
 type PortscannerResult struct {

@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	log "github.com/sirupsen/logrus"
-	"sync"
-	"time"
 )
 
 type CollectorGeneral struct {

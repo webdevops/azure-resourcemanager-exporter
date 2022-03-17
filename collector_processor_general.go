@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	log "github.com/sirupsen/logrus"
 )

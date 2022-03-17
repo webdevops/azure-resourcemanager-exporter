@@ -1,9 +1,10 @@
 package main
 
 import (
+	"time"
+
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 type CollectorBase struct {
