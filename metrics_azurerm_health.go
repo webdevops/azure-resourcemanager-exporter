@@ -63,7 +63,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 		resourceId = stringsTrimSuffixCI(resourceId, ("/providers/" + to.String(val.Type) + "/" + to.String(val.Name)))
 		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
 
-		resourceAvailabilityState := resourcehealth.Unknown
+		resourceAvailabilityState := resourcehealth.AvailabilityStateValuesUnknown
 
 		if val.Properties != nil {
 			resourceAvailabilityState = val.Properties.AvailabilityState
