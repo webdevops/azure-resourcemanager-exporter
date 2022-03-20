@@ -133,6 +133,17 @@ To disable write rate limits set `SCRAPE_RATELIMIT_WRITE` to `0`.
 | `azurerm_publicip_portscan_status`             | Portscan            | Status of scanned ports (finished scan, elapsed time, updated timestamp)                                                          |
 | `azurerm_publicip_portscan_port`               | Portscan            | List of opened ports per IP                                                                                                       |
 
+### ResourceTags handling
+
+Tag can be dynamically added to metrics and processed though filters
+
+format is: `tagname?filter1` or `tagname?filter1&filter2`
+
+| Tag filter | Description                 |
+|------------|-----------------------------|
+| `toLower`  | Lowercasing Azure tag value |
+| `toUpper`  | Uppercasing Azure tag value |
+
 ### AzureTracing metrics
 
 (with 22.2.0 and later)
