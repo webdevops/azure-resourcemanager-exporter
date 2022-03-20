@@ -29,7 +29,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_resource_info",
 			Help: "Azure Resource information",
 		},
-		append(
+		prometheusAzure.AddResourceTagsToPrometheusLabelsDefinition(
 			[]string{
 				"resourceID",
 				"resourceName",
@@ -40,7 +40,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 				"location",
 				"provisioningState",
 			},
-			stringListAddPrefix(opts.Azure.ResourceTags, "tag_")...,
+			opts.Azure.ResourceTags,
 		),
 	)
 	prometheus.MustRegister(m.prometheus.resource)
@@ -50,7 +50,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_resourcegroup_info",
 			Help: "Azure ResourceManager resourcegroup information",
 		},
-		append(
+		prometheusAzure.AddResourceTagsToPrometheusLabelsDefinition(
 			[]string{
 				"resourceID",
 				"subscriptionID",
@@ -58,7 +58,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 				"location",
 				"provisioningState",
 			},
-			stringListAddPrefix(opts.Azure.ResourceGroupTags, "tag_")...,
+			opts.Azure.ResourceGroupTags,
 		),
 	)
 	prometheus.MustRegister(m.prometheus.resourceGroup)

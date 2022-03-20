@@ -33,10 +33,3 @@ func stringsTrimSuffixCI(str, suffix string) string {
 
 	return str
 }
-func stringListAddPrefix(list []string, prefix string) []string {
-	ret := []string{}
-	for _, val := range list {
-		ret = append(ret, prefix+val)
-	}
-	return ret
-}
