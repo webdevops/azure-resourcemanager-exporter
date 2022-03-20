@@ -20,10 +20,10 @@ type (
 		Azure struct {
 			Tenant            *string  `long:"azure-tenant"                   env:"AZURE_TENANT_ID"           description:"Azure tenant id" required:"true"`
 			Environment       *string  `long:"azure-environment"              env:"AZURE_ENVIRONMENT"         description:"Azure environment name" default:"AZUREPUBLICCLOUD"`
-			Subscription      []string `long:"azure-subscription"             env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID"`
-			Location          []string `long:"azure-location"                 env:"AZURE_LOCATION"            env-delim:" "  description:"Azure locations"                                  default:"westeurope" default:"northeurope"` //nolint:staticcheck
-			ResourceGroupTags []string `long:"azure-resourcegroup-tag"        env:"AZURE_RESOURCEGROUP_TAG"   env-delim:" "  description:"Azure ResourceGroup tags"                         default:"owner"`
-			ResourceTags      []string `long:"azure-resource-tag"             env:"AZURE_RESOURCE_TAG"        env-delim:" "  description:"Azure Resource tags"                              default:"owner"`
+			Subscription      []string `long:"azure-subscription"             env:"AZURE_SUBSCRIPTION_ID"     env-delim:" "  description:"Azure subscription ID (space delimiter)"`
+			Location          []string `long:"azure-location"                 env:"AZURE_LOCATION"            env-delim:" "  description:"Azure locations (space delimiter)"                                  default:"westeurope" default:"northeurope"` //nolint:staticcheck
+			ResourceGroupTags []string `long:"azure-resourcegroup-tag"        env:"AZURE_RESOURCEGROUP_TAG"   env-delim:" "  description:"Azure ResourceGroup tags (space delimiter)"                         default:"owner"`
+			ResourceTags      []string `long:"azure-resource-tag"             env:"AZURE_RESOURCE_TAG"        env-delim:" "  description:"Azure Resource tags (space delimiter)"                              default:"owner"`
 		}
 
 		// scrape times
@@ -50,8 +50,8 @@ type (
 		// costs
 
 		Costs struct {
-			Timeframe []string `long:"costs-timeframe" env:"COSTS_TIMEFRAME"  env-delim:" " description:"Timeframe for cost reportings" default:"MonthToDate" default:"YearToDate"`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       //nolint:staticcheck
-			Dimension []string `long:"costs-dimension" env:"COSTS_DIMENSION"  env-delim:" " description:"Dimensions for detailed cost metrics (eg 'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType','ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName','DepartmentName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier','EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber','ChargeType','PublisherType','ReservationId','ReservationName','Frequency','PartNumber','CostAllocationRuleName','MarkupRuleName','PricingModel')" default:"ResourceType" default:"ResourceLocation"` //nolint:staticcheck
+			Timeframe []string `long:"costs-timeframe" env:"COSTS_TIMEFRAME"  env-delim:" " description:"Timeframe for cost reportings  (space delimiter)" default:"MonthToDate" default:"YearToDate"`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       //nolint:staticcheck
+			Dimension []string `long:"costs-dimension" env:"COSTS_DIMENSION"  env-delim:" " description:"Dimensions for detailed cost metrics (eg 'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType','ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName','DepartmentName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier','EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber','ChargeType','PublisherType','ReservationId','ReservationName','Frequency','PartNumber','CostAllocationRuleName','MarkupRuleName','PricingModel')  (space delimiter)" default:"ResourceType" default:"ResourceLocation"` //nolint:staticcheck
 		}
 
 		// portscan settings
@@ -61,7 +61,7 @@ type (
 			Parallel  int           `long:"portscan-parallel"             env:"PORTSCAN_PARALLEL"                        description:"Portscan parallel scans (parallel * threads = concurrent gofuncs)"  default:"2"`
 			Threads   int           `long:"portscan-threads"              env:"PORTSCAN_THREADS"                         description:"Portscan threads (concurrent port scans per IP)"  default:"1000"`
 			Timeout   int           `long:"portscan-timeout"              env:"PORTSCAN_TIMEOUT"                         description:"Portscan timeout (seconds)"                       default:"5"`
-			PortRange []string      `long:"portscan-range"                env:"PORTSCAN_RANGE"            env-delim:" "  description:"Portscan port range (first-last)"                 default:"1-65535"`
+			PortRange []string      `long:"portscan-range"                env:"PORTSCAN_RANGE"            env-delim:" "  description:"Portscan port range (first-last)  (space delimiter)"                 default:"1-65535"`
 		}
 
 		// caching

@@ -37,53 +37,50 @@ Usage:
   azure-resourcemanager-exporter [OPTIONS]
 
 Application Options:
-      --debug                         debug mode [$DEBUG]
-  -v, --verbose                       verbose mode [$VERBOSE]
-      --log.json                      Switch log output to json format [$LOG_JSON]
-      --azure-tenant=                 Azure tenant id [$AZURE_TENANT_ID]
-      --azure-environment=            Azure environment name (default: AZUREPUBLICCLOUD) [$AZURE_ENVIRONMENT]
-      --azure-subscription=           Azure subscription ID [$AZURE_SUBSCRIPTION_ID]
-      --azure-location=               Azure locations (default: westeurope, northeurope) [$AZURE_LOCATION]
-      --azure-resourcegroup-tag=      Azure ResourceGroup tags (default: owner) [$AZURE_RESOURCEGROUP_TAG]
-      --azure-resource-tag=           Azure Resource tags (default: owner) [$AZURE_RESOURCE_TAG]
-      --scrape-time=                  Default scrape time (time.duration) (default: 5m) [$SCRAPE_TIME]
-      --scrape-ratelimit-read=        Scrape time for ratelimit read metrics (time.duration) (default: 2m)
-                                      [$SCRAPE_RATELIMIT_READ]
-      --scrape-ratelimit-write=       Scrape time for ratelimit write metrics (time.duration) (default: 5m)
-                                      [$SCRAPE_RATELIMIT_WRITE]
-      --scrape-time-exporter=         Scrape time for exporter metrics (time.duration) (default: 10s) [$SCRAPE_TIME_EXPORTER]
-      --scrape-time-general=          Scrape time for general metrics (time.duration) [$SCRAPE_TIME_GENERAL]
-      --scrape-time-resource=         Scrape time for resource metrics  (time.duration) [$SCRAPE_TIME_RESOURCE]
-      --scrape-time-quota=            Scrape time for quota metrics  (time.duration) [$SCRAPE_TIME_QUOTA]
-      --scrape-time-security=         Scrape time for Security metrics (time.duration) [$SCRAPE_TIME_SECURITY]
-      --scrape-time-resourcehealth=   Scrape time for ResourceHealth metrics (time.duration) [$SCRAPE_TIME_RESOURCEHEALTH]
-      --scrape-time-iam=              Scrape time for IAM metrics (time.duration) [$SCRAPE_TIME_IAM]
-      --scrape-time-graph=            Scrape time for Graph metrics (time.duration) [$SCRAPE_TIME_GRAPH]
-      --scrape-time-costs=            Scrape time for costs/consumtion metrics (time.duration; BETA) (default: 0)
-                                      [$SCRAPE_TIME_COSTS]
-      --graph-application-filter=     Graph application filter query eg: startswith(displayName,'A') [$GRAPH_APPLICATION_FILTER]
-      --costs-timeframe=              Timeframe for cost reportings (default: MonthToDate, YearToDate) [$COSTS_TIMEFRAME]
-      --costs-dimension=              Dimensions for detailed cost metrics (eg
-                                      'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType',
-                                      'ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName',
-                                      'DepartmentName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier',
-                                      'EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber',
-                                      'ChargeType','PublisherType','ReservationId','ReservationName','Frequency','PartNumber',
-                                      'CostAllocationRuleName','MarkupRuleName','PricingModel') (default: ResourceType, ResourceLocation)
-                                      [$COSTS_DIMENSION]
-      --portscan                      Enable portscan for public IPs [$PORTSCAN]
-      --portscan-time=                Portscan time (time.duration) (default: 3h) [$PORTSCAN_TIME]
-      --portscan-parallel=            Portscan parallel scans (parallel * threads = concurrent gofuncs) (default: 2)
-                                      [$PORTSCAN_PARALLEL]
-      --portscan-threads=             Portscan threads (concurrent port scans per IP) (default: 1000) [$PORTSCAN_THREADS]
-      --portscan-timeout=             Portscan timeout (seconds) (default: 5) [$PORTSCAN_TIMEOUT]
-      --portscan-range=               Portscan port range (first-last) (default: 1-65535) [$PORTSCAN_RANGE]
-      --metrics.resourceid.lowercase  Publish lowercase Azure Resoruce ID in metrics [$METRIC_RESOURCEID_LOWERCASE]
-      --cache-path=                   Cache path [$CACHE_PATH]
-      --bind=                         Server address (default: :8080) [$SERVER_BIND]
+      --debug                       debug mode [$DEBUG]
+  -v, --verbose                     verbose mode [$VERBOSE]
+      --log.json                    Switch log output to json format [$LOG_JSON]
+      --azure-tenant=               Azure tenant id [$AZURE_TENANT_ID]
+      --azure-environment=          Azure environment name (default: AZUREPUBLICCLOUD) [$AZURE_ENVIRONMENT]
+      --azure-subscription=         Azure subscription ID (space delimiter) [$AZURE_SUBSCRIPTION_ID]
+      --azure-location=             Azure locations (space delimiter) (default: westeurope, northeurope) [$AZURE_LOCATION]
+      --azure-resourcegroup-tag=    Azure ResourceGroup tags (space delimiter) (default: owner) [$AZURE_RESOURCEGROUP_TAG]
+      --azure-resource-tag=         Azure Resource tags (space delimiter) (default: owner) [$AZURE_RESOURCE_TAG]
+      --scrape-time=                Default scrape time (time.duration) (default: 5m) [$SCRAPE_TIME]
+      --scrape-ratelimit-read=      Scrape time for ratelimit read metrics (time.duration) (default: 2m) [$SCRAPE_RATELIMIT_READ]
+      --scrape-ratelimit-write=     Scrape time for ratelimit write metrics (time.duration) (default: 5m) [$SCRAPE_RATELIMIT_WRITE]
+      --scrape-time-exporter=       Scrape time for exporter metrics (time.duration) (default: 10s) [$SCRAPE_TIME_EXPORTER]
+      --scrape-time-general=        Scrape time for general metrics (time.duration) [$SCRAPE_TIME_GENERAL]
+      --scrape-time-resource=       Scrape time for resource metrics  (time.duration) [$SCRAPE_TIME_RESOURCE]
+      --scrape-time-quota=          Scrape time for quota metrics  (time.duration) [$SCRAPE_TIME_QUOTA]
+      --scrape-time-security=       Scrape time for Security metrics (time.duration) [$SCRAPE_TIME_SECURITY]
+      --scrape-time-resourcehealth= Scrape time for ResourceHealth metrics (time.duration) [$SCRAPE_TIME_RESOURCEHEALTH]
+      --scrape-time-iam=            Scrape time for IAM metrics (time.duration) [$SCRAPE_TIME_IAM]
+      --scrape-time-graph=          Scrape time for Graph metrics (time.duration) [$SCRAPE_TIME_GRAPH]
+      --scrape-time-costs=          Scrape time for costs/consumtion metrics (time.duration; BETA) (default: 0) [$SCRAPE_TIME_COSTS]
+      --graph-application-filter=   Graph application filter query eg: startswith(displayName,'A') [$GRAPH_APPLICATION_FILTER]
+      --costs-timeframe=            Timeframe for cost reportings  (space delimiter) (default: MonthToDate, YearToDate)
+                                    [$COSTS_TIMEFRAME]
+      --costs-dimension=            Dimensions for detailed cost metrics (eg
+                                    'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType','Resourc-
+                                    eId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName','Departme-
+                                    ntName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier','EnrollmentAccountName',-
+                                    'BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber','ChargeType','PublisherType','-
+                                    ReservationId','ReservationName','Frequency','PartNumber','CostAllocationRuleName','MarkupRuleNa-
+                                    me','PricingModel')  (space delimiter) (default: ResourceType, ResourceLocation)
+                                    [$COSTS_DIMENSION]
+      --portscan                    Enable portscan for public IPs [$PORTSCAN]
+      --portscan-time=              Portscan time (time.duration) (default: 3h) [$PORTSCAN_TIME]
+      --portscan-parallel=          Portscan parallel scans (parallel * threads = concurrent gofuncs) (default: 2)
+                                    [$PORTSCAN_PARALLEL]
+      --portscan-threads=           Portscan threads (concurrent port scans per IP) (default: 1000) [$PORTSCAN_THREADS]
+      --portscan-timeout=           Portscan timeout (seconds) (default: 5) [$PORTSCAN_TIMEOUT]
+      --portscan-range=             Portscan port range (first-last)  (space delimiter) (default: 1-65535) [$PORTSCAN_RANGE]
+      --cache-path=                 Cache path [$CACHE_PATH]
+      --bind=                       Server address (default: :8080) [$SERVER_BIND]
 
 Help Options:
-  -h, --help                          Show this help message
+  -h, --help                        Show this help message
 ```
 
 for Azure API authentication (using ENV vars) see https://docs.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
