@@ -21,7 +21,10 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 )
 
-require github.com/webdevops/go-common v0.0.0-20220406110653-237539a358b2
+require (
+	github.com/jessevdk/go-flags v1.5.0
+	github.com/webdevops/go-common v0.0.0-20220406110653-237539a358b2
+)
 
 require (
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
