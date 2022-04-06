@@ -9,7 +9,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
+	azureCommon "github.com/webdevops/go-common/azure"
 )
 
 type MetricsCollectorPortscanner struct {
@@ -180,7 +180,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context,
 	m.prometheus.publicIpInfo.Reset()
 	for _, pip := range pipList {
 		resourceId := to.String(pip.ID)
-		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+		azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
 		m.prometheus.publicIpInfo.With(prometheus.Labels{
 			"subscriptionID":   azureResource.Subscription,

@@ -8,8 +8,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
+	azureCommon "github.com/webdevops/go-common/azure"
+	prometheusCommon "github.com/webdevops/go-common/prometheus"
 )
 
 type MetricsCollectorAzureRmHealth struct {
@@ -61,7 +61,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 
 		resourceId := to.String(val.ID)
 		resourceId = stringsTrimSuffixCI(resourceId, ("/providers/" + to.String(val.Type) + "/" + to.String(val.Name)))
-		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+		azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
 		resourceAvailabilityState := resourcehealth.AvailabilityStateValuesUnknown
 

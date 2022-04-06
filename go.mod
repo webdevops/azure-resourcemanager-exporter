@@ -3,7 +3,7 @@ module github.com/webdevops/azure-resourcemanager-exporter
 go 1.17
 
 require (
-	github.com/Azure/azure-sdk-for-go v62.2.0+incompatible
+	github.com/Azure/azure-sdk-for-go v63.1.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.24
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.11
 	github.com/Azure/go-autorest/autorest/to v0.4.0
@@ -22,6 +22,8 @@ require (
 	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
+
+require github.com/webdevops/go-common v0.0.0-20220406110653-237539a358b2
 
 require (
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect

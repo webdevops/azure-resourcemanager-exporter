@@ -5,7 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	prometheusCommon "github.com/webdevops/go-prometheus-common"
+	prometheusCommon "github.com/webdevops/go-common/prometheus"
 )
 
 type MetricsCollectorExporter struct {

@@ -11,8 +11,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
+	azureCommon "github.com/webdevops/go-common/azure"
+	prometheusCommon "github.com/webdevops/go-common/prometheus"
 )
 
 type MetricsCollectorAzureRmCosts struct {
@@ -248,7 +248,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 		val := result.Value()
 
 		resourceId := to.String(val.ID)
-		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+		azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
 		infoMetric.AddInfo(prometheus.Labels{
 			"resourceID":     stringToStringLower(resourceId),

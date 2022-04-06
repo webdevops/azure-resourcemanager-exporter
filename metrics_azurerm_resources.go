@@ -8,8 +8,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
+	azureCommon "github.com/webdevops/go-common/azure"
+	prometheusCommon "github.com/webdevops/go-common/prometheus"
 )
 
 type MetricsCollectorAzureRmResources struct {
@@ -29,7 +29,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_resource_info",
 			Help: "Azure Resource information",
 		},
-		prometheusAzure.AddResourceTagsToPrometheusLabelsDefinition(
+		azureCommon.AddResourceTagsToPrometheusLabelsDefinition(
 			[]string{
 				"resourceID",
 				"resourceName",
@@ -50,7 +50,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
 			Name: "azurerm_resourcegroup_info",
 			Help: "Azure ResourceManager resourcegroup information",
 		},
-		prometheusAzure.AddResourceTagsToPrometheusLabelsDefinition(
+		azureCommon.AddResourceTagsToPrometheusLabelsDefinition(
 			[]string{
 				"resourceID",
 				"subscriptionID",
@@ -88,7 +88,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context
 
 	for _, item := range *resourceGroupResult.Response().Value {
 		resourceId := to.String(item.ID)
-		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+		azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
 		infoLabels := prometheus.Labels{
 			"resourceID":        stringPtrToStringLower(item.ID),
@@ -97,7 +97,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context
 			"location":          stringPtrToStringLower(item.Location),
 			"provisioningState": stringPtrToStringLower(item.Properties.ProvisioningState),
 		}
-		infoLabels = prometheusAzure.AddResourceTagsToPrometheusLabels(infoLabels, item.Tags, opts.Azure.ResourceGroupTags)
+		infoLabels = azureCommon.AddResourceTagsToPrometheusLabels(infoLabels, item.Tags, opts.Azure.ResourceGroupTags)
 		infoMetric.AddInfo(infoLabels)
 	}
 
@@ -122,7 +122,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Con
 		val := list.Value()
 
 		resourceId := to.String(val.ID)
-		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+		azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
 		infoLabels := prometheus.Labels{
 			"subscriptionID":    azureResource.Subscription,
@@ -134,7 +134,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Con
 			"location":          stringPtrToStringLower(val.Location),
 			"provisioningState": stringPtrToStringLower(val.ProvisioningState),
 		}
-		infoLabels = prometheusAzure.AddResourceTagsToPrometheusLabels(infoLabels, val.Tags, opts.Azure.ResourceTags)
+		infoLabels = azureCommon.AddResourceTagsToPrometheusLabels(infoLabels, val.Tags, opts.Azure.ResourceTags)
 		resourceMetric.AddInfo(infoLabels)
 
 		if list.NextWithContext(ctx) != nil {

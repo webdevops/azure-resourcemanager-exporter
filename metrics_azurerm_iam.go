@@ -10,8 +10,8 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	prometheusCommon "github.com/webdevops/go-prometheus-common"
-	prometheusAzure "github.com/webdevops/go-prometheus-common/azure"
+	azureCommon "github.com/webdevops/go-common/azure"
+	prometheusCommon "github.com/webdevops/go-common/prometheus"
 )
 
 type MetricsCollectorAzureRmIam struct {
@@ -126,7 +126,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 		val := list.Value()
 
 		resourceId := to.String(val.ID)
-		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+		azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
 		infoLabels := prometheus.Labels{
 			"subscriptionID":   azureResource.Subscription,
@@ -168,7 +168,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 		count++
 
 		resourceId := to.String(val.Scope)
-		azureResource, _ := prometheusAzure.ParseResourceId(resourceId)
+		azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
 		infoLabels := prometheus.Labels{
 			"subscriptionID":   azureResource.Subscription,
