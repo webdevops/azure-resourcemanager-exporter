@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resourcehealth/mgmt/resourcehealth"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -10,18 +8,19 @@ import (
 	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorAzureRmHealth struct {
-	CollectorProcessorGeneral
+	collector.Processor
 
 	prometheus struct {
 		resourceHealth *prometheus.GaugeVec
 	}
 }
 
-func (m *MetricsCollectorAzureRmHealth) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorAzureRmHealth) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 
 	m.prometheus.resourceHealth = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -42,11 +41,20 @@ func (m *MetricsCollectorAzureRmHealth) Reset() {
 	m.prometheus.resourceHealth.Reset()
 }
 
-func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := resourcehealth.NewAvailabilityStatusesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+		m.collectSubscription(subscription, logger, callback)
+	})
+	if err != nil {
+		m.Logger().Panic(err)
+	}
+}
 
-	list, err := client.ListBySubscriptionIDComplete(ctx, "", "")
+func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := resourcehealth.NewAvailabilityStatusesClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
+
+	list, err := client.ListBySubscriptionIDComplete(m.Context(), "", "")
 
 	if err != nil {
 		logger.Panic(err)
@@ -60,7 +68,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 		val := list.Value()
 
 		resourceId := to.String(val.ID)
-		resourceId = stringsTrimSuffixCI(resourceId, ("/providers/" + to.String(val.Type) + "/" + to.String(val.Name)))
+		resourceId = stringsTrimSuffixCI(resourceId, "/providers/"+to.String(val.Type)+"/"+to.String(val.Name))
 		azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
 		resourceAvailabilityState := resourcehealth.AvailabilityStateValuesUnknown
@@ -80,7 +88,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(ctx context.Context, logger *log
 			}
 		}
 
-		if list.NextWithContext(ctx) != nil {
+		if list.NextWithContext(m.Context()) != nil {
 			break
 		}
 	}

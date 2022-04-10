@@ -1,30 +1,37 @@
 package main
 
 import (
-	"context"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	log "github.com/sirupsen/logrus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorAzureRmRateLimitRead struct {
-	CollectorProcessorGeneral
+	collector.Processor
 }
 
-func (m *MetricsCollectorAzureRmRateLimitRead) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorAzureRmRateLimitRead) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 }
 
 func (m *MetricsCollectorAzureRmRateLimitRead) Reset() {
 }
 
-func (m *MetricsCollectorAzureRmRateLimitRead) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := subscriptions.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmRateLimitRead) Collect(callback chan<- func()) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+		m.collectSubscription(subscription, logger, callback)
+	})
+	if err != nil {
+		m.Logger().Panic(err)
+	}
+}
 
-	_, err := client.Get(ctx, *subscription.SubscriptionID)
+func (m *MetricsCollectorAzureRmRateLimitRead) collectSubscription(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := subscriptions.NewClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint)
+	AzureClient.DecorateAzureAutorest(&client.Client)
+
+	_, err := client.Get(m.Context(), *subscription.SubscriptionID)
 	if err != nil {
 		logger.Panic(err)
 	}
-
 }

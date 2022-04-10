@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -13,10 +12,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorAzureRmSecurity struct {
-	CollectorProcessorGeneral
+	collector.Processor
 
 	prometheus struct {
 		securitycenterCompliance *prometheus.GaugeVec
@@ -24,8 +24,8 @@ type MetricsCollectorAzureRmSecurity struct {
 	}
 }
 
-func (m *MetricsCollectorAzureRmSecurity) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorAzureRmSecurity) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 
 	m.prometheus.securitycenterCompliance = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -64,22 +64,28 @@ func (m *MetricsCollectorAzureRmSecurity) Reset() {
 	m.prometheus.advisorRecommendations.Reset()
 }
 
-func (m *MetricsCollectorAzureRmSecurity) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureAdvisorRecommendations(ctx, logger, callback, subscription)
-	for _, location := range m.CollectorReference.AzureLocations {
-		m.collectAzureSecurityCompliance(ctx, logger, callback, subscription, location)
+func (m *MetricsCollectorAzureRmSecurity) Collect(callback chan<- func()) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+		m.collectAzureAdvisorRecommendations(subscription, logger, callback)
+		for _, location := range opts.Azure.Location {
+			m.collectAzureSecurityCompliance(subscription, logger, callback, location)
+		}
+
+	})
+	if err != nil {
+		m.Logger().Panic(err)
 	}
 }
 
-func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, location string) {
+func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func(), location string) {
 	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", *subscription.SubscriptionID)
-	client := security.NewCompliancesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, subscriptionResourceId, location)
-	decorateAzureAutorest(&client.Client)
+	client := security.NewCompliancesClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, subscriptionResourceId, location)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
 	infoMetric := prometheusCommon.NewMetricsList()
 
 	// try to find latest
-	result, err := client.ListComplete(ctx, subscriptionResourceId)
+	result, err := client.ListComplete(m.Context(), subscriptionResourceId)
 	if err != nil {
 		logger.Error(err)
 		return
@@ -96,13 +102,13 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 			lastReportName = to.String(row.Name)
 		}
 
-		if result.NextWithContext(ctx) != nil {
+		if result.NextWithContext(m.Context()) != nil {
 			break
 		}
 	}
 
 	if lastReportName != "" {
-		complienceResult, err := client.Get(ctx, subscriptionResourceId, lastReportName)
+		complienceResult, err := client.Get(m.Context(), subscriptionResourceId, lastReportName)
 		if err != nil {
 			logger.Error(err)
 			return
@@ -125,11 +131,11 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(ctx con
 	}
 }
 
-func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := advisor.NewRecommendationsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := advisor.NewRecommendationsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
-	recommendationResult, err := client.ListComplete(ctx, "", nil, "")
+	recommendationResult, err := client.ListComplete(m.Context(), "", nil, "")
 	if err != nil {
 		logger.Panic(err)
 	}

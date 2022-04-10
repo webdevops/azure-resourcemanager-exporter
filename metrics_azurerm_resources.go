@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -10,10 +8,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorAzureRmResources struct {
-	CollectorProcessorGeneral
+	collector.Processor
 
 	prometheus struct {
 		resource      *prometheus.GaugeVec
@@ -21,8 +20,8 @@ type MetricsCollectorAzureRmResources struct {
 	}
 }
 
-func (m *MetricsCollectorAzureRmResources) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 
 	m.prometheus.resource = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -69,17 +68,23 @@ func (m *MetricsCollectorAzureRmResources) Reset() {
 	m.prometheus.resourceGroup.Reset()
 }
 
-func (m *MetricsCollectorAzureRmResources) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureResourceGroup(ctx, logger, callback, subscription)
-	m.collectAzureResources(ctx, logger, callback, subscription)
+func (m *MetricsCollectorAzureRmResources) Collect(callback chan<- func()) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+		m.collectAzureResourceGroup(subscription, logger, callback)
+		m.collectAzureResources(subscription, logger, callback)
+
+	})
+	if err != nil {
+		m.Logger().Panic(err)
+	}
 }
 
 // Collect Azure ResourceGroup metrics
-func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := resources.NewGroupsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := resources.NewGroupsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
-	resourceGroupResult, err := client.ListComplete(ctx, "", nil)
+	resourceGroupResult, err := client.ListComplete(m.Context(), "", nil)
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -106,11 +111,11 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(ctx context
 	}
 }
 
-func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := resources.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := resources.NewClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
-	list, err := client.ListComplete(ctx, "", "createdTime,changedTime,provisioningState", nil)
+	list, err := client.ListComplete(m.Context(), "", "createdTime,changedTime,provisioningState", nil)
 
 	if err != nil {
 		logger.Panic(err)
@@ -137,7 +142,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(ctx context.Con
 		infoLabels = azureCommon.AddResourceTagsToPrometheusLabels(infoLabels, val.Tags, opts.Azure.ResourceTags)
 		resourceMetric.AddInfo(infoLabels)
 
-		if list.NextWithContext(ctx) != nil {
+		if list.NextWithContext(m.Context()) != nil {
 			break
 		}
 	}

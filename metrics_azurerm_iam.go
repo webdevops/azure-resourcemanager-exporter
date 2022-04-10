@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/graphrbac/graphrbac"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/azure-sdk-for-go/services/preview/authorization/mgmt/2020-04-01-preview/authorization"
@@ -12,10 +10,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorAzureRmIam struct {
-	CollectorProcessorGeneral
+	collector.Processor
 
 	graphclient *graphrbac.ObjectsClient
 
@@ -27,17 +26,16 @@ type MetricsCollectorAzureRmIam struct {
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorAzureRmIam) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 
 	// init azure client
-	auth, err := auth.NewAuthorizerFromEnvironmentWithResource(azureEnvironment.GraphEndpoint)
+	authorizer, err := auth.NewAuthorizerFromEnvironmentWithResource(AzureClient.Environment.GraphEndpoint)
 	if err != nil {
-		m.logger().Panic(err)
+		m.Logger().Panic(err)
 	}
-	graphclient := graphrbac.NewObjectsClientWithBaseURI(azureEnvironment.GraphEndpoint, *opts.Azure.Tenant)
-	decorateAzureAutorest(&graphclient.Client)
-	graphclient.Authorizer = auth
+	graphclient := graphrbac.NewObjectsClientWithBaseURI(AzureClient.Environment.GraphEndpoint, *opts.Azure.Tenant)
+	AzureClient.DecorateAzureAutorestWithAuthorizer(&graphclient.Client, authorizer)
 
 	m.graphclient = &graphclient
 
@@ -105,16 +103,21 @@ func (m *MetricsCollectorAzureRmIam) Reset() {
 	m.prometheus.principal.Reset()
 }
 
-func (m *MetricsCollectorAzureRmIam) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectRoleDefinitions(ctx, logger, callback, subscription)
-	m.collectRoleAssignments(ctx, logger, callback, subscription)
+func (m *MetricsCollectorAzureRmIam) Collect(callback chan<- func()) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+		m.collectRoleDefinitions(subscription, logger, callback)
+		m.collectRoleAssignments(subscription, logger, callback)
+	})
+	if err != nil {
+		m.Logger().Panic(err)
+	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := authorization.NewRoleDefinitionsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := authorization.NewRoleDefinitionsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
-	list, err := client.ListComplete(ctx, *subscription.ID, "")
+	list, err := client.ListComplete(m.Context(), *subscription.ID, "")
 
 	if err != nil {
 		logger.Panic(err)
@@ -137,7 +140,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 		}
 		infoMetric.AddInfo(infoLabels)
 
-		if list.NextWithContext(ctx) != nil {
+		if list.NextWithContext(m.Context()) != nil {
 			break
 		}
 	}
@@ -147,11 +150,11 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(ctx context.Context,
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := authorization.NewRoleAssignmentsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := authorization.NewRoleAssignmentsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
-	list, err := client.ListComplete(ctx, "", "")
+	list, err := client.ListComplete(m.Context(), "", "")
 
 	if err != nil {
 		logger.Panic(err)
@@ -182,7 +185,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 
 		principalIdMap[principalId] = principalId
 
-		if list.NextWithContext(ctx) != nil {
+		if list.NextWithContext(m.Context()) != nil {
 			break
 		}
 	}
@@ -191,7 +194,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 	for _, val := range principalIdMap {
 		principalIdList = append(principalIdList, val)
 	}
-	m.collectPrincipals(ctx, logger, callback, subscription, principalIdList)
+	m.collectPrincipals(subscription, logger, callback, principalIdList)
 
 	callback <- func() {
 		infoMetric.GaugeSet(m.prometheus.roleAssignment)
@@ -201,7 +204,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(ctx context.Context,
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, principalIdList []string) {
+func (m *MetricsCollectorAzureRmIam) collectPrincipals(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func(), principalIdList []string) {
 	var infoLabels *prometheus.Labels
 	infoMetric := prometheusCommon.NewMetricsList()
 
@@ -218,7 +221,7 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, logg
 			ObjectIds: &principalIdChunkList,
 		}
 
-		list, err := m.graphclient.GetObjectsByObjectIdsComplete(ctx, opts)
+		list, err := m.graphclient.GetObjectsByObjectIdsComplete(m.Context(), opts)
 		if err != nil {
 			logger.Panic(err)
 		}
@@ -261,7 +264,7 @@ func (m *MetricsCollectorAzureRmIam) collectPrincipals(ctx context.Context, logg
 				infoMetric.AddInfo(*infoLabels)
 			}
 
-			if list.NextWithContext(ctx) != nil {
+			if list.NextWithContext(m.Context()) != nil {
 				break
 			}
 		}

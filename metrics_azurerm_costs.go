@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -13,10 +12,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorAzureRmCosts struct {
-	CollectorProcessorGeneral
+	collector.Processor
 
 	prometheus struct {
 		consumptionBudgetInfo    *prometheus.GaugeVec
@@ -32,8 +32,8 @@ type MetricsCollectorAzureRmCosts struct {
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 
 	m.prometheus.consumptionBudgetInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -161,10 +161,18 @@ func (m *MetricsCollectorAzureRmCosts) Reset() {
 	m.prometheus.costmanagementDetailActualCost.Reset()
 }
 
-func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
+	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+		m.collectSubscription(subscription, logger, callback)
+	})
+	if err != nil {
+		m.Logger().Panic(err)
+	}
+}
+
+func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
 	for _, timeframe := range opts.Costs.Timeframe {
 		m.collectCostManagementMetrics(
-			ctx,
 			logger.WithField("costreport", "Usage"),
 			callback,
 			subscription,
@@ -175,7 +183,6 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 		)
 
 		m.collectCostManagementMetrics(
-			ctx,
 			logger.WithField("costreport", "ActualCost"),
 			callback,
 			subscription,
@@ -192,7 +199,6 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 			time.Sleep(5 * time.Second)
 
 			m.collectCostManagementMetrics(
-				ctx,
 				logger.WithField("costreport", "Usage"),
 				callback,
 				subscription,
@@ -203,7 +209,6 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 			)
 
 			m.collectCostManagementMetrics(
-				ctx,
 				logger.WithField("costreport", "ActualCost"),
 				callback,
 				subscription,
@@ -219,21 +224,19 @@ func (m *MetricsCollectorAzureRmCosts) Collect(ctx context.Context, logger *log.
 	}
 
 	m.collectBugdetMetrics(
-		ctx,
 		logger.WithField("consumption", "Budgets"),
 		callback,
 		subscription,
 	)
-
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := consumption.NewBudgetsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
+	client := consumption.NewBudgetsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
 	scope := fmt.Sprintf("/subscriptions/%s/", *subscription.SubscriptionID)
 
-	result, err := client.ListComplete(ctx, scope)
+	result, err := client.ListComplete(m.Context(), scope)
 	if err != nil {
 		log.Error(err.Error())
 		return
@@ -288,7 +291,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 			}, budgetCurrentSpend/limitAmount)
 		}
 
-		if result.NextWithContext(ctx) != nil {
+		if result.NextWithContext(m.Context()) != nil {
 			break
 		}
 	}
@@ -301,9 +304,9 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(ctx context.Context,
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, costType string, dimension *string, timeframe string, metric *prometheus.GaugeVec) {
-	client := costmanagement.NewQueryClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, costType string, dimension *string, timeframe string, metric *prometheus.GaugeVec) {
+	client := costmanagement.NewQueryClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
 	scope := fmt.Sprintf("/subscriptions/%s/", *subscription.SubscriptionID)
 
@@ -340,7 +343,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(ctx context.
 		{Name: to.StringPtr("BillingMonth"), QuerySortingDirection: "ascending"},
 	}
 
-	list, err := client.Usage(ctx, scope, params)
+	list, err := client.Usage(m.Context(), scope, params)
 	if err != nil {
 		logger.Error(err)
 		return

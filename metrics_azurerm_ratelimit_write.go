@@ -1,27 +1,36 @@
 package main
 
 import (
-	"context"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	log "github.com/sirupsen/logrus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorAzureRmRateLimitWrite struct {
-	CollectorProcessorGeneral
+	collector.Processor
 }
 
-func (m *MetricsCollectorAzureRmRateLimitWrite) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorAzureRmRateLimitWrite) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 }
 
 func (m *MetricsCollectorAzureRmRateLimitWrite) Reset() {
+
 }
 
-func (m *MetricsCollectorAzureRmRateLimitWrite) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := resources.NewTagsClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmRateLimitWrite) Collect(callback chan<- func()) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+		m.collectSubscription(subscription, logger, callback)
+	})
+	if err != nil {
+		m.Logger().Panic(err)
+	}
+}
+
+func (m *MetricsCollectorAzureRmRateLimitWrite) collectSubscription(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := resources.NewTagsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
 	params := resources.TagsPatchResource{
 		Operation: "Merge",
@@ -29,7 +38,7 @@ func (m *MetricsCollectorAzureRmRateLimitWrite) Collect(ctx context.Context, log
 			Tags: map[string]*string{},
 		},
 	}
-	_, err := client.UpdateAtScope(ctx, *subscription.ID, params)
+	_, err := client.UpdateAtScope(m.Context(), *subscription.ID, params)
 	if err != nil {
 		logger.Warn(err)
 	}

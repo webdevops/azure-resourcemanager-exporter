@@ -1,19 +1,18 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorPortscanner struct {
-	CollectorProcessorCustom
+	collector.Processor
 
 	portscanner *Portscanner
 
@@ -25,8 +24,8 @@ type MetricsCollectorPortscanner struct {
 	}
 }
 
-func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 
 	m.portscanner = &Portscanner{}
 	m.portscanner.Init()
@@ -74,16 +73,16 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 	prometheus.MustRegister(m.prometheus.publicIpPortscanPort)
 
 	m.portscanner.Callbacks.FinishScan = func(c *Portscanner) {
-		m.logger().Infof("finished for %v IPs", len(m.portscanner.PublicIps))
+		m.Logger().Infof("finished for %v IPs", len(m.portscanner.PublicIps))
 
 		if opts.Cache.Path != "" {
-			m.logger().Infof("saved to cache")
+			m.Logger().Infof("saved to cache")
 			m.portscanner.CacheSave(opts.Cache.Path)
 		}
 	}
 
 	m.portscanner.Callbacks.StartupScan = func(c *Portscanner) {
-		m.logger().Infof(
+		m.Logger().Infof(
 			"starting for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
 			len(c.PublicIps),
 			opts.Portscan.Parallel,
@@ -98,7 +97,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress) {
 		ipAddress := stringPtrToStringLower(pip.IPAddress)
 
-		m.logger().WithField("ipAddress", ipAddress).Infof("start port scanning")
+		m.Logger().WithField("ipAddress", ipAddress).Infof("start port scanning")
 
 		// set the ipAdress to be scanned
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
@@ -139,15 +138,23 @@ func (m *MetricsCollectorPortscanner) Setup(collector *CollectorCustom) {
 
 	if opts.Cache.Path != "" {
 		if _, err := os.Stat(opts.Cache.Path); !os.IsNotExist(err) {
-			m.logger().Infof("load from cache")
+			m.Logger().Infof("load from cache")
 			m.portscanner.CacheLoad(opts.Cache.Path)
 		}
 	}
 }
 
-func (m *MetricsCollectorPortscanner) Collect(ctx context.Context, logger *log.Entry) {
-	publicIpList := m.fetchPublicIpAdresses(ctx, logger, m.CollectorReference.AzureSubscriptions)
+func (m *MetricsCollectorPortscanner) Reset() {
 
+}
+
+func (m *MetricsCollectorPortscanner) Collect(callback chan<- func()) {
+	subscriptionList, err := AzureSubscriptionsIterator.ListSubscriptions()
+	if err != nil {
+		m.Logger().Panic(err)
+	}
+
+	publicIpList := m.fetchPublicIpAdresses(subscriptionList)
 	m.portscanner.SetAzurePublicIpList(publicIpList)
 
 	if len(publicIpList) > 0 {
@@ -155,17 +162,17 @@ func (m *MetricsCollectorPortscanner) Collect(ctx context.Context, logger *log.E
 	}
 }
 
-func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(ctx context.Context, logger *log.Entry, subscriptions []subscriptions.Subscription) (pipList []network.PublicIPAddress) {
-	logger.Info("collecting public ips")
+func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions []subscriptions.Subscription) (pipList []network.PublicIPAddress) {
+	m.Logger().Info("collecting public ips")
 
 	for _, val := range subscriptions {
 		subscription := val
-		contextLogger := logger.WithField("azureSubscription", subscription)
+		contextLogger := m.Logger().WithField("azureSubscription", subscription)
 
-		client := network.NewPublicIPAddressesClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-		decorateAzureAutorest(&client.Client)
+		client := network.NewPublicIPAddressesClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+		AzureClient.DecorateAzureAutorest(&client.Client)
 
-		list, err := client.ListAll(ctx)
+		list, err := client.ListAll(m.Context())
 		if err != nil {
 			contextLogger.Panic(err)
 		}

@@ -7,12 +7,12 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorGraphApps struct {
-	CollectorProcessorCustom
+	collector.Processor
 
 	client *graphrbac.ApplicationsClient
 
@@ -22,14 +22,13 @@ type MetricsCollectorGraphApps struct {
 	}
 }
 
-func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 
 	// init azure client
-	auth, _ := auth.NewAuthorizerFromEnvironmentWithResource(azureEnvironment.GraphEndpoint)
-	client := graphrbac.NewApplicationsClientWithBaseURI(azureEnvironment.GraphEndpoint, *opts.Azure.Tenant)
-	decorateAzureAutorest(&client.Client)
-	client.Authorizer = auth
+	auth, _ := auth.NewAuthorizerFromEnvironmentWithResource(AzureClient.Environment.GraphEndpoint)
+	client := graphrbac.NewApplicationsClientWithBaseURI(AzureClient.Environment.GraphEndpoint, *opts.Azure.Tenant)
+	AzureClient.DecorateAzureAutorestWithAuthorizer(&client.Client, auth)
 
 	m.client = &client
 
@@ -62,7 +61,14 @@ func (m *MetricsCollectorGraphApps) Setup(collector *CollectorCustom) {
 	prometheus.MustRegister(m.prometheus.appsCredentials)
 }
 
-func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Entry) {
+func (m *MetricsCollectorGraphApps) Reset() {
+	m.prometheus.apps.Reset()
+	m.prometheus.appsCredentials.Reset()
+}
+
+func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
+	logger := m.Logger()
+
 	appsMetrics := prometheusCommon.NewMetricsList()
 	appsCredentialMetrics := prometheusCommon.NewMetricsList()
 
@@ -126,8 +132,8 @@ func (m *MetricsCollectorGraphApps) Collect(ctx context.Context, logger *log.Ent
 		}
 	}
 
-	m.prometheus.apps.Reset()
-	m.prometheus.appsCredentials.Reset()
-	appsMetrics.GaugeSet(m.prometheus.apps)
-	appsCredentialMetrics.GaugeSet(m.prometheus.appsCredentials)
+	callback <- func() {
+		appsMetrics.GaugeSet(m.prometheus.apps)
+		appsCredentialMetrics.GaugeSet(m.prometheus.appsCredentials)
+	}
 }

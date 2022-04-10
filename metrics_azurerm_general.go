@@ -1,17 +1,16 @@
 package main
 
 import (
-	"context"
-
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
+	"github.com/webdevops/go-common/prometheus/collector"
 )
 
 type MetricsCollectorAzureRmGeneral struct {
-	CollectorProcessorGeneral
+	collector.Processor
 
 	prometheus struct {
 		subscription  *prometheus.GaugeVec
@@ -19,8 +18,8 @@ type MetricsCollectorAzureRmGeneral struct {
 	}
 }
 
-func (m *MetricsCollectorAzureRmGeneral) Setup(collector *CollectorGeneral) {
-	m.CollectorReference = collector
+func (m *MetricsCollectorAzureRmGeneral) Setup(collector *collector.Collector) {
+	m.Processor.Setup(collector)
 
 	m.prometheus.subscription = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -44,16 +43,21 @@ func (m *MetricsCollectorAzureRmGeneral) Reset() {
 	m.prometheus.subscription.Reset()
 }
 
-func (m *MetricsCollectorAzureRmGeneral) Collect(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	m.collectAzureSubscription(ctx, logger, callback, subscription)
+func (m *MetricsCollectorAzureRmGeneral) Collect(callback chan<- func()) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+		m.collectSubscription(subscription, logger, callback)
+	})
+	if err != nil {
+		m.Logger().Panic(err)
+	}
 }
 
 // Collect Azure Subscription metrics
-func (m *MetricsCollectorAzureRmGeneral) collectAzureSubscription(ctx context.Context, logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := subscriptions.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint)
-	decorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmGeneral) collectSubscription(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client := subscriptions.NewClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint)
+	AzureClient.DecorateAzureAutorest(&client.Client)
 
-	sub, err := client.Get(ctx, *subscription.SubscriptionID)
+	sub, err := client.Get(m.Context(), *subscription.SubscriptionID)
 	if err != nil {
 		logger.Panic(err)
 	}

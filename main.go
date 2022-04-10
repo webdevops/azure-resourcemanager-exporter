@@ -1,24 +1,20 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	flags "github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	azureCommon "github.com/webdevops/go-common/azure"
 	"github.com/webdevops/go-common/prometheus/azuretracing"
+	"github.com/webdevops/go-common/prometheus/collector"
 
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
 )
@@ -32,14 +28,10 @@ var (
 	argparser *flags.Parser
 	opts      config.Opts
 
-	AzureAuthorizer    autorest.Authorizer
-	AzureSubscriptions []subscriptions.Subscription
+	AzureClient                *azureCommon.Client
+	AzureSubscriptionsIterator *azureCommon.SubscriptionsIterator
 
-	azureEnvironment  azure.Environment
 	portscanPortRange []Portrange
-
-	collectorGeneralList map[string]*CollectorGeneral
-	collectorCustomList  map[string]*CollectorCustom
 
 	portrangeRegexp = regexp.MustCompile("^(?P<first>[0-9]+)(-(?P<last>[0-9]+))?$")
 
@@ -69,7 +61,6 @@ func main() {
 	startHttpServer()
 }
 
-// init argparser and parse/validate arguments
 func initArgparser() {
 	argparser = flags.NewParser(&opts, flags.Default)
 	_, err := argparser.Parse()
@@ -83,37 +74,6 @@ func initArgparser() {
 			argparser.WriteHelp(os.Stdout)
 			os.Exit(1)
 		}
-	}
-
-	// verbose level
-	if opts.Logger.Verbose {
-		log.SetLevel(log.DebugLevel)
-	}
-
-	// debug level
-	if opts.Logger.Debug {
-		log.SetReportCaller(true)
-		log.SetLevel(log.TraceLevel)
-		log.SetFormatter(&log.TextFormatter{
-			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-				s := strings.Split(f.Function, ".")
-				funcName := s[len(s)-1]
-				return funcName, fmt.Sprintf("%s:%d", path.Base(f.File), f.Line)
-			},
-		})
-	}
-
-	// json log format
-	if opts.Logger.LogJson {
-		log.SetReportCaller(true)
-		log.SetFormatter(&log.JSONFormatter{
-			DisableTimestamp: true,
-			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-				s := strings.Split(f.Function, ".")
-				funcName := s[len(s)-1]
-				return funcName, fmt.Sprintf("%s:%d", path.Base(f.File), f.Line)
-			},
-		})
 	}
 
 	if opts.Portscan.Enabled {
@@ -201,150 +161,172 @@ func initArgparser() {
 	}
 }
 
-// Init and build Azure authorzier
+func initLogger() {
+	// verbose level
+	if opts.Logger.Debug {
+		log.SetLevel(log.DebugLevel)
+	}
+
+	// trace level
+	if opts.Logger.Trace {
+		log.SetReportCaller(true)
+		log.SetLevel(log.TraceLevel)
+		log.SetFormatter(&log.TextFormatter{
+			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+				s := strings.Split(f.Function, "/")
+				funcName := s[len(s)-1]
+				return funcName, fmt.Sprintf("%s:%d", f.File, f.Line)
+			},
+		})
+	}
+
+	// json log format
+	if opts.Logger.Json {
+		log.SetReportCaller(true)
+		log.SetFormatter(&log.JSONFormatter{
+			DisableTimestamp: true,
+			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+				s := strings.Split(f.Function, "/")
+				funcName := s[len(s)-1]
+				return funcName, fmt.Sprintf("%s:%d", f.File, f.Line)
+			},
+		})
+	}
+}
+
 func initAzureConnection() {
 	var err error
-	ctx := context.Background()
-
-	// setup azure authorizer
-	AzureAuthorizer, err = auth.NewAuthorizerFromEnvironment()
+	AzureClient, err = azureCommon.NewClientFromEnvironment(*opts.Azure.Environment, log.StandardLogger())
 	if err != nil {
-		log.Panic(err)
+		log.Panic(err.Error())
 	}
 
-	azureEnvironment, err = azure.EnvironmentFromName(*opts.Azure.Environment)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	subscriptionsClient := subscriptions.NewClientWithBaseURI(azureEnvironment.ResourceManagerEndpoint)
-	subscriptionsClient.Authorizer = AzureAuthorizer
-
-	if len(opts.Azure.Subscription) == 0 {
-		// auto lookup subscriptions
-		listResult, err := subscriptionsClient.List(ctx)
-		if err != nil {
-			log.Panic(err)
-		}
-		AzureSubscriptions = listResult.Values()
-
-		if len(AzureSubscriptions) == 0 {
-			log.Panic("no Azure Subscriptions found via auto detection, does this ServicePrincipal have read permissions to the subcriptions?")
-		}
-	} else {
-		// fixed subscription list
-		AzureSubscriptions = []subscriptions.Subscription{}
-		for _, subId := range opts.Azure.Subscription {
-			result, err := subscriptionsClient.Get(ctx, subId)
-			if err != nil {
-				log.Panic(err)
-			}
-			AzureSubscriptions = append(AzureSubscriptions, result)
-		}
-	}
+	AzureClient.SetUserAgent(UserAgent + gitTag)
+	AzureSubscriptionsIterator = azureCommon.NewSubscriptionIterator(AzureClient)
 }
 
 func initMetricCollector() {
 	var collectorName string
-	collectorGeneralList = map[string]*CollectorGeneral{}
-	collectorCustomList = map[string]*CollectorCustom{}
 
 	collectorName = "General"
 	if opts.Scrape.TimeGeneral.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmGeneral{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeGeneral)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeGeneral)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "RateLimitRead"
 	if opts.Scrape.TimeRateLimitRead.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmRateLimitRead{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeRateLimitRead)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmRateLimitRead{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeRateLimitRead)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 	collectorName = "RateLimitWrite"
 	if opts.Scrape.TimeRateLimitWrite.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmRateLimitWrite{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeRateLimitWrite)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmRateLimitWrite{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeRateLimitWrite)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "Resource"
 	if opts.Scrape.TimeResource.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmResources{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeResource)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeResource)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "Quota"
 	if opts.Scrape.TimeQuota.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmQuota{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeQuota)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeQuota)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "Costs"
 	if opts.Scrape.TimeCosts.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmCosts{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeCosts)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeCosts)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "Security"
 	if opts.Scrape.TimeSecurity.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmSecurity{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeSecurity)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmSecurity{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeSecurity)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "Health"
 	if opts.Scrape.TimeResourceHealth.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmHealth{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeResourceHealth)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeResourceHealth)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "IAM"
 	if opts.Scrape.TimeIam.Seconds() > 0 {
-		collectorGeneralList[collectorName] = NewCollectorGeneral(collectorName, &MetricsCollectorAzureRmIam{})
-		collectorGeneralList[collectorName].Run(*opts.Scrape.TimeIam)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeIam)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "GraphApps"
 	if opts.Scrape.TimeGraph.Seconds() > 0 {
-		collectorCustomList[collectorName] = NewCollectorCustom(collectorName, &MetricsCollectorGraphApps{})
-		collectorCustomList[collectorName].Run(*opts.Scrape.TimeGraph)
+		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeGraph)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
 	collectorName = "Portscan"
 	if opts.Portscan.Enabled {
-		collectorCustomList[collectorName] = NewCollectorCustom(collectorName, &MetricsCollectorPortscanner{})
-		collectorCustomList[collectorName].Run(opts.Portscan.Time)
+		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, log.StandardLogger())
+		c.SetScapeTime(opts.Scrape.Time)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
-
-	collectorName = "Exporter"
-	if opts.Scrape.TimeExporter.Seconds() > 0 {
-		collectorCustomList[collectorName] = NewCollectorCustom(collectorName, &MetricsCollectorExporter{})
-		collectorCustomList[collectorName].SetIsHidden(true)
-		collectorCustomList[collectorName].Run(*opts.Scrape.TimeExporter)
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
-
 }
 
 // start and handle prometheus handler
@@ -356,16 +338,14 @@ func startHttpServer() {
 		}
 	})
 
+	// healthz
+	http.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if _, err := fmt.Fprint(w, "Ok"); err != nil {
+			log.Error(err)
+		}
+	})
+
 	http.Handle("/metrics", azuretracing.RegisterAzureMetricAutoClean(promhttp.Handler()))
 
 	log.Fatal(http.ListenAndServe(opts.ServerBind, nil))
-}
-
-func decorateAzureAutorest(client *autorest.Client) {
-	client.Authorizer = AzureAuthorizer
-	if err := client.AddToUserAgent(UserAgent + gitTag); err != nil {
-		log.Panic(err)
-	}
-
-	azuretracing.DecorateAzureAutoRestClient(client)
 }
