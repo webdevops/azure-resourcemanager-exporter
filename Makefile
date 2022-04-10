@@ -43,7 +43,7 @@ dependencies:
 	go mod vendor
 
 .PHONY: check-release
-check-release: vendor lint gosec
+check-release: vendor lint gosec test
 
 .PHONY: lint
 lint: $(GOLANGCI_LINT_BIN)
