@@ -47,6 +47,7 @@ type Portrange struct {
 
 func main() {
 	initArgparser()
+	initLogger()
 
 	log.Infof("starting azure-resourcemanager-exporter v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
 	log.Info(string(opts.GetJson()))
