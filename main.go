@@ -203,6 +203,11 @@ func initAzureConnection() {
 	}
 
 	AzureClient.SetUserAgent(UserAgent + gitTag)
+
+	// limit subscriptions (if filter is set)
+	if len(opts.Azure.Subscription) >= 1 {
+		AzureClient.SetSubscriptionFilter(opts.Azure.Subscription...)
+	}
 	AzureSubscriptionsIterator = azureCommon.NewSubscriptionIterator(AzureClient)
 }
 

@@ -162,7 +162,7 @@ func (m *MetricsCollectorPortscanner) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions []subscriptions.Subscription) (pipList []network.PublicIPAddress) {
+func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[string]subscriptions.Subscription) (pipList []network.PublicIPAddress) {
 	m.Logger().Info("collecting public ips")
 
 	for _, val := range subscriptions {
