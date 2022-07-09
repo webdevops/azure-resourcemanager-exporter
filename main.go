@@ -283,16 +283,16 @@ func initMetricCollector() {
 	// 	log.WithField("collector", collectorName).Infof("collector disabled")
 	// }
 
-	// collectorName = "GraphApps"
-	// if opts.Scrape.TimeGraph.Seconds() > 0 {
-	// 	c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
-	// 	c.SetScapeTime(*opts.Scrape.TimeGraph)
-	// 	if err := c.Start(); err != nil {
-	// 		log.Panic(err.Error())
-	// 	}
-	// } else {
-	// 	log.WithField("collector", collectorName).Infof("collector disabled")
-	// }
+	collectorName = "GraphApps"
+	if opts.Scrape.TimeGraph.Seconds() > 0 {
+		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeGraph)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
+	} else {
+		log.WithField("collector", collectorName).Infof("collector disabled")
+	}
 
 	collectorName = "Portscan"
 	if opts.Portscan.Enabled {
