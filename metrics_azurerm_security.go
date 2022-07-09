@@ -1,18 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/advisor/mgmt/advisor"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	"github.com/Azure/azure-sdk-for-go/profiles/preview/preview/security/mgmt/security"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
+	"github.com/webdevops/go-common/utils/to"
 )
 
 type MetricsCollectorAzureRmSecurity struct {
@@ -34,7 +31,6 @@ func (m *MetricsCollectorAzureRmSecurity) Setup(collector *collector.Collector) 
 		},
 		[]string{
 			"subscriptionID",
-			"location",
 			"assessmentType",
 		},
 	)
@@ -65,60 +61,56 @@ func (m *MetricsCollectorAzureRmSecurity) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmSecurity) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
-		m.collectAzureAdvisorRecommendations(subscription, logger, callback)
-		for _, location := range opts.Azure.Location {
-			m.collectAzureSecurityCompliance(subscription, logger, callback, location)
-		}
-
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+		m.collectAzureSecurityCompliance(subscription, logger, callback)
+		// m.collectAzureAdvisorRecommendations(subscription, logger, callback)
 	})
 	if err != nil {
 		m.Logger().Panic(err)
 	}
 }
 
-func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func(), location string) {
-	subscriptionResourceId := fmt.Sprintf("/subscriptions/%v", *subscription.SubscriptionID)
-	client := security.NewCompliancesClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, subscriptionResourceId, location)
-	AzureClient.DecorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client, err := armsecurity.NewCompliancesClient(AzureClient.GetCred(), nil)
+	if err != nil {
+		logger.Panic(err)
+	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
 
-	// try to find latest
-	result, err := client.ListComplete(m.Context(), subscriptionResourceId)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
+	pager := client.NewListPager(*subscription.ID, nil)
 
 	lastReportName := ""
 	var lastReportTimestamp *time.Time
-	for result.NotDone() {
-		row := result.Value()
-
-		if lastReportTimestamp == nil || row.AssessmentTimestampUtcDate.UTC().After(*lastReportTimestamp) {
-			timestamp := row.AssessmentTimestampUtcDate.UTC()
-			lastReportTimestamp = &timestamp
-			lastReportName = to.String(row.Name)
+	for pager.More() {
+		nextResult, err := pager.NextPage(m.Context())
+		if err != nil {
+			logger.Panic(err)
 		}
 
-		if result.NextWithContext(m.Context()) != nil {
-			break
+		if nextResult.Value != nil {
+			for _, complienceReport := range nextResult.Value {
+				if lastReportTimestamp == nil || complienceReport.Properties.AssessmentTimestampUTCDate.UTC().After(*lastReportTimestamp) {
+					timestamp := complienceReport.Properties.AssessmentTimestampUTCDate.UTC()
+					lastReportTimestamp = &timestamp
+					lastReportName = to.String(complienceReport.Name)
+				}
+
+			}
 		}
 	}
 
 	if lastReportName != "" {
-		complienceResult, err := client.Get(m.Context(), subscriptionResourceId, lastReportName)
+		report, err := client.Get(m.Context(), *subscription.ID, lastReportName, nil)
 		if err != nil {
 			logger.Error(err)
 			return
 		}
 
-		if complienceResult.AssessmentResult != nil {
-			for _, result := range *complienceResult.AssessmentResult {
+		if report.Properties.AssessmentResult != nil {
+			for _, result := range report.Properties.AssessmentResult {
 				infoLabels := prometheus.Labels{
 					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-					"location":       stringToStringLower(location),
 					"assessmentType": stringPtrToStringLower(result.SegmentType),
 				}
 				infoMetric.Add(infoLabels, to.Float64(result.Percentage))
@@ -131,36 +123,37 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(subscri
 	}
 }
 
-func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client := advisor.NewRecommendationsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	AzureClient.DecorateAzureAutorest(&client.Client)
-
-	recommendationResult, err := client.ListComplete(m.Context(), "", nil, "")
-	if err != nil {
-		logger.Panic(err)
-	}
-
-	infoMetric := prometheusCommon.NewHashedMetricsList()
-
-	for _, item := range *recommendationResult.Response().Value {
-		resourceId := to.String(item.ID)
-		azureResource, _ := azureCommon.ParseResourceId(resourceId)
-
-		infoLabels := prometheus.Labels{
-			"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-			"category":       stringToStringLower(string(item.RecommendationProperties.Category)),
-			"resourceType":   stringPtrToStringLower(item.RecommendationProperties.ImpactedField),
-			"resourceName":   stringPtrToStringLower(item.RecommendationProperties.ImpactedValue),
-			"resourceGroup":  azureResource.ResourceGroup,
-			"problem":        to.String(item.RecommendationProperties.ShortDescription.Problem),
-			"impact":         stringToStringLower(string(item.Impact)),
-			"risk":           stringToStringLower(string(item.Risk)),
-		}
-
-		infoMetric.Inc(infoLabels)
-	}
-
-	callback <- func() {
-		infoMetric.GaugeSet(m.prometheus.advisorRecommendations)
-	}
-}
+//
+// func (m *MetricsCollectorAzureRmSecurity) collectAzureAdvisorRecommendations(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+// 	client := advisor.NewRecommendationsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
+// 	AzureClient.DecorateAzureAutorest(&client.Client)
+//
+// 	recommendationResult, err := client.ListComplete(m.Context(), "", nil, "")
+// 	if err != nil {
+// 		logger.Panic(err)
+// 	}
+//
+// 	infoMetric := prometheusCommon.NewHashedMetricsList()
+//
+// 	for _, item := range *recommendationResult.Response().Value {
+// 		resourceId := to.String(item.ID)
+// 		azureResource, _ := azureCommon.ParseResourceId(resourceId)
+//
+// 		infoLabels := prometheus.Labels{
+// 			"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+// 			"category":       stringToStringLower(string(item.RecommendationProperties.Category)),
+// 			"resourceType":   stringPtrToStringLower(item.RecommendationProperties.ImpactedField),
+// 			"resourceName":   stringPtrToStringLower(item.RecommendationProperties.ImpactedValue),
+// 			"resourceGroup":  azureResource.ResourceGroup,
+// 			"problem":        to.String(item.RecommendationProperties.ShortDescription.Problem),
+// 			"impact":         stringToStringLower(string(item.Impact)),
+// 			"risk":           stringToStringLower(string(item.Risk)),
+// 		}
+//
+// 		infoMetric.Inc(infoLabels)
+// 	}
+//
+// 	callback <- func() {
+// 		infoMetric.GaugeSet(m.prometheus.advisorRecommendations)
+// 	}
+// }

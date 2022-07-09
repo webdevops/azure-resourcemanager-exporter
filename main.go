@@ -12,7 +12,7 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	azureCommon "github.com/webdevops/go-common/azure"
+	azureCommon "github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/azuretracing"
 	"github.com/webdevops/go-common/prometheus/collector"
 
@@ -21,14 +21,14 @@ import (
 
 const (
 	Author    = "webdevops.io"
-	UserAgent = "azure-metrics-exporter/"
+	UserAgent = "azure-resourcemanager-exporter/"
 )
 
 var (
 	argparser *flags.Parser
 	opts      config.Opts
 
-	AzureClient                *azureCommon.Client
+	AzureClient                *azureCommon.ArmClient
 	AzureSubscriptionsIterator *azureCommon.SubscriptionsIterator
 
 	portscanPortRange []Portrange
@@ -106,14 +106,6 @@ func initArgparser() {
 	// scrape time
 	if opts.Scrape.TimeGeneral == nil {
 		opts.Scrape.TimeGeneral = &opts.Scrape.Time
-	}
-
-	if opts.Scrape.TimeRateLimitRead == nil {
-		opts.Scrape.TimeRateLimitRead = &opts.Scrape.Time
-	}
-
-	if opts.Scrape.TimeRateLimitWrite == nil {
-		opts.Scrape.TimeRateLimitWrite = &opts.Scrape.Time
 	}
 
 	if opts.Scrape.TimeResource == nil {
@@ -197,7 +189,7 @@ func initLogger() {
 
 func initAzureConnection() {
 	var err error
-	AzureClient, err = azureCommon.NewClientFromEnvironment(*opts.Azure.Environment, log.StandardLogger())
+	AzureClient, err = azureCommon.NewArmClientWithCloudName(*opts.Azure.Environment, log.StandardLogger())
 	if err != nil {
 		log.Panic(err.Error())
 	}
@@ -218,27 +210,6 @@ func initMetricCollector() {
 	if opts.Scrape.TimeGeneral.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.TimeGeneral)
-		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
-		}
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
-
-	collectorName = "RateLimitRead"
-	if opts.Scrape.TimeRateLimitRead.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmRateLimitRead{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeRateLimitRead)
-		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
-		}
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
-	collectorName = "RateLimitWrite"
-	if opts.Scrape.TimeRateLimitWrite.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmRateLimitWrite{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeRateLimitWrite)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -301,27 +272,27 @@ func initMetricCollector() {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
-	collectorName = "IAM"
-	if opts.Scrape.TimeIam.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeIam)
-		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
-		}
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
+	// collectorName = "IAM"
+	// if opts.Scrape.TimeIam.Seconds() > 0 {
+	// 	c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, log.StandardLogger())
+	// 	c.SetScapeTime(*opts.Scrape.TimeIam)
+	// 	if err := c.Start(); err != nil {
+	// 		log.Panic(err.Error())
+	// 	}
+	// } else {
+	// 	log.WithField("collector", collectorName).Infof("collector disabled")
+	// }
 
-	collectorName = "GraphApps"
-	if opts.Scrape.TimeGraph.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeGraph)
-		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
-		}
-	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
-	}
+	// collectorName = "GraphApps"
+	// if opts.Scrape.TimeGraph.Seconds() > 0 {
+	// 	c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
+	// 	c.SetScapeTime(*opts.Scrape.TimeGraph)
+	// 	if err := c.Start(); err != nil {
+	// 		log.Panic(err.Error())
+	// 	}
+	// } else {
+	// 	log.WithField("collector", collectorName).Infof("collector disabled")
+	// }
 
 	collectorName = "Portscan"
 	if opts.Portscan.Enabled {

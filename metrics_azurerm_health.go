@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resourcehealth/mgmt/resourcehealth"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcehealth/armresourcehealth"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
+	"github.com/webdevops/go-common/utils/to"
 )
 
 type MetricsCollectorAzureRmHealth struct {
@@ -42,7 +42,7 @@ func (m *MetricsCollectorAzureRmHealth) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
 		m.collectSubscription(subscription, logger, callback)
 	})
 	if err != nil {
@@ -50,46 +50,47 @@ func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client := resourcehealth.NewAvailabilityStatusesClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	AzureClient.DecorateAzureAutorest(&client.Client)
-
-	list, err := client.ListBySubscriptionIDComplete(m.Context(), "", "")
-
+func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client, err := armresourcehealth.NewAvailabilityStatusesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
 	if err != nil {
 		logger.Panic(err)
 	}
 
-	availabilityStateValues := resourcehealth.PossibleAvailabilityStateValuesValues()
-
 	resourceHealthMetric := prometheusCommon.NewMetricsList()
 
-	for list.NotDone() {
-		val := list.Value()
+	availabilityStateValues := armresourcehealth.PossibleAvailabilityStateValuesValues()
 
-		resourceId := to.String(val.ID)
-		resourceId = stringsTrimSuffixCI(resourceId, "/providers/"+to.String(val.Type)+"/"+to.String(val.Name))
-		azureResource, _ := azureCommon.ParseResourceId(resourceId)
+	pager := client.NewListBySubscriptionIDPager(nil)
 
-		resourceAvailabilityState := resourcehealth.AvailabilityStateValuesUnknown
-
-		if val.Properties != nil {
-			resourceAvailabilityState = val.Properties.AvailabilityState
+	for pager.More() {
+		nextResult, err := pager.NextPage(m.Context())
+		if err != nil {
+			logger.Panic(err)
 		}
 
-		for _, availabilityState := range availabilityStateValues {
-			if availabilityState == resourceAvailabilityState {
-				resourceHealthMetric.Add(prometheus.Labels{
-					"subscriptionID":    azureResource.Subscription,
-					"resourceID":        stringToStringLower(resourceId),
-					"resourceGroup":     azureResource.ResourceGroup,
-					"availabilityState": stringToStringLower(string(availabilityState)),
-				}, 1)
+		if nextResult.Value != nil {
+			for _, resourceHealth := range nextResult.Value {
+
+				resourceId := to.String(resourceHealth.ID)
+				resourceId = stringsTrimSuffixCI(resourceId, "/providers/"+to.String(resourceHealth.Type)+"/"+to.String(resourceHealth.Name))
+				azureResource, _ := azureCommon.ParseResourceId(resourceId)
+
+				resourceAvailabilityState := armresourcehealth.AvailabilityStateValuesUnknown
+				if resourceHealth.Properties != nil && resourceHealth.Properties.AvailabilityState != nil {
+					resourceAvailabilityState = *resourceHealth.Properties.AvailabilityState
+				}
+
+				for _, availabilityState := range availabilityStateValues {
+					if availabilityState == resourceAvailabilityState {
+						resourceHealthMetric.Add(prometheus.Labels{
+							"subscriptionID":    azureResource.Subscription,
+							"resourceID":        stringToStringLower(resourceId),
+							"resourceGroup":     azureResource.ResourceGroup,
+							"availabilityState": stringToStringLower(string(availabilityState)),
+						}, 1)
+					}
+				}
 			}
-		}
-
-		if list.NextWithContext(m.Context()) != nil {
-			break
 		}
 	}
 

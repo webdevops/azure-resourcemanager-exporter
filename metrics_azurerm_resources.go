@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/resources"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
+	"github.com/webdevops/go-common/utils/to"
 )
 
 type MetricsCollectorAzureRmResources struct {
@@ -69,7 +69,7 @@ func (m *MetricsCollectorAzureRmResources) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmResources) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
 		m.collectAzureResourceGroup(subscription, logger, callback)
 		m.collectAzureResources(subscription, logger, callback)
 
@@ -80,30 +80,38 @@ func (m *MetricsCollectorAzureRmResources) Collect(callback chan<- func()) {
 }
 
 // Collect Azure ResourceGroup metrics
-func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client := resources.NewGroupsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	AzureClient.DecorateAzureAutorest(&client.Client)
-
-	resourceGroupResult, err := client.ListComplete(m.Context(), "", nil)
+func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client, err := armresources.NewResourceGroupsClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
 	if err != nil {
 		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
 
-	for _, item := range *resourceGroupResult.Response().Value {
-		resourceId := to.String(item.ID)
-		azureResource, _ := azureCommon.ParseResourceId(resourceId)
+	pager := client.NewListPager(nil)
 
-		infoLabels := prometheus.Labels{
-			"resourceID":        stringPtrToStringLower(item.ID),
-			"subscriptionID":    azureResource.Subscription,
-			"resourceGroup":     azureResource.ResourceGroup,
-			"location":          stringPtrToStringLower(item.Location),
-			"provisioningState": stringPtrToStringLower(item.Properties.ProvisioningState),
+	for pager.More() {
+		nextResult, err := pager.NextPage(m.Context())
+		if err != nil {
+			logger.Panic(err)
 		}
-		infoLabels = azureCommon.AddResourceTagsToPrometheusLabels(infoLabels, item.Tags, opts.Azure.ResourceGroupTags)
-		infoMetric.AddInfo(infoLabels)
+
+		if nextResult.ResourceGroupListResult.Value != nil {
+			for _, resourceGroup := range nextResult.ResourceGroupListResult.Value {
+				resourceId := to.String(resourceGroup.ID)
+				azureResource, _ := azureCommon.ParseResourceId(resourceId)
+
+				infoLabels := prometheus.Labels{
+					"resourceID":        stringPtrToStringLower(resourceGroup.ID),
+					"subscriptionID":    azureResource.Subscription,
+					"resourceGroup":     azureResource.ResourceGroup,
+					"location":          stringPtrToStringLower(resourceGroup.Location),
+					"provisioningState": stringPtrToStringLower(resourceGroup.Properties.ProvisioningState),
+				}
+				infoLabels = azureCommon.AddResourceTagsToPrometheusLabels(infoLabels, resourceGroup.Tags, opts.Azure.ResourceGroupTags)
+				infoMetric.AddInfo(infoLabels)
+			}
+		}
 	}
 
 	callback <- func() {
@@ -111,39 +119,40 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscriptio
 	}
 }
 
-func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client := resources.NewClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	AzureClient.DecorateAzureAutorest(&client.Client)
-
-	list, err := client.ListComplete(m.Context(), "", "createdTime,changedTime,provisioningState", nil)
-
+func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client, err := armresources.NewClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
 	if err != nil {
 		logger.Panic(err)
 	}
 
 	resourceMetric := prometheusCommon.NewMetricsList()
 
-	for list.NotDone() {
-		val := list.Value()
+	pager := client.NewListPager(nil)
 
-		resourceId := to.String(val.ID)
-		azureResource, _ := azureCommon.ParseResourceId(resourceId)
-
-		infoLabels := prometheus.Labels{
-			"subscriptionID":    azureResource.Subscription,
-			"resourceID":        stringToStringLower(resourceId),
-			"resourceName":      azureResource.ResourceName,
-			"resourceGroup":     azureResource.ResourceGroup,
-			"provider":          azureResource.ResourceProviderName,
-			"resourceType":      azureResource.ResourceType,
-			"location":          stringPtrToStringLower(val.Location),
-			"provisioningState": stringPtrToStringLower(val.ProvisioningState),
+	for pager.More() {
+		nextResult, err := pager.NextPage(m.Context())
+		if err != nil {
+			logger.Panic(err)
 		}
-		infoLabels = azureCommon.AddResourceTagsToPrometheusLabels(infoLabels, val.Tags, opts.Azure.ResourceTags)
-		resourceMetric.AddInfo(infoLabels)
 
-		if list.NextWithContext(m.Context()) != nil {
-			break
+		if nextResult.ResourceListResult.Value != nil {
+			for _, resource := range nextResult.ResourceListResult.Value {
+				resourceId := to.String(resource.ID)
+				azureResource, _ := azureCommon.ParseResourceId(resourceId)
+
+				infoLabels := prometheus.Labels{
+					"subscriptionID":    azureResource.Subscription,
+					"resourceID":        stringToStringLower(resourceId),
+					"resourceName":      azureResource.ResourceName,
+					"resourceGroup":     azureResource.ResourceGroup,
+					"provider":          azureResource.ResourceProviderName,
+					"resourceType":      azureResource.ResourceType,
+					"location":          stringPtrToStringLower(resource.Location),
+					"provisioningState": stringPtrToStringLower(resource.ProvisioningState),
+				}
+				infoLabels = azureCommon.AddResourceTagsToPrometheusLabels(infoLabels, resource.Tags, opts.Azure.ResourceTags)
+				resourceMetric.AddInfo(infoLabels)
+			}
 		}
 	}
 

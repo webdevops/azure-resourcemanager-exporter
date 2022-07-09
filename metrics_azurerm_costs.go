@@ -1,18 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/consumption/mgmt/consumption"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	"github.com/Azure/azure-sdk-for-go/services/costmanagement/mgmt/2019-10-01/costmanagement" // nolint waiting for migration until sdk is fully GA
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
+	"github.com/webdevops/go-common/utils/to"
 )
 
 type MetricsCollectorAzureRmCosts struct {
@@ -162,7 +161,7 @@ func (m *MetricsCollectorAzureRmCosts) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
 		m.collectSubscription(subscription, logger, callback)
 	})
 	if err != nil {
@@ -170,13 +169,13 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
 	for _, timeframe := range opts.Costs.Timeframe {
 		m.collectCostManagementMetrics(
 			logger.WithField("costreport", "Usage"),
 			callback,
 			subscription,
-			"Usage",
+			armcostmanagement.ExportTypeUsage,
 			nil,
 			timeframe,
 			m.prometheus.costmanagementOverallUsage,
@@ -186,7 +185,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription subscrip
 			logger.WithField("costreport", "ActualCost"),
 			callback,
 			subscription,
-			"ActualCost",
+			armcostmanagement.ExportTypeActualCost,
 			nil,
 			timeframe,
 			m.prometheus.costmanagementOverallActualCost,
@@ -202,7 +201,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription subscrip
 				logger.WithField("costreport", "Usage"),
 				callback,
 				subscription,
-				"Usage",
+				armcostmanagement.ExportTypeUsage,
 				&dimension,
 				timeframe,
 				m.prometheus.costmanagementDetailUsage,
@@ -212,7 +211,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription subscrip
 				logger.WithField("costreport", "ActualCost"),
 				callback,
 				subscription,
-				"ActualCost",
+				armcostmanagement.ExportTypeActualCost,
 				&dimension,
 				timeframe,
 				m.prometheus.costmanagementDetailActualCost,
@@ -230,16 +229,10 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription subscrip
 	)
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription) {
-	client := consumption.NewBudgetsClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	AzureClient.DecorateAzureAutorest(&client.Client)
-
-	scope := fmt.Sprintf("/subscriptions/%s/", *subscription.SubscriptionID)
-
-	result, err := client.ListComplete(m.Context(), scope)
+func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, callback chan<- func(), subscription *armsubscriptions.Subscription) {
+	client, err := armconsumption.NewBudgetsClient(AzureClient.GetCred(), nil)
 	if err != nil {
-		log.Error(err.Error())
-		return
+		logger.Panic(err)
 	}
 
 	infoMetric := prometheusCommon.NewMetricsList()
@@ -247,52 +240,54 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, c
 	currentMetric := prometheusCommon.NewMetricsList()
 	usageMetric := prometheusCommon.NewMetricsList()
 
-	for result.NotDone() {
-		val := result.Value()
+	pager := client.NewListPager(*subscription.ID, nil)
 
-		resourceId := to.String(val.ID)
-		azureResource, _ := azureCommon.ParseResourceId(resourceId)
-
-		infoMetric.AddInfo(prometheus.Labels{
-			"resourceID":     stringToStringLower(resourceId),
-			"subscriptionID": azureResource.Subscription,
-			"resourceGroup":  azureResource.ResourceGroup,
-			"budgetName":     to.String(val.Name),
-			"category":       stringPtrToStringLower(val.BudgetProperties.Category),
-			"timeGrain":      string(val.BudgetProperties.TimeGrain),
-		})
-
-		if val.BudgetProperties.Amount != nil {
-			limitAmount, _ := val.BudgetProperties.Amount.Float64()
-			limitMetric.Add(prometheus.Labels{
-				"resourceID":     stringToStringLower(resourceId),
-				"subscriptionID": azureResource.Subscription,
-				"budgetName":     to.String(val.Name),
-			}, limitAmount)
+	for pager.More() {
+		nextResult, err := pager.NextPage(m.Context())
+		if err != nil {
+			logger.Panic(err)
 		}
 
-		if val.BudgetProperties.CurrentSpend != nil {
-			budgetCurrentSpend, _ := val.BudgetProperties.CurrentSpend.Amount.Float64()
-			currentMetric.Add(prometheus.Labels{
-				"resourceID":     stringToStringLower(resourceId),
-				"subscriptionID": azureResource.Subscription,
-				"budgetName":     to.String(val.Name),
-				"unit":           stringPtrToStringLower(val.BudgetProperties.CurrentSpend.Unit),
-			}, budgetCurrentSpend)
-		}
+		if nextResult.Value != nil {
+			for _, budget := range nextResult.Value {
+				resourceId := to.String(budget.ID)
+				azureResource, _ := azureCommon.ParseResourceId(resourceId)
 
-		if val.BudgetProperties.Amount != nil && val.BudgetProperties.CurrentSpend != nil {
-			budgetCurrentSpend, _ := val.BudgetProperties.CurrentSpend.Amount.Float64()
-			limitAmount, _ := val.BudgetProperties.Amount.Float64()
-			usageMetric.Add(prometheus.Labels{
-				"resourceID":     stringToStringLower(resourceId),
-				"subscriptionID": azureResource.Subscription,
-				"budgetName":     to.String(val.Name),
-			}, budgetCurrentSpend/limitAmount)
-		}
+				infoMetric.AddInfo(prometheus.Labels{
+					"resourceID":     stringToStringLower(resourceId),
+					"subscriptionID": azureResource.Subscription,
+					"resourceGroup":  azureResource.ResourceGroup,
+					"budgetName":     to.String(budget.Name),
+					"category":       stringToStringLower(string(*budget.Properties.Category)),
+					"timeGrain":      string(*budget.Properties.TimeGrain),
+				})
 
-		if result.NextWithContext(m.Context()) != nil {
-			break
+				if budget.Properties.Amount != nil {
+					limitMetric.Add(prometheus.Labels{
+						"resourceID":     stringToStringLower(resourceId),
+						"subscriptionID": azureResource.Subscription,
+						"budgetName":     to.String(budget.Name),
+					}, *budget.Properties.Amount)
+				}
+
+				if budget.Properties.CurrentSpend != nil {
+					currentMetric.Add(prometheus.Labels{
+						"resourceID":     stringToStringLower(resourceId),
+						"subscriptionID": azureResource.Subscription,
+						"budgetName":     to.String(budget.Name),
+						"unit":           stringPtrToStringLower(budget.Properties.CurrentSpend.Unit),
+					}, *budget.Properties.CurrentSpend.Amount)
+				}
+
+				if budget.Properties.Amount != nil && budget.Properties.CurrentSpend != nil {
+					usageMetric.Add(prometheus.Labels{
+						"resourceID":     stringToStringLower(resourceId),
+						"subscriptionID": azureResource.Subscription,
+						"budgetName":     to.String(budget.Name),
+					}, *budget.Properties.CurrentSpend.Amount / *budget.Properties.Amount)
+				}
+
+			}
 		}
 	}
 
@@ -304,56 +299,63 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, c
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.Entry, callback chan<- func(), subscription subscriptions.Subscription, costType string, dimension *string, timeframe string, metric *prometheus.GaugeVec) {
-	client := costmanagement.NewQueryClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-	AzureClient.DecorateAzureAutorest(&client.Client)
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.Entry, callback chan<- func(), subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimension *string, timeframe string, metric *prometheus.GaugeVec) {
+	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), nil)
+	if err != nil {
+		logger.Panic(err)
+	}
 
-	scope := fmt.Sprintf("/subscriptions/%s/", *subscription.SubscriptionID)
-
-	queryGrouping := []costmanagement.QueryGrouping{
+	dimensionType := armcostmanagement.QueryColumnTypeDimension
+	queryGrouping := []*armcostmanagement.QueryGrouping{
 		{
 			Name: to.StringPtr("ResourceGroupName"),
-			Type: "Dimension",
+			Type: &dimensionType,
 		},
 	}
 
 	if dimension != nil {
 		queryGrouping = append(
 			queryGrouping,
-			costmanagement.QueryGrouping{
+			&armcostmanagement.QueryGrouping{
 				Name: dimension,
-				Type: "Dimension",
+				Type: &dimensionType,
 			},
 		)
 	}
 
-	params := costmanagement.QueryDefinition{}
-	params.Type = to.StringPtr(costType)
-	params.Timeframe = costmanagement.TimeframeType(timeframe)
-	params.Dataset = &costmanagement.QueryDataset{}
-	params.Dataset.Grouping = &queryGrouping
-	params.Dataset.Granularity = "None"
-	params.Dataset.Aggregation = map[string]*costmanagement.QueryAggregation{}
+	granularity := armcostmanagement.GranularityType("none")
+	timeframeType := armcostmanagement.TimeframeType(timeframe)
 
-	params.Dataset.Aggregation["PreTaxCost"] = &costmanagement.QueryAggregation{
-		Name:     to.StringPtr("PreTaxCost"),
-		Function: to.StringPtr("Sum"),
+	aggregationFunction := armcostmanagement.FunctionTypeSum
+	params := armcostmanagement.QueryDefinition{
+		Dataset: &armcostmanagement.QueryDataset{
+			Aggregation: map[string]*armcostmanagement.QueryAggregation{
+				"PreTaxCost": &armcostmanagement.QueryAggregation{
+					Name:     to.StringPtr("PreTaxCost"),
+					Function: &aggregationFunction,
+				},
+			},
+			Configuration: nil,
+			Filter:        nil,
+			Granularity:   &granularity,
+			Grouping:      queryGrouping,
+		},
+		Timeframe:  &timeframeType,
+		Type:       &exportType,
+		TimePeriod: nil,
 	}
-	params.Dataset.Sorting = &[]costmanagement.QuerySortingConfiguration{
-		{Name: to.StringPtr("BillingMonth"), QuerySortingDirection: "ascending"},
-	}
-
-	list, err := client.Usage(m.Context(), scope, params)
+	result, err := client.Usage(m.Context(), *subscription.ID, params, nil)
 	if err != nil {
-		logger.Error(err)
-		return
+		logger.Panic(err)
 	}
 
-	if list.Columns == nil || list.Rows == nil {
+	if result.Properties == nil || result.Properties.Columns == nil || result.Properties.Rows == nil {
 		// no result
 		logger.Warnln("got invalid response (no columns or rows)")
 		return
 	}
+
+	list := result.Properties
 
 	columnNumberCost := -1
 	columnNumberResourceGroupName := -1
@@ -365,7 +367,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 		dimensionColName = *dimension
 	}
 
-	for num, col := range *list.Columns {
+	for num, col := range list.Columns {
 		if col.Name == nil {
 			continue
 		}
@@ -395,7 +397,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 	}
 
 	costMetric := prometheusCommon.NewMetricsList()
-	for _, row := range *list.Rows {
+	for _, row := range list.Rows {
 		usage := float64(0)
 		if v, ok := row[columnNumberCost].(float64); ok {
 			usage = v

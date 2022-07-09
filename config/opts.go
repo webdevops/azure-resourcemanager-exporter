@@ -29,8 +29,6 @@ type (
 		// scrape times
 		Scrape struct {
 			Time               time.Duration  `long:"scrape-time"                    env:"SCRAPE_TIME"                    description:"Default scrape time (time.duration)"                      default:"5m"`
-			TimeRateLimitRead  *time.Duration `long:"scrape-ratelimit-read"          env:"SCRAPE_RATELIMIT_READ"          description:"Scrape time for ratelimit read metrics (time.duration)"   default:"2m"`
-			TimeRateLimitWrite *time.Duration `long:"scrape-ratelimit-write"         env:"SCRAPE_RATELIMIT_WRITE"         description:"Scrape time for ratelimit write metrics (time.duration)"  default:"5m"`
 			TimeExporter       *time.Duration `long:"scrape-time-exporter"           env:"SCRAPE_TIME_EXPORTER"           description:"Scrape time for exporter metrics (time.duration)"         default:"10s"`
 			TimeGeneral        *time.Duration `long:"scrape-time-general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
 			TimeResource       *time.Duration `long:"scrape-time-resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`

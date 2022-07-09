@@ -3,12 +3,12 @@ package main
 import (
 	"os"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/network/mgmt/network"
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	azureCommon "github.com/webdevops/go-common/azure"
 	"github.com/webdevops/go-common/prometheus/collector"
+	"github.com/webdevops/go-common/utils/to"
 )
 
 type MetricsCollectorPortscanner struct {
@@ -94,8 +94,8 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 		m.prometheus.publicIpPortscanStatus.Reset()
 	}
 
-	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress) {
-		ipAddress := stringPtrToStringLower(pip.IPAddress)
+	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, pip armnetwork.PublicIPAddress) {
+		ipAddress := stringPtrToStringLower(pip.Properties.IPAddress)
 
 		m.Logger().WithField("ipAddress", ipAddress).Infof("start port scanning")
 
@@ -106,8 +106,8 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 		}).Set(0)
 	}
 
-	m.portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, pip network.PublicIPAddress, elapsed float64) {
-		ipAddress := stringPtrToStringLower(pip.IPAddress)
+	m.portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, pip armnetwork.PublicIPAddress, elapsed float64) {
+		ipAddress := stringPtrToStringLower(pip.Properties.IPAddress)
 
 		// set ipAddess to be finsihed
 		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
@@ -162,24 +162,32 @@ func (m *MetricsCollectorPortscanner) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[string]subscriptions.Subscription) (pipList []network.PublicIPAddress) {
+func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[string]*armsubscriptions.Subscription) (pipList []*armnetwork.PublicIPAddress) {
 	m.Logger().Info("collecting public ips")
 
 	for _, val := range subscriptions {
 		subscription := val
 		contextLogger := m.Logger().WithField("azureSubscription", subscription)
 
-		client := network.NewPublicIPAddressesClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint, *subscription.SubscriptionID)
-		AzureClient.DecorateAzureAutorest(&client.Client)
-
-		list, err := client.ListAll(m.Context())
+		client, err := armnetwork.NewPublicIPAddressesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
 		if err != nil {
 			contextLogger.Panic(err)
 		}
 
-		for _, val := range list.Values() {
-			if val.IPAddress != nil {
-				pipList = append(pipList, val)
+		pager := client.NewListAllPager(nil)
+
+		for pager.More() {
+			nextResult, err := pager.NextPage(m.Context())
+			if err != nil {
+				contextLogger.Panic(err)
+			}
+
+			if nextResult.Value != nil {
+				for _, publicIp := range nextResult.Value {
+					if publicIp.Properties.IPAddress != nil {
+						pipList = append(pipList, publicIp)
+					}
+				}
 			}
 		}
 	}
@@ -194,8 +202,8 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 			"resourceID":       stringPtrToStringLower(pip.ID),
 			"resourceGroup":    azureResource.ResourceGroup,
 			"name":             azureResource.ResourceName,
-			"ipAddressVersion": stringToStringLower(string(pip.PublicIPAddressVersion)),
-			"ipAddress":        stringPtrToStringLower(pip.IPAddress),
+			"ipAddressVersion": stringToStringLower(string(*pip.Properties.PublicIPAddressVersion)),
+			"ipAddress":        stringPtrToStringLower(pip.Properties.IPAddress),
 		}).Set(1)
 	}
 

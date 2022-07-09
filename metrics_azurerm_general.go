@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/resources/mgmt/subscriptions"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
+	"github.com/webdevops/go-common/utils/to"
 )
 
 type MetricsCollectorAzureRmGeneral struct {
@@ -44,7 +44,7 @@ func (m *MetricsCollectorAzureRmGeneral) Reset() {
 }
 
 func (m *MetricsCollectorAzureRmGeneral) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription subscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
 		m.collectSubscription(subscription, logger, callback)
 	})
 	if err != nil {
@@ -53,23 +53,20 @@ func (m *MetricsCollectorAzureRmGeneral) Collect(callback chan<- func()) {
 }
 
 // Collect Azure Subscription metrics
-func (m *MetricsCollectorAzureRmGeneral) collectSubscription(subscription subscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client := subscriptions.NewClientWithBaseURI(AzureClient.Environment.ResourceManagerEndpoint)
-	AzureClient.DecorateAzureAutorest(&client.Client)
-
-	sub, err := client.Get(m.Context(), *subscription.SubscriptionID)
-	if err != nil {
-		logger.Panic(err)
+func (m *MetricsCollectorAzureRmGeneral) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	subscriptionMetric := prometheusCommon.NewMetricsList()
+	spendingLimit := ""
+	if subscription.SubscriptionPolicies.SpendingLimit != nil {
+		spendingLimit = string(*subscription.SubscriptionPolicies.SpendingLimit)
 	}
 
-	subscriptionMetric := prometheusCommon.NewMetricsList()
 	subscriptionMetric.AddInfo(prometheus.Labels{
-		"resourceID":          stringPtrToStringLower(sub.ID),
-		"subscriptionID":      stringPtrToStringLower(sub.SubscriptionID),
-		"subscriptionName":    to.String(sub.DisplayName),
-		"spendingLimit":       string(sub.SubscriptionPolicies.SpendingLimit),
-		"quotaID":             stringPtrToStringLower(sub.SubscriptionPolicies.QuotaID),
-		"locationPlacementID": stringPtrToStringLower(sub.SubscriptionPolicies.LocationPlacementID),
+		"resourceID":          stringPtrToStringLower(subscription.ID),
+		"subscriptionID":      stringPtrToStringLower(subscription.SubscriptionID),
+		"subscriptionName":    to.String(subscription.DisplayName),
+		"spendingLimit":       spendingLimit,
+		"quotaID":             stringPtrToStringLower(subscription.SubscriptionPolicies.QuotaID),
+		"locationPlacementID": stringPtrToStringLower(subscription.SubscriptionPolicies.LocationPlacementID),
 	})
 
 	callback <- func() {
