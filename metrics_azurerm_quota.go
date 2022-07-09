@@ -95,9 +95,24 @@ func (m *MetricsCollectorAzureRmQuota) Reset() {
 
 func (m *MetricsCollectorAzureRmQuota) Collect(callback chan<- func()) {
 	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
-		m.collectAzureComputeUsage(subscription, logger, callback)
-		m.collectAzureNetworkUsage(subscription, logger, callback)
-		m.collectAzureStorageUsage(subscription, logger, callback)
+
+		if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, "Microsoft.Compute"); registered {
+			m.collectAzureComputeUsage(subscription, logger, callback)
+		} else if err != nil {
+			logger.Error(err.Error())
+		}
+
+		if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, "Microsoft.Network"); registered {
+			m.collectAzureNetworkUsage(subscription, logger, callback)
+		} else if err != nil {
+			logger.Error(err.Error())
+		}
+
+		if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, "Microsoft.Storage"); registered {
+			m.collectAzureNetworkUsage(subscription, logger, callback)
+		} else if err != nil {
+			logger.Error(err.Error())
+		}
 	})
 	if err != nil {
 		m.Logger().Panic(err)
