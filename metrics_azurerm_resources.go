@@ -105,11 +105,11 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscriptio
 			azureResource, _ := armclient.ParseResourceId(resourceId)
 
 			infoLabels := prometheus.Labels{
-				"resourceID":        stringPtrToStringLower(resourceGroup.ID),
+				"resourceID":        to.StringLower(resourceGroup.ID),
 				"subscriptionID":    azureResource.Subscription,
 				"resourceGroup":     azureResource.ResourceGroup,
-				"location":          stringPtrToStringLower(resourceGroup.Location),
-				"provisioningState": stringPtrToStringLower(resourceGroup.Properties.ProvisioningState),
+				"location":          to.StringLower(resourceGroup.Location),
+				"provisioningState": to.StringLower(resourceGroup.Properties.ProvisioningState),
 			}
 			infoLabels = armclient.AddResourceTagsToPrometheusLabels(infoLabels, resourceGroup.Tags, opts.Azure.ResourceGroupTags)
 			infoMetric.AddInfo(infoLabels)
@@ -152,8 +152,8 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 				"resourceGroup":     azureResource.ResourceGroup,
 				"provider":          azureResource.ResourceProviderName,
 				"resourceType":      azureResource.ResourceType,
-				"location":          stringPtrToStringLower(resource.Location),
-				"provisioningState": stringPtrToStringLower(resource.ProvisioningState),
+				"location":          to.StringLower(resource.Location),
+				"provisioningState": to.StringLower(resource.ProvisioningState),
 			}
 			infoLabels = armclient.AddResourceTagsToPrometheusLabels(infoLabels, resource.Tags, opts.Azure.ResourceTags)
 			resourceMetric.AddInfo(infoLabels)

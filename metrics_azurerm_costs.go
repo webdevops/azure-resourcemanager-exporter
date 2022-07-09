@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -168,57 +170,57 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	// for _, timeframe := range opts.Costs.Timeframe {
-	// 	m.collectCostManagementMetrics(
-	// 		logger.WithField("costreport", "Usage"),
-	// 		callback,
-	// 		subscription,
-	// 		armcostmanagement.ExportTypeUsage,
-	// 		nil,
-	// 		timeframe,
-	// 		m.prometheus.costmanagementOverallUsage,
-	// 	)
-	//
-	// 	m.collectCostManagementMetrics(
-	// 		logger.WithField("costreport", "ActualCost"),
-	// 		callback,
-	// 		subscription,
-	// 		armcostmanagement.ExportTypeActualCost,
-	// 		nil,
-	// 		timeframe,
-	// 		m.prometheus.costmanagementOverallActualCost,
-	// 	)
-	//
-	// 	for _, val := range opts.Costs.Dimension {
-	// 		dimension := val
-	//
-	// 		// avoid ratelimit
-	// 		time.Sleep(10 * time.Second)
-	//
-	// 		m.collectCostManagementMetrics(
-	// 			logger.WithField("costreport", "Usage"),
-	// 			callback,
-	// 			subscription,
-	// 			armcostmanagement.ExportTypeUsage,
-	// 			&dimension,
-	// 			timeframe,
-	// 			m.prometheus.costmanagementDetailUsage,
-	// 		)
-	//
-	// 		m.collectCostManagementMetrics(
-	// 			logger.WithField("costreport", "ActualCost"),
-	// 			callback,
-	// 			subscription,
-	// 			armcostmanagement.ExportTypeActualCost,
-	// 			&dimension,
-	// 			timeframe,
-	// 			m.prometheus.costmanagementDetailActualCost,
-	// 		)
-	// 	}
-	//
-	// 	// avoid ratelimit
-	// 	time.Sleep(10 * time.Second)
-	// }
+	for _, timeframe := range opts.Costs.Timeframe {
+		m.collectCostManagementMetrics(
+			logger.WithField("costreport", "Usage"),
+			callback,
+			subscription,
+			armcostmanagement.ExportTypeUsage,
+			nil,
+			timeframe,
+			m.prometheus.costmanagementOverallUsage,
+		)
+
+		m.collectCostManagementMetrics(
+			logger.WithField("costreport", "ActualCost"),
+			callback,
+			subscription,
+			armcostmanagement.ExportTypeActualCost,
+			nil,
+			timeframe,
+			m.prometheus.costmanagementOverallActualCost,
+		)
+
+		for _, val := range opts.Costs.Dimension {
+			dimension := val
+
+			// avoid ratelimit
+			time.Sleep(10 * time.Second)
+
+			m.collectCostManagementMetrics(
+				logger.WithField("costreport", "Usage"),
+				callback,
+				subscription,
+				armcostmanagement.ExportTypeUsage,
+				&dimension,
+				timeframe,
+				m.prometheus.costmanagementDetailUsage,
+			)
+
+			m.collectCostManagementMetrics(
+				logger.WithField("costreport", "ActualCost"),
+				callback,
+				subscription,
+				armcostmanagement.ExportTypeActualCost,
+				&dimension,
+				timeframe,
+				m.prometheus.costmanagementDetailActualCost,
+			)
+		}
+
+		// avoid ratelimit
+		time.Sleep(10 * time.Second)
+	}
 
 	m.collectBugdetMetrics(
 		logger.WithField("consumption", "Budgets"),
@@ -276,7 +278,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, c
 					"resourceID":     stringToStringLower(resourceId),
 					"subscriptionID": azureResource.Subscription,
 					"budgetName":     to.String(budget.Name),
-					"unit":           stringPtrToStringLower(budget.Properties.CurrentSpend.Unit),
+					"unit":           to.StringLower(budget.Properties.CurrentSpend.Unit),
 				}, *budget.Properties.CurrentSpend.Amount)
 			}
 
@@ -405,8 +407,8 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 		resourceGroup := row[columnNumberResourceGroupName].(string)
 
 		labels := prometheus.Labels{
-			"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-			"resourceGroup":  stringPtrToStringLower(&resourceGroup),
+			"subscriptionID": to.StringLower(subscription.SubscriptionID),
+			"resourceGroup":  to.StringLower(&resourceGroup),
 			"currency":       stringToStringLower(row[columnNumberCurrency].(string)),
 			"timeframe":      timeframe,
 		}

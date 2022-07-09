@@ -3,17 +3,12 @@ package main
 import (
 	"regexp"
 	"strings"
-
-	"github.com/webdevops/go-common/utils/to"
 )
 
 var (
 	roleDefinitionIdRegExp = regexp.MustCompile("(?i)/subscriptions/[^/]+/providers/Microsoft.Authorization/roleDefinitions/([^/]*)")
 )
 
-func stringPtrToStringLower(val *string) string {
-	return strings.ToLower(to.String(val))
-}
 func stringToStringLower(val string) string {
 	return strings.ToLower(val)
 }

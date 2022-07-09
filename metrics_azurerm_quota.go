@@ -151,7 +151,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 				limitValue := float64(to.Int64(resourceUsage.Limit))
 
 				infoLabels := prometheus.Labels{
-					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"scope":          "compute",
 					"quota":          quotaName,
@@ -159,7 +159,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 				}
 
 				labels := prometheus.Labels{
-					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"scope":          "compute",
 					"quota":          quotaName,
@@ -215,7 +215,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 				limitValue := float64(to.Int64(resourceUsage.Limit))
 
 				infoLabels := prometheus.Labels{
-					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"scope":          "network",
 					"quota":          quotaName,
@@ -223,7 +223,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 				}
 
 				labels := prometheus.Labels{
-					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"scope":          "network",
 					"quota":          quotaName,
@@ -278,7 +278,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 				limitValue := float64(to.Int32(resourceUsage.Limit))
 
 				infoLabels := prometheus.Labels{
-					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"scope":          "storage",
 					"quota":          quotaName,
@@ -286,7 +286,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 				}
 
 				labels := prometheus.Labels{
-					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"scope":          "storage",
 					"quota":          quotaName,

@@ -124,7 +124,7 @@ package main
 // 			"roleDefinitionID": stringToStringLower(resourceId),
 // 			"name":             to.String(val.Name),
 // 			"roleName":         to.String(val.RoleName),
-// 			"roleType":         stringPtrToStringLower(val.RoleType),
+// 			"roleType":         to.StringLower(val.RoleType),
 // 		}
 // 		infoMetric.AddInfo(infoLabels)
 //
@@ -163,7 +163,7 @@ package main
 //
 // 		infoLabels := prometheus.Labels{
 // 			"subscriptionID":   azureResource.Subscription,
-// 			"roleAssignmentID": stringPtrToStringLower(val.ID),
+// 			"roleAssignmentID": to.StringLower(val.ID),
 // 			"roleDefinitionID": extractRoleDefinitionIdFromAzureId(to.String(val.RoleDefinitionID)),
 // 			"resourceID":       stringToStringLower(resourceId),
 // 			"resourceGroup":    azureResource.ResourceGroup,
@@ -187,7 +187,7 @@ package main
 // 	callback <- func() {
 // 		infoMetric.GaugeSet(m.prometheus.roleAssignment)
 // 		m.prometheus.roleAssignmentCount.With(prometheus.Labels{
-// 			"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+// 			"subscriptionID": to.StringLower(subscription.SubscriptionID),
 // 		}).Set(count)
 // 	}
 // }
@@ -220,29 +220,29 @@ package main
 //
 // 			if object, valid := val.AsADGroup(); valid {
 // 				infoLabels = &prometheus.Labels{
-// 					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-// 					"principalID":    stringPtrToStringLower(object.ObjectID),
+// 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
+// 					"principalID":    to.StringLower(object.ObjectID),
 // 					"principalName":  to.String(object.DisplayName),
 // 					"principalType":  stringToStringLower(string(object.ObjectType)),
 // 				}
 // 			} else if object, valid := val.AsApplication(); valid {
 // 				infoLabels = &prometheus.Labels{
-// 					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-// 					"principalID":    stringPtrToStringLower(object.ObjectID),
+// 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
+// 					"principalID":    to.StringLower(object.ObjectID),
 // 					"principalName":  to.String(object.DisplayName),
 // 					"principalType":  stringToStringLower(string(object.ObjectType)),
 // 				}
 // 			} else if object, valid := val.AsServicePrincipal(); valid {
 // 				infoLabels = &prometheus.Labels{
-// 					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-// 					"principalID":    stringPtrToStringLower(object.ObjectID),
+// 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
+// 					"principalID":    to.StringLower(object.ObjectID),
 // 					"principalName":  to.String(object.DisplayName),
 // 					"principalType":  stringToStringLower(string(object.ObjectType)),
 // 				}
 // 			} else if object, valid := val.AsUser(); valid {
 // 				infoLabels = &prometheus.Labels{
-// 					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-// 					"principalID":    stringPtrToStringLower(object.ObjectID),
+// 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
+// 					"principalID":    to.StringLower(object.ObjectID),
 // 					"principalName":  to.String(object.DisplayName),
 // 					"principalType":  stringToStringLower(string(object.ObjectType)),
 // 				}
