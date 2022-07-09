@@ -135,39 +135,41 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 		pager := client.NewListPager(location, nil)
 
 		for pager.More() {
-			nextResult, err := pager.NextPage(m.Context())
+			result, err := pager.NextPage(m.Context())
 			if err != nil {
 				logger.Panic(err)
 			}
 
-			if nextResult.Value != nil {
-				for _, resourceUsage := range nextResult.Value {
-					quotaName := to.String(resourceUsage.Name.Value)
-					quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
-					currentValue := float64(to.Int32(resourceUsage.CurrentValue))
-					limitValue := float64(to.Int64(resourceUsage.Limit))
+			if result.Value == nil {
+				continue
+			}
 
-					infoLabels := prometheus.Labels{
-						"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-						"location":       strings.ToLower(location),
-						"scope":          "compute",
-						"quota":          quotaName,
-						"quotaName":      quotaNameLocalized,
-					}
+			for _, resourceUsage := range result.Value {
+				quotaName := to.String(resourceUsage.Name.Value)
+				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
+				currentValue := float64(to.Int32(resourceUsage.CurrentValue))
+				limitValue := float64(to.Int64(resourceUsage.Limit))
 
-					labels := prometheus.Labels{
-						"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-						"location":       strings.ToLower(location),
-						"scope":          "compute",
-						"quota":          quotaName,
-					}
+				infoLabels := prometheus.Labels{
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"location":       strings.ToLower(location),
+					"scope":          "compute",
+					"quota":          quotaName,
+					"quotaName":      quotaNameLocalized,
+				}
 
-					quotaMetric.Add(infoLabels, 1)
-					quotaCurrentMetric.Add(labels, currentValue)
-					quotaLimitMetric.Add(labels, limitValue)
-					if limitValue != 0 {
-						quotaUsageMetric.Add(labels, currentValue/limitValue)
-					}
+				labels := prometheus.Labels{
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"location":       strings.ToLower(location),
+					"scope":          "compute",
+					"quota":          quotaName,
+				}
+
+				quotaMetric.Add(infoLabels, 1)
+				quotaCurrentMetric.Add(labels, currentValue)
+				quotaLimitMetric.Add(labels, limitValue)
+				if limitValue != 0 {
+					quotaUsageMetric.Add(labels, currentValue/limitValue)
 				}
 			}
 		}
@@ -197,39 +199,41 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 		pager := client.NewListPager(location, nil)
 
 		for pager.More() {
-			nextResult, err := pager.NextPage(m.Context())
+			result, err := pager.NextPage(m.Context())
 			if err != nil {
 				logger.Panic(err)
 			}
 
-			if nextResult.Value != nil {
-				for _, resourceUsage := range nextResult.Value {
-					quotaName := to.String(resourceUsage.Name.Value)
-					quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
-					currentValue := float64(to.Int64(resourceUsage.CurrentValue))
-					limitValue := float64(to.Int64(resourceUsage.Limit))
+			if result.Value == nil {
+				continue
+			}
 
-					infoLabels := prometheus.Labels{
-						"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-						"location":       strings.ToLower(location),
-						"scope":          "network",
-						"quota":          quotaName,
-						"quotaName":      quotaNameLocalized,
-					}
+			for _, resourceUsage := range result.Value {
+				quotaName := to.String(resourceUsage.Name.Value)
+				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
+				currentValue := float64(to.Int64(resourceUsage.CurrentValue))
+				limitValue := float64(to.Int64(resourceUsage.Limit))
 
-					labels := prometheus.Labels{
-						"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-						"location":       strings.ToLower(location),
-						"scope":          "network",
-						"quota":          quotaName,
-					}
+				infoLabels := prometheus.Labels{
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"location":       strings.ToLower(location),
+					"scope":          "network",
+					"quota":          quotaName,
+					"quotaName":      quotaNameLocalized,
+				}
 
-					quotaMetric.Add(infoLabels, 1)
-					quotaCurrentMetric.Add(labels, currentValue)
-					quotaLimitMetric.Add(labels, limitValue)
-					if limitValue != 0 {
-						quotaUsageMetric.Add(labels, currentValue/limitValue)
-					}
+				labels := prometheus.Labels{
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"location":       strings.ToLower(location),
+					"scope":          "network",
+					"quota":          quotaName,
+				}
+
+				quotaMetric.Add(infoLabels, 1)
+				quotaCurrentMetric.Add(labels, currentValue)
+				quotaLimitMetric.Add(labels, limitValue)
+				if limitValue != 0 {
+					quotaUsageMetric.Add(labels, currentValue/limitValue)
 				}
 			}
 		}
@@ -258,39 +262,41 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 		pager := client.NewListByLocationPager(location, nil)
 
 		for pager.More() {
-			nextResult, err := pager.NextPage(m.Context())
+			result, err := pager.NextPage(m.Context())
 			if err != nil {
 				logger.Panic(err)
 			}
 
-			if nextResult.Value != nil {
-				for _, resourceUsage := range nextResult.Value {
-					quotaName := to.String(resourceUsage.Name.Value)
-					quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
-					currentValue := float64(to.Int32(resourceUsage.CurrentValue))
-					limitValue := float64(to.Int32(resourceUsage.Limit))
+			if result.Value == nil {
+				continue
+			}
 
-					infoLabels := prometheus.Labels{
-						"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-						"location":       strings.ToLower(location),
-						"scope":          "storage",
-						"quota":          quotaName,
-						"quotaName":      quotaNameLocalized,
-					}
+			for _, resourceUsage := range result.Value {
+				quotaName := to.String(resourceUsage.Name.Value)
+				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
+				currentValue := float64(to.Int32(resourceUsage.CurrentValue))
+				limitValue := float64(to.Int32(resourceUsage.Limit))
 
-					labels := prometheus.Labels{
-						"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
-						"location":       strings.ToLower(location),
-						"scope":          "storage",
-						"quota":          quotaName,
-					}
+				infoLabels := prometheus.Labels{
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"location":       strings.ToLower(location),
+					"scope":          "storage",
+					"quota":          quotaName,
+					"quotaName":      quotaNameLocalized,
+				}
 
-					quotaMetric.Add(infoLabels, 1)
-					quotaCurrentMetric.Add(labels, currentValue)
-					quotaLimitMetric.Add(labels, limitValue)
-					if limitValue != 0 {
-						quotaUsageMetric.Add(labels, currentValue/limitValue)
-					}
+				labels := prometheus.Labels{
+					"subscriptionID": stringPtrToStringLower(subscription.SubscriptionID),
+					"location":       strings.ToLower(location),
+					"scope":          "storage",
+					"quota":          quotaName,
+				}
+
+				quotaMetric.Add(infoLabels, 1)
+				quotaCurrentMetric.Add(labels, currentValue)
+				quotaLimitMetric.Add(labels, limitValue)
+				if limitValue != 0 {
+					quotaUsageMetric.Add(labels, currentValue/limitValue)
 				}
 			}
 		}

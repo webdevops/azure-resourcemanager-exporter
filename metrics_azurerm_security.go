@@ -83,19 +83,20 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(subscri
 	lastReportName := ""
 	var lastReportTimestamp *time.Time
 	for pager.More() {
-		nextResult, err := pager.NextPage(m.Context())
+		result, err := pager.NextPage(m.Context())
 		if err != nil {
 			logger.Panic(err)
 		}
 
-		if nextResult.Value != nil {
-			for _, complienceReport := range nextResult.Value {
-				if lastReportTimestamp == nil || complienceReport.Properties.AssessmentTimestampUTCDate.UTC().After(*lastReportTimestamp) {
-					timestamp := complienceReport.Properties.AssessmentTimestampUTCDate.UTC()
-					lastReportTimestamp = &timestamp
-					lastReportName = to.String(complienceReport.Name)
-				}
+		if result.Value == nil {
+			continue
+		}
 
+		for _, complienceReport := range result.Value {
+			if lastReportTimestamp == nil || complienceReport.Properties.AssessmentTimestampUTCDate.UTC().After(*lastReportTimestamp) {
+				timestamp := complienceReport.Properties.AssessmentTimestampUTCDate.UTC()
+				lastReportTimestamp = &timestamp
+				lastReportName = to.String(complienceReport.Name)
 			}
 		}
 	}

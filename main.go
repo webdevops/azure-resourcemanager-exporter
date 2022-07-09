@@ -12,7 +12,7 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	azureCommon "github.com/webdevops/go-common/azuresdk/armclient"
+	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/azuretracing"
 	"github.com/webdevops/go-common/prometheus/collector"
 
@@ -28,8 +28,8 @@ var (
 	argparser *flags.Parser
 	opts      config.Opts
 
-	AzureClient                *azureCommon.ArmClient
-	AzureSubscriptionsIterator *azureCommon.SubscriptionsIterator
+	AzureClient                *armclient.ArmClient
+	AzureSubscriptionsIterator *armclient.SubscriptionsIterator
 
 	portscanPortRange []Portrange
 
@@ -189,7 +189,7 @@ func initLogger() {
 
 func initAzureConnection() {
 	var err error
-	AzureClient, err = azureCommon.NewArmClientWithCloudName(*opts.Azure.Environment, log.StandardLogger())
+	AzureClient, err = armclient.NewArmClientWithCloudName(*opts.Azure.Environment, log.StandardLogger())
 	if err != nil {
 		log.Panic(err.Error())
 	}
@@ -200,7 +200,7 @@ func initAzureConnection() {
 	if len(opts.Azure.Subscription) >= 1 {
 		AzureClient.SetSubscriptionFilter(opts.Azure.Subscription...)
 	}
-	AzureSubscriptionsIterator = azureCommon.NewSubscriptionIterator(AzureClient)
+	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient)
 }
 
 func initMetricCollector() {

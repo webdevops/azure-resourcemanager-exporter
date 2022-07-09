@@ -1,14 +1,12 @@
 package main
 
 import (
-	"time"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	azureCommon "github.com/webdevops/go-common/azure"
+	"github.com/webdevops/go-common/azuresdk/armclient"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
@@ -170,57 +168,57 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	for _, timeframe := range opts.Costs.Timeframe {
-		m.collectCostManagementMetrics(
-			logger.WithField("costreport", "Usage"),
-			callback,
-			subscription,
-			armcostmanagement.ExportTypeUsage,
-			nil,
-			timeframe,
-			m.prometheus.costmanagementOverallUsage,
-		)
-
-		m.collectCostManagementMetrics(
-			logger.WithField("costreport", "ActualCost"),
-			callback,
-			subscription,
-			armcostmanagement.ExportTypeActualCost,
-			nil,
-			timeframe,
-			m.prometheus.costmanagementOverallActualCost,
-		)
-
-		for _, val := range opts.Costs.Dimension {
-			dimension := val
-
-			// avoid ratelimit
-			time.Sleep(5 * time.Second)
-
-			m.collectCostManagementMetrics(
-				logger.WithField("costreport", "Usage"),
-				callback,
-				subscription,
-				armcostmanagement.ExportTypeUsage,
-				&dimension,
-				timeframe,
-				m.prometheus.costmanagementDetailUsage,
-			)
-
-			m.collectCostManagementMetrics(
-				logger.WithField("costreport", "ActualCost"),
-				callback,
-				subscription,
-				armcostmanagement.ExportTypeActualCost,
-				&dimension,
-				timeframe,
-				m.prometheus.costmanagementDetailActualCost,
-			)
-		}
-
-		// avoid ratelimit
-		time.Sleep(5 * time.Second)
-	}
+	// for _, timeframe := range opts.Costs.Timeframe {
+	// 	m.collectCostManagementMetrics(
+	// 		logger.WithField("costreport", "Usage"),
+	// 		callback,
+	// 		subscription,
+	// 		armcostmanagement.ExportTypeUsage,
+	// 		nil,
+	// 		timeframe,
+	// 		m.prometheus.costmanagementOverallUsage,
+	// 	)
+	//
+	// 	m.collectCostManagementMetrics(
+	// 		logger.WithField("costreport", "ActualCost"),
+	// 		callback,
+	// 		subscription,
+	// 		armcostmanagement.ExportTypeActualCost,
+	// 		nil,
+	// 		timeframe,
+	// 		m.prometheus.costmanagementOverallActualCost,
+	// 	)
+	//
+	// 	for _, val := range opts.Costs.Dimension {
+	// 		dimension := val
+	//
+	// 		// avoid ratelimit
+	// 		time.Sleep(10 * time.Second)
+	//
+	// 		m.collectCostManagementMetrics(
+	// 			logger.WithField("costreport", "Usage"),
+	// 			callback,
+	// 			subscription,
+	// 			armcostmanagement.ExportTypeUsage,
+	// 			&dimension,
+	// 			timeframe,
+	// 			m.prometheus.costmanagementDetailUsage,
+	// 		)
+	//
+	// 		m.collectCostManagementMetrics(
+	// 			logger.WithField("costreport", "ActualCost"),
+	// 			callback,
+	// 			subscription,
+	// 			armcostmanagement.ExportTypeActualCost,
+	// 			&dimension,
+	// 			timeframe,
+	// 			m.prometheus.costmanagementDetailActualCost,
+	// 		)
+	// 	}
+	//
+	// 	// avoid ratelimit
+	// 	time.Sleep(10 * time.Second)
+	// }
 
 	m.collectBugdetMetrics(
 		logger.WithField("consumption", "Budgets"),
@@ -243,50 +241,51 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, c
 	pager := client.NewListPager(*subscription.ID, nil)
 
 	for pager.More() {
-		nextResult, err := pager.NextPage(m.Context())
+		result, err := pager.NextPage(m.Context())
 		if err != nil {
 			logger.Panic(err)
 		}
 
-		if nextResult.Value != nil {
-			for _, budget := range nextResult.Value {
-				resourceId := to.String(budget.ID)
-				azureResource, _ := azureCommon.ParseResourceId(resourceId)
+		if result.Value == nil {
+			continue
+		}
 
-				infoMetric.AddInfo(prometheus.Labels{
+		for _, budget := range result.Value {
+			resourceId := to.String(budget.ID)
+			azureResource, _ := armclient.ParseResourceId(resourceId)
+
+			infoMetric.AddInfo(prometheus.Labels{
+				"resourceID":     stringToStringLower(resourceId),
+				"subscriptionID": azureResource.Subscription,
+				"resourceGroup":  azureResource.ResourceGroup,
+				"budgetName":     to.String(budget.Name),
+				"category":       stringToStringLower(string(*budget.Properties.Category)),
+				"timeGrain":      string(*budget.Properties.TimeGrain),
+			})
+
+			if budget.Properties.Amount != nil {
+				limitMetric.Add(prometheus.Labels{
 					"resourceID":     stringToStringLower(resourceId),
 					"subscriptionID": azureResource.Subscription,
-					"resourceGroup":  azureResource.ResourceGroup,
 					"budgetName":     to.String(budget.Name),
-					"category":       stringToStringLower(string(*budget.Properties.Category)),
-					"timeGrain":      string(*budget.Properties.TimeGrain),
-				})
+				}, *budget.Properties.Amount)
+			}
 
-				if budget.Properties.Amount != nil {
-					limitMetric.Add(prometheus.Labels{
-						"resourceID":     stringToStringLower(resourceId),
-						"subscriptionID": azureResource.Subscription,
-						"budgetName":     to.String(budget.Name),
-					}, *budget.Properties.Amount)
-				}
+			if budget.Properties.CurrentSpend != nil {
+				currentMetric.Add(prometheus.Labels{
+					"resourceID":     stringToStringLower(resourceId),
+					"subscriptionID": azureResource.Subscription,
+					"budgetName":     to.String(budget.Name),
+					"unit":           stringPtrToStringLower(budget.Properties.CurrentSpend.Unit),
+				}, *budget.Properties.CurrentSpend.Amount)
+			}
 
-				if budget.Properties.CurrentSpend != nil {
-					currentMetric.Add(prometheus.Labels{
-						"resourceID":     stringToStringLower(resourceId),
-						"subscriptionID": azureResource.Subscription,
-						"budgetName":     to.String(budget.Name),
-						"unit":           stringPtrToStringLower(budget.Properties.CurrentSpend.Unit),
-					}, *budget.Properties.CurrentSpend.Amount)
-				}
-
-				if budget.Properties.Amount != nil && budget.Properties.CurrentSpend != nil {
-					usageMetric.Add(prometheus.Labels{
-						"resourceID":     stringToStringLower(resourceId),
-						"subscriptionID": azureResource.Subscription,
-						"budgetName":     to.String(budget.Name),
-					}, *budget.Properties.CurrentSpend.Amount / *budget.Properties.Amount)
-				}
-
+			if budget.Properties.Amount != nil && budget.Properties.CurrentSpend != nil {
+				usageMetric.Add(prometheus.Labels{
+					"resourceID":     stringToStringLower(resourceId),
+					"subscriptionID": azureResource.Subscription,
+					"budgetName":     to.String(budget.Name),
+				}, *budget.Properties.CurrentSpend.Amount / *budget.Properties.Amount)
 			}
 		}
 	}

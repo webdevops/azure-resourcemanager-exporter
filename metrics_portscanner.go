@@ -6,7 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
-	azureCommon "github.com/webdevops/go-common/azure"
+	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 )
@@ -177,16 +177,18 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 		pager := client.NewListAllPager(nil)
 
 		for pager.More() {
-			nextResult, err := pager.NextPage(m.Context())
+			result, err := pager.NextPage(m.Context())
 			if err != nil {
 				contextLogger.Panic(err)
 			}
 
-			if nextResult.Value != nil {
-				for _, publicIp := range nextResult.Value {
-					if publicIp.Properties.IPAddress != nil {
-						pipList = append(pipList, publicIp)
-					}
+			if result.Value == nil {
+				continue
+			}
+
+			for _, publicIp := range result.Value {
+				if publicIp.Properties.IPAddress != nil {
+					pipList = append(pipList, publicIp)
 				}
 			}
 		}
@@ -195,7 +197,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 	m.prometheus.publicIpInfo.Reset()
 	for _, pip := range pipList {
 		resourceId := to.String(pip.ID)
-		azureResource, _ := azureCommon.ParseResourceId(resourceId)
+		azureResource, _ := armclient.ParseResourceId(resourceId)
 
 		m.prometheus.publicIpInfo.With(prometheus.Labels{
 			"subscriptionID":   azureResource.Subscription,
