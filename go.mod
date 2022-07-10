@@ -12,13 +12,13 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/webdevops/go-common v0.0.0-20220709200011-30692f8551e2
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/sys v0.0.0-20220708085239-5a0f0661e09d // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement v1.0.0
@@ -28,6 +28,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.7.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.0.0
+	github.com/microsoftgraph/msgraph-sdk-go v0.28.0
 )
 
 require (
@@ -54,7 +55,6 @@ require (
 	github.com/microsoft/kiota-http-go v0.5.1 // indirect
 	github.com/microsoft/kiota-serialization-json-go v0.5.4 // indirect
 	github.com/microsoft/kiota-serialization-text-go v0.4.1 // indirect
-	github.com/microsoftgraph/msgraph-sdk-go v0.28.0 // indirect
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.26.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
@@ -62,6 +62,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/stretchr/testify v1.7.2 // indirect
+	github.com/webdevops/go-common v0.0.0-20220710144606-a26195db2d99 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
 	golang.org/x/text v0.3.7 // indirect

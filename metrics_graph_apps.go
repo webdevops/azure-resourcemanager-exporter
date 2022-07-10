@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/microsoftgraph/msgraph-sdk-go/applications"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/webdevops/go-common/msgraphsdk/msgraphclient"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
@@ -11,8 +10,6 @@ import (
 
 type MetricsCollectorGraphApps struct {
 	collector.Processor
-
-	graphClient *msgraphclient.MsGraphClient
 
 	prometheus struct {
 		apps            *prometheus.GaugeVec
@@ -22,9 +19,6 @@ type MetricsCollectorGraphApps struct {
 
 func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
-
-	// init azure client
-	m.graphClient = msgraphclient.NewMsGraphClient(*opts.Azure.Environment, m.Logger().Logger)
 
 	m.prometheus.apps = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -68,7 +62,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 			Filter: &opts.Graph.ApplicationFilter,
 		},
 	}
-	result, err := m.graphClient.ServiceClient().Applications().GetWithRequestConfigurationAndResponseHandler(&opts, nil)
+	result, err := MsGraphClient.ServiceClient().Applications().GetWithRequestConfigurationAndResponseHandler(&opts, nil)
 	if err != nil {
 		m.Logger().Panic(err)
 	}

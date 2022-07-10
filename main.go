@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
+	"github.com/webdevops/go-common/msgraphsdk/msgraphclient"
 	"github.com/webdevops/go-common/prometheus/azuretracing"
 	"github.com/webdevops/go-common/prometheus/collector"
 
@@ -30,6 +31,8 @@ var (
 
 	AzureClient                *armclient.ArmClient
 	AzureSubscriptionsIterator *armclient.SubscriptionsIterator
+
+	MsGraphClient *msgraphclient.MsGraphClient
 
 	portscanPortRange []Portrange
 
@@ -200,7 +203,20 @@ func initAzureConnection() {
 	if len(opts.Azure.Subscription) >= 1 {
 		AzureClient.SetSubscriptionFilter(opts.Azure.Subscription...)
 	}
+
 	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient)
+}
+
+func initMsGraphConnection() {
+	var err error
+	if MsGraphClient == nil {
+		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*opts.Azure.Environment, log.StandardLogger())
+		if err != nil {
+			log.Panic(err.Error())
+		}
+
+		MsGraphClient.SetUserAgent(UserAgent + gitTag)
+	}
 }
 
 func initMetricCollector() {
@@ -272,19 +288,21 @@ func initMetricCollector() {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
-	// collectorName = "IAM"
-	// if opts.Scrape.TimeIam.Seconds() > 0 {
-	// 	c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, log.StandardLogger())
-	// 	c.SetScapeTime(*opts.Scrape.TimeIam)
-	// 	if err := c.Start(); err != nil {
-	// 		log.Panic(err.Error())
-	// 	}
-	// } else {
-	// 	log.WithField("collector", collectorName).Infof("collector disabled")
-	// }
+	collectorName = "IAM"
+	if opts.Scrape.TimeIam.Seconds() > 0 {
+		initMsGraphConnection()
+		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.TimeIam)
+		if err := c.Start(); err != nil {
+			log.Panic(err.Error())
+		}
+	} else {
+		log.WithField("collector", collectorName).Infof("collector disabled")
+	}
 
 	collectorName = "GraphApps"
 	if opts.Scrape.TimeGraph.Seconds() > 0 {
+		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.TimeGraph)
 		if err := c.Start(); err != nil {

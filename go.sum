@@ -38,6 +38,8 @@ github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0 h1:QkAcEIAKbNL4KoFr4Sath
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0/go.mod h1:bhXu1AjYL+wutSL/kpSq6s7733q2Rb0yuot9Zgfqa/0=
 github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.0 h1:jp0dGvZ7ZK0mgqnTSClMxa5xuRL7NZgHameVYF6BurY=
 github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.0/go.mod h1:eWRD7oawr1Mu1sLCawqVc0CUiF43ia3qQMxLscsKQ9w=
+github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization v1.0.0 h1:qtRcg5Y7jNJ4jEzPq4GpWLfTspHdNe2ZK6LjwGcjgmU=
+github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization v1.0.0/go.mod h1:lPneRe3TwsoDRKY4O6YDLXHhEWrD+TIRa8XrV/3/fqw=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute v1.0.0 h1:/Di3vB4sNeQ+7A8efjUVENvyB945Wruvstucqp7ZArg=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute v1.0.0/go.mod h1:gM3K25LQlsET3QR+4V74zxCsFAy0r6xMNN9n80SZn+4=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption v1.0.0 h1:DSK/n3SPssFsqEn15KMksdbjEBlBNNgn4IGkvWM4nt0=
@@ -220,6 +222,8 @@ github.com/microsoft/kiota-serialization-json-go v0.5.4 h1:BpkTYq1AeZPCnSsp3zpzf
 github.com/microsoft/kiota-serialization-json-go v0.5.4/go.mod h1:GI9vrssO1EvqzDtvMKuhjALn40phZOWkeeaMgtCk6xE=
 github.com/microsoft/kiota-serialization-text-go v0.4.1 h1:6QPH7+geUPCpaSZkKCQw0Scngx2IF0vKodrvvWWiu2A=
 github.com/microsoft/kiota-serialization-text-go v0.4.1/go.mod h1:DsriFnVBDCc4D84qxG3j8q/1Sxu16JILfhxMZm3kdfw=
+github.com/microsoftgraph/msgraph-sdk-go v0.27.0 h1:IYXQ3F1egu3eGbuc5MqrUXNhFaF75QTGmPc5fAmR720=
+github.com/microsoftgraph/msgraph-sdk-go v0.27.0/go.mod h1:AYhkkjNPaSl3Vr7r/ocnIp+QBs4okJVeYD1aG31BmJc=
 github.com/microsoftgraph/msgraph-sdk-go v0.28.0 h1:BolP/vNW7gsNXivg/qikcdftOicLMgMm3Z/6PpSFDvU=
 github.com/microsoftgraph/msgraph-sdk-go v0.28.0/go.mod h1:MB2iPD8vd8RTRAqlKTZfhLvE8OBiC/vjaOy8+J+nF1k=
 github.com/microsoftgraph/msgraph-sdk-go-core v0.26.1 h1:wzEoPk6uyd+SkBur9NpzpPfKseUQYT1yjFkDUueLpfk=
@@ -283,10 +287,14 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.7.2 h1:4jaiDzPyXQvSd7D0EjG45355tLlV3VOECpq10pLC+8s=
 github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1FQKckRals=
-github.com/webdevops/go-common v0.0.0-20220709195604-05518bd4402d h1:etzrTV9B+UUF5txA2K0N/YXdEwJ8ChqXzfZ0uD7Z8Y0=
-github.com/webdevops/go-common v0.0.0-20220709195604-05518bd4402d/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
-github.com/webdevops/go-common v0.0.0-20220709200011-30692f8551e2 h1:ms1tX2XueeWyLPPHVeaLMG9KbSiXxG5IS8bdLSQVeU0=
-github.com/webdevops/go-common v0.0.0-20220709200011-30692f8551e2/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
+github.com/webdevops/go-common v0.0.0-20220710120941-0b645a3ad1e4 h1:2q80mEtZiKqkhYvR7J2185qugI0zzpEs709hWnDvc04=
+github.com/webdevops/go-common v0.0.0-20220710120941-0b645a3ad1e4/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
+github.com/webdevops/go-common v0.0.0-20220710142228-eac1f96c41f7 h1:uaudrXEvDCTl7rxpd7sRBhZMjhK2LVxLFw+IdnxpJao=
+github.com/webdevops/go-common v0.0.0-20220710142228-eac1f96c41f7/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
+github.com/webdevops/go-common v0.0.0-20220710143135-a0611d891903 h1:DvKmRq00ygU7lueD5A1pIgh2ZkAUHxHVuCk8KH5iJys=
+github.com/webdevops/go-common v0.0.0-20220710143135-a0611d891903/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
+github.com/webdevops/go-common v0.0.0-20220710144606-a26195db2d99 h1:ozrb0GXFQz1+Om+2VUkBClr+N5QJ8emYZHCQuxwzaKo=
+github.com/webdevops/go-common v0.0.0-20220710144606-a26195db2d99/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
 github.com/yosida95/uritemplate/v3 v3.0.2 h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4=
 github.com/yosida95/uritemplate/v3 v3.0.2/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
