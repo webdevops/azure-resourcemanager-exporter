@@ -331,7 +331,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 	params := armcostmanagement.QueryDefinition{
 		Dataset: &armcostmanagement.QueryDataset{
 			Aggregation: map[string]*armcostmanagement.QueryAggregation{
-				"PreTaxCost": &armcostmanagement.QueryAggregation{
+				"PreTaxCost": {
 					Name:     to.StringPtr("PreTaxCost"),
 					Function: &aggregationFunction,
 				},
