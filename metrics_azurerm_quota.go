@@ -109,7 +109,7 @@ func (m *MetricsCollectorAzureRmQuota) Collect(callback chan<- func()) {
 		}
 
 		if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, "Microsoft.Storage"); registered {
-			m.collectAzureNetworkUsage(subscription, logger, callback)
+			m.collectAzureStorageUsage(subscription, logger, callback)
 		} else if err != nil {
 			logger.Error(err.Error())
 		}
