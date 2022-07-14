@@ -47,6 +47,8 @@ github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement v1.0.0 h1:8L7OWiGwm6qe2U3zDv3K3WDXwOOgurDu7qw6Mv86Nlw=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement v1.0.0/go.mod h1:A8BFugBY4i+NVB3A87dK5jR0q765uv4KY8fE8o+sCcM=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/internal v1.0.0 h1:lMW1lD/17LUA5z1XTURo7LcVG2ICBPlyMHjIUrcFZNQ=
+github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/machinelearningservices/armmachinelearningservices v1.0.1 h1:+1gdz3WAp3YlbHxNMqoyrewNHsF+CR85y18HH2y/bEo=
+github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/machinelearningservices/armmachinelearningservices v1.0.1/go.mod h1:md0mgc1e9fNERM9AWcna8jctaYqbnUBQrNUtNrq1Ysk=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork v1.0.0 h1:nBy98uKOIfun5z6wx6jwWLrULcM0+cjBalBFZlEZ7CA=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork v1.0.0/go.mod h1:243D9iHbcQXoFUtgHJwL7gl2zx1aDuDMjvBZVGr2uW0=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcehealth/armresourcehealth v1.0.0 h1:lyMXciJWP7xUCjBFHRG72dOMyv6B+B9aFFVgWreYgrY=
@@ -222,8 +224,6 @@ github.com/microsoft/kiota-serialization-json-go v0.5.4 h1:BpkTYq1AeZPCnSsp3zpzf
 github.com/microsoft/kiota-serialization-json-go v0.5.4/go.mod h1:GI9vrssO1EvqzDtvMKuhjALn40phZOWkeeaMgtCk6xE=
 github.com/microsoft/kiota-serialization-text-go v0.4.1 h1:6QPH7+geUPCpaSZkKCQw0Scngx2IF0vKodrvvWWiu2A=
 github.com/microsoft/kiota-serialization-text-go v0.4.1/go.mod h1:DsriFnVBDCc4D84qxG3j8q/1Sxu16JILfhxMZm3kdfw=
-github.com/microsoftgraph/msgraph-sdk-go v0.27.0 h1:IYXQ3F1egu3eGbuc5MqrUXNhFaF75QTGmPc5fAmR720=
-github.com/microsoftgraph/msgraph-sdk-go v0.27.0/go.mod h1:AYhkkjNPaSl3Vr7r/ocnIp+QBs4okJVeYD1aG31BmJc=
 github.com/microsoftgraph/msgraph-sdk-go v0.28.0 h1:BolP/vNW7gsNXivg/qikcdftOicLMgMm3Z/6PpSFDvU=
 github.com/microsoftgraph/msgraph-sdk-go v0.28.0/go.mod h1:MB2iPD8vd8RTRAqlKTZfhLvE8OBiC/vjaOy8+J+nF1k=
 github.com/microsoftgraph/msgraph-sdk-go-core v0.26.1 h1:wzEoPk6uyd+SkBur9NpzpPfKseUQYT1yjFkDUueLpfk=
@@ -287,12 +287,6 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.7.2 h1:4jaiDzPyXQvSd7D0EjG45355tLlV3VOECpq10pLC+8s=
 github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1FQKckRals=
-github.com/webdevops/go-common v0.0.0-20220710120941-0b645a3ad1e4 h1:2q80mEtZiKqkhYvR7J2185qugI0zzpEs709hWnDvc04=
-github.com/webdevops/go-common v0.0.0-20220710120941-0b645a3ad1e4/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
-github.com/webdevops/go-common v0.0.0-20220710142228-eac1f96c41f7 h1:uaudrXEvDCTl7rxpd7sRBhZMjhK2LVxLFw+IdnxpJao=
-github.com/webdevops/go-common v0.0.0-20220710142228-eac1f96c41f7/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
-github.com/webdevops/go-common v0.0.0-20220710143135-a0611d891903 h1:DvKmRq00ygU7lueD5A1pIgh2ZkAUHxHVuCk8KH5iJys=
-github.com/webdevops/go-common v0.0.0-20220710143135-a0611d891903/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
 github.com/webdevops/go-common v0.0.0-20220710144606-a26195db2d99 h1:ozrb0GXFQz1+Om+2VUkBClr+N5QJ8emYZHCQuxwzaKo=
 github.com/webdevops/go-common v0.0.0-20220710144606-a26195db2d99/go.mod h1:3N8X1Tk0j9o2X7sK3k1wnoiS+P8WNVo74l+6Rvew8FY=
 github.com/yosida95/uritemplate/v3 v3.0.2 h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4=

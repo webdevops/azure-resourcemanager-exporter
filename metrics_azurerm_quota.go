@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/machinelearningservices/armmachinelearningservices"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
@@ -113,13 +114,25 @@ func (m *MetricsCollectorAzureRmQuota) Collect(callback chan<- func()) {
 		} else if err != nil {
 			logger.Error(err.Error())
 		}
+
+		if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, "Microsoft.Storage"); registered {
+			m.collectAzureStorageUsage(subscription, logger, callback)
+		} else if err != nil {
+			logger.Error(err.Error())
+		}
+
+		if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, "Microsoft.MachineLearningServices"); registered {
+			m.collectAzureMachineLearningUsage(subscription, logger, callback)
+		} else if err != nil {
+			logger.Error(err.Error())
+		}
 	})
 	if err != nil {
 		m.Logger().Panic(err)
 	}
 }
 
-// Collect Azure ComputeUsage metrics
+// collectAzureComputeUsage collects compute usages
 func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
 	client, err := armcompute.NewUsageClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
 	if err != nil {
@@ -147,8 +160,8 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 			for _, resourceUsage := range result.Value {
 				quotaName := to.String(resourceUsage.Name.Value)
 				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
-				currentValue := float64(to.Int32(resourceUsage.CurrentValue))
-				limitValue := float64(to.Int64(resourceUsage.Limit))
+				currentValue := float64(to.Number(resourceUsage.CurrentValue))
+				limitValue := float64(to.Number(resourceUsage.Limit))
 
 				infoLabels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
@@ -183,7 +196,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 	}
 }
 
-// Collect Azure NetworkUsage metrics
+// collectAzureComputeUsage collects network usages
 func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
 	client, err := armnetwork.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
 	if err != nil {
@@ -211,8 +224,8 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 			for _, resourceUsage := range result.Value {
 				quotaName := to.String(resourceUsage.Name.Value)
 				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
-				currentValue := float64(to.Int64(resourceUsage.CurrentValue))
-				limitValue := float64(to.Int64(resourceUsage.Limit))
+				currentValue := float64(to.Number(resourceUsage.CurrentValue))
+				limitValue := float64(to.Number(resourceUsage.Limit))
 
 				infoLabels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
@@ -246,7 +259,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 	}
 }
 
-// Collect Azure StorageUsage metrics
+// collectAzureComputeUsage collects storage usages
 func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
 	client, err := armstorage.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
 	if err != nil {
@@ -274,8 +287,8 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 			for _, resourceUsage := range result.Value {
 				quotaName := to.String(resourceUsage.Name.Value)
 				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
-				currentValue := float64(to.Int32(resourceUsage.CurrentValue))
-				limitValue := float64(to.Int32(resourceUsage.Limit))
+				currentValue := float64(to.Number(resourceUsage.CurrentValue))
+				limitValue := float64(to.Number(resourceUsage.Limit))
 
 				infoLabels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
@@ -289,6 +302,69 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"scope":          "storage",
+					"quota":          quotaName,
+				}
+
+				quotaMetric.Add(infoLabels, 1)
+				quotaCurrentMetric.Add(labels, currentValue)
+				quotaLimitMetric.Add(labels, limitValue)
+				if limitValue != 0 {
+					quotaUsageMetric.Add(labels, currentValue/limitValue)
+				}
+			}
+		}
+	}
+
+	callback <- func() {
+		quotaMetric.GaugeSet(m.prometheus.quota)
+		quotaCurrentMetric.GaugeSet(m.prometheus.quotaCurrent)
+		quotaLimitMetric.GaugeSet(m.prometheus.quotaLimit)
+	}
+}
+
+// collectAzureComputeUsage collects machinelearning usages
+func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+	client, err := armmachinelearningservices.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	quotaMetric := prometheusCommon.NewMetricsList()
+	quotaCurrentMetric := prometheusCommon.NewMetricsList()
+	quotaLimitMetric := prometheusCommon.NewMetricsList()
+	quotaUsageMetric := prometheusCommon.NewMetricsList()
+
+	for _, location := range opts.Azure.Location {
+		pager := client.NewListPager(location, nil)
+
+		for pager.More() {
+			result, err := pager.NextPage(m.Context())
+			if err != nil {
+				logger.Panic(err)
+			}
+
+			if result.Value == nil {
+				continue
+			}
+
+			for _, resourceUsage := range result.Value {
+				quotaName := to.String(resourceUsage.Name.Value)
+				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
+				currentValue := float64(to.Number(resourceUsage.CurrentValue))
+				limitValue := float64(to.Number(resourceUsage.Limit))
+
+				infoLabels := prometheus.Labels{
+					"subscriptionID": to.StringLower(subscription.SubscriptionID),
+					"location":       strings.ToLower(location),
+					"scope":          "machineLearningServices",
+					"quota":          quotaName,
+					"quotaName":      quotaNameLocalized,
+				}
+
+				labels := prometheus.Labels{
+					"subscriptionID": to.StringLower(subscription.SubscriptionID),
+					"location":       strings.ToLower(location),
+					"scope":          "machineLearningServices",
 					"quota":          quotaName,
 				}
 
