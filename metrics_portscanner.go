@@ -169,7 +169,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 		subscription := val
 		contextLogger := m.Logger().WithField("azureSubscription", subscription)
 
-		client, err := armnetwork.NewPublicIPAddressesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+		client, err := armnetwork.NewPublicIPAddressesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 		if err != nil {
 			contextLogger.Panic(err)
 		}

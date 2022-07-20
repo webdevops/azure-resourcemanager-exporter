@@ -230,7 +230,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, callback chan<- func(), subscription *armsubscriptions.Subscription) {
-	client, err := armconsumption.NewBudgetsClient(AzureClient.GetCred(), nil)
+	client, err := armconsumption.NewBudgetsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -301,7 +301,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, c
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.Entry, callback chan<- func(), subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimension *string, timeframe string, metric *prometheus.GaugeVec) {
-	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), nil)
+	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}

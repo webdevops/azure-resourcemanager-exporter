@@ -51,7 +51,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armresourcehealth.NewAvailabilityStatusesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	client, err := armresourcehealth.NewAvailabilityStatusesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}

@@ -81,7 +81,7 @@ func (m *MetricsCollectorAzureRmResources) Collect(callback chan<- func()) {
 
 // Collect Azure ResourceGroup metrics
 func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armresources.NewResourceGroupsClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	client, err := armresources.NewResourceGroupsClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -122,7 +122,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscriptio
 }
 
 func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armresources.NewClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	client, err := armresources.NewClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}

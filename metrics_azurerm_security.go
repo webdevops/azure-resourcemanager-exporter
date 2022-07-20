@@ -71,7 +71,7 @@ func (m *MetricsCollectorAzureRmSecurity) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armsecurity.NewCompliancesClient(AzureClient.GetCred(), nil)
+	client, err := armsecurity.NewCompliancesClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}

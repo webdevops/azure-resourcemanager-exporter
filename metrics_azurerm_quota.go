@@ -134,7 +134,7 @@ func (m *MetricsCollectorAzureRmQuota) Collect(callback chan<- func()) {
 
 // collectAzureComputeUsage collects compute usages
 func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armcompute.NewUsageClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	client, err := armcompute.NewUsageClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -198,7 +198,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 
 // collectAzureComputeUsage collects network usages
 func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armnetwork.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	client, err := armnetwork.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -261,7 +261,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 
 // collectAzureComputeUsage collects storage usages
 func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armstorage.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	client, err := armstorage.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -324,7 +324,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 
 // collectAzureComputeUsage collects machinelearning usages
 func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armmachinelearningservices.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	client, err := armmachinelearningservices.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -356,7 +356,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscrip
 				infoLabels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
-					"scope":          "machineLearningServices",
+					"scope":          "machinelearningservices",
 					"quota":          quotaName,
 					"quotaName":      quotaNameLocalized,
 				}
@@ -364,7 +364,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscrip
 				labels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
-					"scope":          "machineLearningServices",
+					"scope":          "machinelearningservices",
 					"quota":          quotaName,
 				}
 

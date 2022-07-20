@@ -100,7 +100,7 @@ func (m *MetricsCollectorAzureRmIam) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
-	client, err := armauthorization.NewRoleDefinitionsClient(AzureClient.GetCred(), nil)
+	client, err := armauthorization.NewRoleDefinitionsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -142,7 +142,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsub
 func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
 	principalIdMap := map[string]string{}
 
-	client, err := armauthorization.NewRoleAssignmentsClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	client, err := armauthorization.NewRoleAssignmentsClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
