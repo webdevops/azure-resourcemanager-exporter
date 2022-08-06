@@ -61,7 +61,7 @@ func (c *Portscanner) Enable() {
 func (c *Portscanner) CacheLoad(path string) {
 	c.mux.Lock()
 
-	jsonContent, _ := os.ReadFile(path)
+	jsonContent, _ := os.ReadFile(path) // #nosec inside container
 	err := json.Unmarshal(jsonContent, &c)
 	if err != nil {
 		c.logger.Errorf("failed to load portscanner cache: %v", err)
@@ -78,7 +78,7 @@ func (c *Portscanner) CacheSave(path string) {
 	c.mux.Lock()
 
 	jsonData, _ := json.Marshal(c)
-	err := os.WriteFile(path, jsonData, 0600)
+	err := os.WriteFile(path, jsonData, 0600) // #nosec inside container
 	if err != nil {
 		c.logger.Panic(err)
 	}
