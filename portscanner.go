@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"sync"
@@ -62,18 +61,8 @@ func (c *Portscanner) Enable() {
 func (c *Portscanner) CacheLoad(path string) {
 	c.mux.Lock()
 
-	file, err := os.Open(path) // #nosec
-	if err != nil {
-		c.logger.Panic(err)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			c.logger.Errorf("error closing file: %s\n", err)
-		}
-	}()
-
-	jsonContent, _ := ioutil.ReadAll(file)
-	err = json.Unmarshal(jsonContent, &c)
+	jsonContent, _ := os.ReadFile(path)
+	err := json.Unmarshal(jsonContent, &c)
 	if err != nil {
 		c.logger.Errorf("failed to load portscanner cache: %v", err)
 	}
@@ -89,7 +78,7 @@ func (c *Portscanner) CacheSave(path string) {
 	c.mux.Lock()
 
 	jsonData, _ := json.Marshal(c)
-	err := ioutil.WriteFile(path, jsonData, 0600)
+	err := os.WriteFile(path, jsonData, 0600)
 	if err != nil {
 		c.logger.Panic(err)
 	}
