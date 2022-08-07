@@ -1,6 +1,6 @@
 module github.com/webdevops/azure-resourcemanager-exporter
 
-go 1.18
+go 1.19
 
 require (
 	github.com/anvie/port-scanner v0.0.0-20180225151059-8159197d3770
