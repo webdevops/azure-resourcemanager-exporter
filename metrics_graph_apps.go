@@ -1,7 +1,9 @@
 package main
 
 import (
+	msgraphcore "github.com/microsoftgraph/msgraph-sdk-go-core"
 	"github.com/microsoftgraph/msgraph-sdk-go/applications"
+	"github.com/microsoftgraph/msgraph-sdk-go/models"
 	"github.com/prometheus/client_golang/prometheus"
 	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
@@ -70,7 +72,14 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 	appsMetrics := prometheusCommon.NewMetricsList()
 	appsCredentialMetrics := prometheusCommon.NewMetricsList()
 
-	for _, application := range result.GetValue() {
+	pageIterator, err := msgraphcore.NewPageIterator(result, MsGraphClient.RequestAdapter(), models.CreateApplicationCollectionResponseFromDiscriminatorValue)
+	if err != nil {
+		m.Logger().Panic(err)
+	}
+
+	err = pageIterator.Iterate(func(pageItem interface{}) bool {
+		application := pageItem.(*models.Application)
+
 		appId := to.StringLower(application.GetAppId())
 		objId := to.StringLower(application.GetId())
 
@@ -125,6 +134,11 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 				}, credential.GetEndDateTime().UTC())
 			}
 		}
+
+		return true
+	})
+	if err != nil {
+		m.Logger().Panic(err)
 	}
 
 	callback <- func() {
