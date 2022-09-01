@@ -3,6 +3,7 @@ package main
 import (
 	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 var (
@@ -27,4 +28,14 @@ func stringsTrimSuffixCI(str, suffix string) string {
 	}
 
 	return str
+}
+
+func truncateStrings(s string, n int, suffix string) string {
+	if len(s) <= n {
+		return s
+	}
+	for !utf8.ValidString(s[:n]) {
+		n--
+	}
+	return s[:n] + suffix
 }

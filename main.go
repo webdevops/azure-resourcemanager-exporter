@@ -277,7 +277,7 @@ func initMetricCollector() {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
-	collectorName = "Health"
+	collectorName = "ResourceHealth"
 	if opts.Scrape.TimeResourceHealth.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.TimeResourceHealth)

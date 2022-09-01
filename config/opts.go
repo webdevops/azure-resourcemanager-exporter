@@ -40,6 +40,10 @@ type (
 			TimeCosts          *time.Duration `long:"scrape-time-costs"              env:"SCRAPE_TIME_COSTS"              description:"Scrape time for costs/consumtion metrics (time.duration; BETA)" default:"0"`
 		}
 
+		ResourceHealth struct {
+			SummaryMaxLength int `long:"resourcehealth-summary-maxlength"           env:"RESOURCEHEALTH_SUMMARY_MAXLENGTH"  description:"Max length of ResourceHealth summary label"  default:"80"`
+		}
+
 		// graph settings
 		Graph struct {
 			ApplicationFilter string `long:"graph-application-filter"    env:"GRAPH_APPLICATION_FILTER"               description:"MS Graph application $filter query eg: startswith(displayName,'A')"`

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcehealth/armresourcehealth"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,7 +17,9 @@ type MetricsCollectorAzureRmHealth struct {
 	collector.Processor
 
 	prometheus struct {
-		resourceHealth *prometheus.GaugeVec
+		resourceHealth                         *prometheus.GaugeVec
+		resourceHealthReportTime               *prometheus.GaugeVec
+		resourceHealthRootCauseAttributionTime *prometheus.GaugeVec
 	}
 }
 
@@ -32,13 +36,46 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *collector.Collector) {
 			"resourceID",
 			"resourceGroup",
 			"availabilityState",
+			"healthEventType",
+			"healthEventCategory",
+			"healthEventCause",
+			"reason",
+			"summary",
 		},
 	)
 	prometheus.MustRegister(m.prometheus.resourceHealth)
+
+	m.prometheus.resourceHealthReportTime = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_resource_health_reporttime",
+			Help: "Azure Resource health status information",
+		},
+		[]string{
+			"subscriptionID",
+			"resourceID",
+			"resourceGroup",
+		},
+	)
+	prometheus.MustRegister(m.prometheus.resourceHealthReportTime)
+
+	m.prometheus.resourceHealthRootCauseAttributionTime = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_resource_health_rootcauseattributiontime",
+			Help: "Azure Resource health status information",
+		},
+		[]string{
+			"subscriptionID",
+			"resourceID",
+			"resourceGroup",
+		},
+	)
+	prometheus.MustRegister(m.prometheus.resourceHealthRootCauseAttributionTime)
 }
 
 func (m *MetricsCollectorAzureRmHealth) Reset() {
 	m.prometheus.resourceHealth.Reset()
+	m.prometheus.resourceHealthReportTime.Reset()
+	m.prometheus.resourceHealthRootCauseAttributionTime.Reset()
 }
 
 func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
@@ -57,6 +94,8 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 	}
 
 	resourceHealthMetric := prometheusCommon.NewMetricsList()
+	resourceHealthReportTimeMetric := prometheusCommon.NewMetricsList()
+	resourceHealthRootCauseAttributionTimeMetric := prometheusCommon.NewMetricsList()
 
 	availabilityStateValues := armresourcehealth.PossibleAvailabilityStateValuesValues()
 
@@ -83,13 +122,39 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 				resourceAvailabilityState = *resourceHealth.Properties.AvailabilityState
 			}
 
+			if resourceHealth.Properties.ReportedTime != nil {
+				resourceHealthReportTimeMetric.AddTime(prometheus.Labels{
+					"subscriptionID": azureResource.Subscription,
+					"resourceID":     stringToStringLower(resourceId),
+					"resourceGroup":  azureResource.ResourceGroup,
+				}, *resourceHealth.Properties.ReportedTime)
+			}
+
+			if resourceHealth.Properties.RootCauseAttributionTime != nil {
+				resourceHealthRootCauseAttributionTimeMetric.AddTime(prometheus.Labels{
+					"subscriptionID": azureResource.Subscription,
+					"resourceID":     stringToStringLower(resourceId),
+					"resourceGroup":  azureResource.ResourceGroup,
+				}, *resourceHealth.Properties.RootCauseAttributionTime)
+			}
+
 			for _, availabilityState := range availabilityStateValues {
 				if availabilityState == resourceAvailabilityState {
+					summary := ""
+					if !strings.EqualFold(string(resourceAvailabilityState), string(armresourcehealth.AvailabilityStateValuesAvailable)) {
+						summary = truncateStrings(to.String(resourceHealth.Properties.Summary), opts.ResourceHealth.SummaryMaxLength, "...")
+					}
+
 					resourceHealthMetric.Add(prometheus.Labels{
-						"subscriptionID":    azureResource.Subscription,
-						"resourceID":        stringToStringLower(resourceId),
-						"resourceGroup":     azureResource.ResourceGroup,
-						"availabilityState": stringToStringLower(string(availabilityState)),
+						"subscriptionID":      azureResource.Subscription,
+						"resourceID":          stringToStringLower(resourceId),
+						"resourceGroup":       azureResource.ResourceGroup,
+						"availabilityState":   stringToStringLower(string(availabilityState)),
+						"healthEventType":     to.String(resourceHealth.Properties.HealthEventType),
+						"healthEventCategory": to.String(resourceHealth.Properties.HealthEventType),
+						"healthEventCause":    to.String(resourceHealth.Properties.HealthEventCause),
+						"reason":              to.String(resourceHealth.Properties.ReasonType),
+						"summary":             summary,
 					}, 1)
 				}
 			}
@@ -98,5 +163,7 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 
 	callback <- func() {
 		resourceHealthMetric.GaugeSet(m.prometheus.resourceHealth)
+		resourceHealthReportTimeMetric.GaugeSet(m.prometheus.resourceHealthReportTime)
+		resourceHealthRootCauseAttributionTimeMetric.GaugeSet(m.prometheus.resourceHealthRootCauseAttributionTime)
 	}
 }
