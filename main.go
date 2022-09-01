@@ -61,7 +61,7 @@ func main() {
 	log.Infof("starting metrics collection")
 	initMetricCollector()
 
-	log.Infof("starting http server on %s", opts.ServerBind)
+	log.Infof("starting http server on %s", opts.Server.Bind)
 	startHttpServer()
 }
 
@@ -326,21 +326,29 @@ func initMetricCollector() {
 
 // start and handle prometheus handler
 func startHttpServer() {
+	mux := http.NewServeMux()
+
 	// healthz
-	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
 			log.Error(err)
 		}
 	})
 
-	// healthz
-	http.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+	// readyz
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
 			log.Error(err)
 		}
 	})
 
-	http.Handle("/metrics", tracing.RegisterAzureMetricAutoClean(promhttp.Handler()))
+	mux.Handle("/metrics", tracing.RegisterAzureMetricAutoClean(promhttp.Handler()))
 
-	log.Fatal(http.ListenAndServe(opts.ServerBind, nil))
+	srv := &http.Server{
+		Addr:         opts.Server.Bind,
+		Handler:      mux,
+		ReadTimeout:  opts.Server.ReadTimeout,
+		WriteTimeout: opts.Server.WriteTimeout,
+	}
+	log.Fatal(srv.ListenAndServe())
 }
