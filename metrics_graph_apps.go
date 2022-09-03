@@ -64,7 +64,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 			Filter: &opts.Graph.ApplicationFilter,
 		},
 	}
-	result, err := MsGraphClient.ServiceClient().Applications().GetWithRequestConfigurationAndResponseHandler(&opts, nil)
+	result, err := MsGraphClient.ServiceClient().Applications().Get(m.Context(), &opts)
 	if err != nil {
 		m.Logger().Panic(err)
 	}
@@ -77,7 +77,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 		m.Logger().Panic(err)
 	}
 
-	err = pageIterator.Iterate(func(pageItem interface{}) bool {
+	err = pageIterator.Iterate(m.Context(), func(pageItem interface{}) bool {
 		application := pageItem.(*models.Application)
 
 		appId := to.StringLower(application.GetAppId())

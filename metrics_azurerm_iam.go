@@ -189,7 +189,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsub
 		principalIdList = append(principalIdList, val)
 	}
 
-	principalList, err := MsGraphClient.LookupPrincipalID(principalIdList...)
+	principalList, err := MsGraphClient.LookupPrincipalID(m.Context(), principalIdList...)
 	if err != nil {
 		logger.Panic(err)
 	}

@@ -210,7 +210,7 @@ func initAzureConnection() {
 func initMsGraphConnection() {
 	var err error
 	if MsGraphClient == nil {
-		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*opts.Azure.Environment, log.StandardLogger())
+		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*opts.Azure.Environment, *opts.Azure.Tenant, log.StandardLogger())
 		if err != nil {
 			log.Panic(err.Error())
 		}
