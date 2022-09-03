@@ -9,7 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 12
       - name: Run Gosec Security Scanner
         uses: securego/gosec@master
         with:
@@ -19,7 +22,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: latest
-          args: -E exportloopref,gofmt --timeout=30m
+          args: -E exportloopref,gofmt --timeout=120m
 
   build:
     needs: lint
@@ -33,7 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 12
       - name: Docker meta
         id: docker_meta
         uses: docker/metadata-action@v4
