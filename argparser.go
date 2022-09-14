@@ -36,7 +36,7 @@ func argparserParsePortrange() (errorMessage error) {
 			// parse first port
 			firstPort, err = strconv.ParseInt(portscanRangeSubMatchResult["first"], 10, 32)
 			if err != nil {
-				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": %v", err)
+				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": %w", err)
 				return
 			}
 
@@ -44,7 +44,7 @@ func argparserParsePortrange() (errorMessage error) {
 			if portscanRangeSubMatchResult["last"] != "" {
 				lastPort, err = strconv.ParseInt(portscanRangeSubMatchResult["last"], 10, 32)
 				if err != nil {
-					errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": %v", err)
+					errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": %w", err)
 					return
 				}
 			} else {

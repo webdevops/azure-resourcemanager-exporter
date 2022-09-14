@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -71,7 +72,8 @@ func initArgparser() {
 
 	// check if there is an parse error
 	if err != nil {
-		if flagsErr, ok := err.(*flags.Error); ok && flagsErr.Type == flags.ErrHelp {
+		var flagsErr *flags.Error
+		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		} else {
 			fmt.Println()
