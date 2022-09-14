@@ -5,38 +5,25 @@ on:
     types: [created]
 
 jobs:
-  lint:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
-        with:
-          args: ./...
-
-      - name: Run Golangci lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: latest
-          args: -E exportloopref,gofmt --timeout=120m
-
-  build:
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '1.19'
-          check-latest: true
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
           swap-size-gb: 12
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.19'
+          check-latest: true
+
       - name: Build
         run: |
           make release-assets
+
       - name: Upload assets to release
         uses: svenstaro/upload-release-action@v2
         with:
