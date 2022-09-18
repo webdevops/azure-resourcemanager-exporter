@@ -12,7 +12,7 @@ require (
 	github.com/remeh/sizedwaitgroup v1.0.0
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
-	golang.org/x/sys v0.0.0-20220913175220-63ea55921009 // indirect
+	golang.org/x/sys v0.0.0-20220915200043-7b5979e65e41 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
 
@@ -28,7 +28,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.7.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.1.0
-	github.com/microsoftgraph/msgraph-sdk-go v0.38.1
+	github.com/microsoftgraph/msgraph-sdk-go v0.39.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.28.1
 	github.com/webdevops/go-common v0.0.0-20220914173209-2471ec95feda
 )
@@ -37,7 +37,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.3 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.1 // indirect
-	github.com/AzureAD/microsoft-authentication-library-for-go v0.6.1 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cjlapao/common-go v0.0.27 // indirect
@@ -46,7 +46,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
-	github.com/microsoft/kiota-abstractions-go v0.10.0 // indirect
+	github.com/microsoft/kiota-abstractions-go v0.10.1 // indirect
 	github.com/microsoft/kiota-authentication-azure-go v0.4.1 // indirect
 	github.com/microsoft/kiota-http-go v0.7.2 // indirect
 	github.com/microsoft/kiota-serialization-json-go v0.6.0 // indirect
