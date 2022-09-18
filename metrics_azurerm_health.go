@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcehealth/armresourcehealth"
@@ -142,7 +143,27 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 				if availabilityState == resourceAvailabilityState {
 					summary := ""
 					if !strings.EqualFold(string(resourceAvailabilityState), string(armresourcehealth.AvailabilityStateValuesAvailable)) {
-						summary = truncateStrings(to.String(resourceHealth.Properties.Summary), opts.ResourceHealth.SummaryMaxLength, "...")
+
+						// log resourcehealth
+						var resourceHealthLogObject interface{}
+						if resourceHealthData, err := json.Marshal(resourceHealth); err == nil {
+							err := json.Unmarshal(resourceHealthData, &resourceHealthLogObject)
+							if err != nil {
+								m.Logger().Warnf("unable to convert resourcehealth to json: %v", err.Error())
+							}
+						}
+
+						m.Logger().WithFields(log.Fields{
+							"subscriptionID":    azureResource.Subscription,
+							"resourceID":        stringToStringLower(resourceId),
+							"resourceGroup":     azureResource.ResourceGroup,
+							"availabilityState": stringToStringLower(string(availabilityState)),
+							"resourceHealth":    resourceHealthLogObject,
+						}).Info("unhealthy resource detected")
+
+						if opts.ResourceHealth.SummaryMaxLength >= 0 {
+							summary = truncateStrings(to.String(resourceHealth.Properties.Summary), opts.ResourceHealth.SummaryMaxLength, "...")
+						}
 					}
 
 					resourceHealthMetric.Add(prometheus.Labels{
