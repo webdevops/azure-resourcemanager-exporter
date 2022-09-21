@@ -57,7 +57,7 @@ Application Options:
       --scrape.time.graph=                Scrape time for Graph metrics (time.duration) [$SCRAPE_TIME_GRAPH]
       --scrape.time.costs=                Scrape time for costs/consumtion metrics (time.duration; BETA) (default: 0)
                                           [$SCRAPE_TIME_COSTS]
-      --resourcehealth.summary.maxlength= Max length of ResourceHealth summary label (0 = disable summary label) (default: 80)
+      --resourcehealth.summary.maxlength= Max length of ResourceHealth summary label (0 = disable summary label) (default: 0)
                                           [$RESOURCEHEALTH_SUMMARY_MAXLENGTH]
       --graph.application.filter=         MS Graph application $filter query eg: startswith(displayName,'A')
                                           [$GRAPH_APPLICATION_FILTER]

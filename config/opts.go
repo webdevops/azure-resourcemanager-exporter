@@ -41,7 +41,7 @@ type (
 		}
 
 		ResourceHealth struct {
-			SummaryMaxLength int `long:"resourcehealth.summary.maxlength"           env:"RESOURCEHEALTH_SUMMARY_MAXLENGTH"  description:"Max length of ResourceHealth summary label (0 = disable summary label)"  default:"80"`
+			SummaryMaxLength int `long:"resourcehealth.summary.maxlength"           env:"RESOURCEHEALTH_SUMMARY_MAXLENGTH"  description:"Max length of ResourceHealth summary label (0 = disable summary label)"  default:"0"`
 		}
 
 		// graph settings
