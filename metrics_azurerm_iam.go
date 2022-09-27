@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
+	armauthorization "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
@@ -150,7 +150,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsub
 	infoMetric := prometheusCommon.NewMetricsList()
 	principalMetric := prometheusCommon.NewMetricsList()
 
-	pager := client.NewListPager(nil)
+	pager := client.NewListForSubscriptionPager(nil)
 
 	count := float64(0)
 	for pager.More() {
