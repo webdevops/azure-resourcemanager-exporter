@@ -344,7 +344,9 @@ func startHttpServer() {
 		}
 	})
 
-	mux.Handle("/metrics", tracing.RegisterAzureMetricAutoClean(promhttp.Handler()))
+	mux.Handle("/metrics", collector.HttpWaitForRlock(
+		tracing.RegisterAzureMetricAutoClean(promhttp.Handler())),
+	)
 
 	srv := &http.Server{
 		Addr:         opts.Server.Bind,
