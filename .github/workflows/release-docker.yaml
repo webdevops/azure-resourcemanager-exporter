@@ -8,24 +8,24 @@ on:
       - '*.*.*'
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set Swap Space
-        uses: pierotofy/set-swap-space@master
-        with:
-          swap-size-gb: 12
-
-      - name: Run Golangci lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: latest
-          args: --print-resources-usage
+#  lint:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#
+#      - name: Set Swap Space
+#        uses: pierotofy/set-swap-space@master
+#        with:
+#          swap-size-gb: 12
+#
+#      - name: Run Golangci lint
+#        uses: golangci/golangci-lint-action@v2
+#        with:
+#          version: latest
+#          args: --print-resources-usage
 
   build:
-    needs: lint
+#    needs: lint
     strategy:
       fail-fast: false
       matrix:
