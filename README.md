@@ -55,30 +55,31 @@ Application Options:
       --scrape.time.resourcehealth=       Scrape time for ResourceHealth metrics (time.duration) [$SCRAPE_TIME_RESOURCEHEALTH]
       --scrape.time.iam=                  Scrape time for IAM metrics (time.duration) [$SCRAPE_TIME_IAM]
       --scrape.time.graph=                Scrape time for Graph metrics (time.duration) [$SCRAPE_TIME_GRAPH]
-      --scrape.time.costs=                Scrape time for costs/consumtion metrics (time.duration; BETA) (default: 0)
-                                          [$SCRAPE_TIME_COSTS]
+      --scrape.time.costs=                Scrape time for costs/consumtion metrics (time.duration; BETA) (default: 0) [$SCRAPE_TIME_COSTS]
       --resourcehealth.summary.maxlength= Max length of ResourceHealth summary label (0 = disable summary label) (default: 0)
                                           [$RESOURCEHEALTH_SUMMARY_MAXLENGTH]
-      --graph.application.filter=         MS Graph application $filter query eg: startswith(displayName,'A')
-                                          [$GRAPH_APPLICATION_FILTER]
+      --graph.application.filter=         MS Graph application $filter query eg: startswith(displayName,'A') [$GRAPH_APPLICATION_FILTER]
       --costs.timeframe=                  Timeframe for cost reportings  (space delimiter) (default: MonthToDate, YearToDate)
                                           [$COSTS_TIMEFRAME]
       --costs.dimension=                  Dimensions for detailed cost metrics (eg
-                                          'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType-
-                                          ','ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','Ac-
-                                          countName','DepartmentName','SubscriptionId','SubscriptionName','ServiceName','Service-
-                                          Tier','EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','Invoi-
-                                          ceNumber','ChargeType','PublisherType','ReservationId','ReservationName','Frequency','-
-                                          PartNumber','CostAllocationRuleName','MarkupRuleName','PricingModel')  (space
-                                          delimiter) (default: ResourceType, ResourceLocation) [$COSTS_DIMENSION]
+                                          'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType','ResourceI-
+
+                                          d','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName','DepartmentNa-
+
+                                          me','SubscriptionId','SubscriptionName','ServiceName','ServiceTier','EnrollmentAccountName','Billi-
+
+                                          ngAccountId','ResourceGuid','BillingPeriod','InvoiceNumber','ChargeType','PublisherType','Reservat-
+
+                                          ionId','ReservationName','Frequency','PartNumber','CostAllocationRuleName','MarkupRuleName','Prici-
+
+                                          ngModel')  (space delimiter) (default: ResourceType, ResourceLocation) [$COSTS_DIMENSION]
+      --costs.request.delay=              Delay API requests by this time to avoid ratelimits (default: 10s) [$COSTS_REQUEST_DELAY]
       --portscan                          Enable portscan for public IPs [$PORTSCAN]
       --portscan.time=                    Portscan time (time.duration) (default: 3h) [$PORTSCAN_TIME]
-      --portscan.parallel=                Portscan parallel scans (parallel * threads = concurrent gofuncs) (default: 2)
-                                          [$PORTSCAN_PARALLEL]
+      --portscan.parallel=                Portscan parallel scans (parallel * threads = concurrent gofuncs) (default: 2) [$PORTSCAN_PARALLEL]
       --portscan.threads=                 Portscan threads (concurrent port scans per IP) (default: 1000) [$PORTSCAN_THREADS]
       --portscan.timeout=                 Portscan timeout (seconds) (default: 5) [$PORTSCAN_TIMEOUT]
-      --portscan.range=                   Portscan port range (first-last)  (space delimiter) (default: 1-65535)
-                                          [$PORTSCAN_RANGE]
+      --portscan.range=                   Portscan port range (first-last)  (space delimiter) (default: 1-65535) [$PORTSCAN_RANGE]
       --cache.path=                       Cache path [$CACHE_PATH]
       --server.bind=                      Server address (default: :8080) [$SERVER_BIND]
       --server.timeout.read=              Server read timeout (default: 5s) [$SERVER_TIMEOUT_READ]

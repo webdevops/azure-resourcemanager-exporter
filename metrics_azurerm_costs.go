@@ -194,9 +194,6 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 		for _, val := range opts.Costs.Dimension {
 			dimension := val
 
-			// avoid ratelimit
-			time.Sleep(10 * time.Second)
-
 			m.collectCostManagementMetrics(
 				logger.WithField("costreport", "Usage"),
 				callback,
@@ -218,8 +215,8 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 			)
 		}
 
-		// avoid ratelimit
-		time.Sleep(10 * time.Second)
+		// avoid rate limit
+		time.Sleep(opts.Costs.RequestDelay)
 	}
 
 	m.collectBugdetMetrics(
@@ -420,6 +417,9 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 
 		costMetric.Add(labels, usage)
 	}
+
+	// avoid rate limit
+	time.Sleep(opts.Costs.RequestDelay)
 
 	callback <- func() {
 		costMetric.GaugeSet(metric)
