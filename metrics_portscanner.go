@@ -30,6 +30,8 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.portscanner = &Portscanner{}
 	m.portscanner.Init()
 
+	cachePath := opts.GetCachePath("portscan.json")
+
 	m.prometheus.publicIpInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_publicip_info",
@@ -75,9 +77,9 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.portscanner.Callbacks.FinishScan = func(c *Portscanner) {
 		m.Logger().Infof("finished for %v IPs", len(m.portscanner.PublicIps))
 
-		if opts.Cache.Path != "" {
+		if cachePath != nil {
 			m.Logger().Infof("saved to cache")
-			m.portscanner.CacheSave(opts.Cache.Path)
+			m.portscanner.CacheSave(*cachePath)
 		}
 	}
 
@@ -136,10 +138,10 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 		m.prometheus.publicIpPortscanPort.With(result.Labels).Set(result.Value)
 	}
 
-	if opts.Cache.Path != "" {
-		if _, err := os.Stat(opts.Cache.Path); !os.IsNotExist(err) {
+	if cachePath != nil {
+		if _, err := os.Stat(*cachePath); !os.IsNotExist(err) {
 			m.Logger().Infof("load from cache")
-			m.portscanner.CacheLoad(opts.Cache.Path)
+			m.portscanner.CacheLoad(*cachePath)
 		}
 	}
 }

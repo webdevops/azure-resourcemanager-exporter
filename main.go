@@ -141,6 +141,14 @@ func initArgparser() {
 		opts.Scrape.TimeGraph = &opts.Scrape.Time
 	}
 
+	if opts.Scrape.TimePortscan == nil {
+		opts.Scrape.TimePortscan = &opts.Scrape.Time
+	}
+
+	if opts.Scrape.TimePortscan == nil || opts.Scrape.TimePortscan.Seconds() == 0 && opts.Portscan.Enabled {
+		log.Fatalf(`portscan is enabled but has invalid scape time (zero)`)
+	}
+
 	// check deprecated env vars
 	deprecatedEnvVars := map[string]string{
 		"SCRAPE_TIME_CONTAINERREGISTRY": "not supported anymore",
@@ -154,7 +162,7 @@ func initArgparser() {
 	}
 	for envVar, reason := range deprecatedEnvVars {
 		if os.Getenv(envVar) != "" {
-			log.Panicf("env var %v is %v", envVar, reason)
+			log.Fatalf("env var %v is %v", envVar, reason)
 		}
 	}
 }
@@ -315,9 +323,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Portscan"
-	if opts.Portscan.Enabled {
+	if opts.Portscan.Enabled && opts.Scrape.TimePortscan.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, log.StandardLogger())
-		c.SetScapeTime(opts.Scrape.Time)
+		c.SetScapeTime(*opts.Scrape.TimePortscan)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}

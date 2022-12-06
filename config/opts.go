@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -38,6 +39,7 @@ type (
 			TimeIam            *time.Duration `long:"scrape.time.iam"                env:"SCRAPE_TIME_IAM"                description:"Scrape time for IAM metrics (time.duration)"`
 			TimeGraph          *time.Duration `long:"scrape.time.graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
 			TimeCosts          *time.Duration `long:"scrape.time.costs"              env:"SCRAPE_TIME_COSTS"              description:"Scrape time for costs/consumtion metrics (time.duration; BETA)" default:"0"`
+			TimePortscan       *time.Duration `long:"scrape.time.portscan"           env:"SCRAPE_TIME_PORTSCAN"           description:"Scrape time for public ips for portscan (time.duration)"`
 		}
 
 		ResourceHealth struct {
@@ -69,7 +71,7 @@ type (
 
 		// caching
 		Cache struct {
-			Path string `long:"cache.path"                    env:"CACHE_PATH"                               description:"Cache path"`
+			Path string `long:"cache.path" env:"CACHE_PATH" description:"Cache path"`
 		}
 
 		Server struct {
@@ -80,6 +82,15 @@ type (
 		}
 	}
 )
+
+func (o *Opts) GetCachePath(path string) (ret *string) {
+	if o.Cache.Path != "" {
+		tmp := filepath.Join(o.Cache.Path, path)
+		ret = &tmp
+	}
+
+	return
+}
 
 func (o *Opts) GetJson() []byte {
 	jsonBytes, err := json.Marshal(o)
