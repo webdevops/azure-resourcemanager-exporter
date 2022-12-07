@@ -52,11 +52,11 @@ type (
 		}
 
 		// costs
-
 		Costs struct {
-			Timeframe    []string      `long:"costs.timeframe" env:"COSTS_TIMEFRAME"  env-delim:" " description:"Timeframe for cost reportings  (space delimiter)" default:"MonthToDate" default:"YearToDate"`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       //nolint:staticcheck
-			Dimension    []string      `long:"costs.dimension" env:"COSTS_DIMENSION"  env-delim:" " description:"Dimensions for detailed cost metrics (eg 'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType','ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName','DepartmentName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier','EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber','ChargeType','PublisherType','ReservationId','ReservationName','Frequency','PartNumber','CostAllocationRuleName','MarkupRuleName','PricingModel')  (space delimiter)" default:"ResourceType" default:"ResourceLocation"` //nolint:staticcheck
+			Timeframe    []string      `long:"costs.timeframe"     env:"COSTS_TIMEFRAME"  env-delim:" " description:"Timeframe for cost reportings  (space delimiter)" default:"MonthToDate" default:"YearToDate"`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       //nolint:staticcheck
+			Dimension    []string      `long:"costs.dimension"     env:"COSTS_DIMENSION"  env-delim:" " description:"Dimensions for detailed cost metrics (eg 'ResourceGroup','ResourceGroupName','ResourceLocation','ConsumedService','ResourceType','ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName','DepartmentName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier','EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber','ChargeType','PublisherType','ReservationId','ReservationName','Frequency','PartNumber','CostAllocationRuleName','MarkupRuleName','PricingModel')  (space delimiter)" default:"ResourceType" default:"ResourceLocation"` //nolint:staticcheck
 			RequestDelay time.Duration `long:"costs.request.delay" env:"COSTS_REQUEST_DELAY" description:"Delay API requests by this time to avoid ratelimits" default:"10s"`
+			CacheExpiry  time.Duration `long:"costs.cache.expiry"  env:"COSTS_CACHE_EXPIRY"  description:"Defines how long cached data is valid" default:"12h"`
 		}
 
 		// portscan settings
@@ -71,7 +71,7 @@ type (
 
 		// caching
 		Cache struct {
-			Path string `long:"cache.path" env:"CACHE_PATH" description:"Cache path"`
+			Path string `long:"cache.path" env:"CACHE_PATH" description:"Cache path (to folder)"`
 		}
 
 		Server struct {

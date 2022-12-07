@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -61,9 +59,10 @@ func (c *Portscanner) Enable() {
 func (c *Portscanner) CacheLoad(path string) {
 	c.mux.Lock()
 
-	jsonContent, _ := os.ReadFile(path) // #nosec inside container
-	err := json.Unmarshal(jsonContent, &c)
-	if err != nil {
+	err := cacheRestoreFromPath(path, c)
+	if err == nil {
+		c.logger.Infof(`restored state from cache path "%v"`, path)
+	} else {
 		c.logger.Errorf("failed to load portscanner cache: %v", err)
 	}
 
@@ -77,9 +76,10 @@ func (c *Portscanner) CacheLoad(path string) {
 func (c *Portscanner) CacheSave(path string) {
 	c.mux.Lock()
 
-	jsonData, _ := json.Marshal(c)
-	err := os.WriteFile(path, jsonData, 0600) // #nosec inside container
-	if err != nil {
+	err := cacheSaveToPath(path, c)
+	if err == nil {
+		c.logger.Infof(`saved state to cache path "%v"`, path)
+	} else {
 		c.logger.Panic(err)
 	}
 

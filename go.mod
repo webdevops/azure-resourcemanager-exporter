@@ -30,7 +30,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.1.0
 	github.com/microsoftgraph/msgraph-sdk-go v0.48.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.30.1
-	github.com/webdevops/go-common v0.0.0-20221205225417-7109770a084a
+	github.com/webdevops/go-common v0.0.0-20221207011900-7b80c7520751
 )
 
 require (
