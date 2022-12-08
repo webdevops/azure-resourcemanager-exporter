@@ -7,11 +7,11 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/prometheus/common v0.37.0 // indirect
+	github.com/prometheus/common v0.38.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
 	github.com/sirupsen/logrus v1.9.0
-	golang.org/x/crypto v0.3.0 // indirect
+	golang.org/x/crypto v0.4.0 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
@@ -30,7 +30,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.1.0
 	github.com/microsoftgraph/msgraph-sdk-go v0.48.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.30.1
-	github.com/webdevops/go-common v0.0.0-20221208173505-b43681581b00
+	github.com/webdevops/go-common v0.0.0-20221208182440-5a0cbaaf246d
 )
 
 require (
@@ -62,7 +62,7 @@ require (
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/otel v1.11.2 // indirect
 	go.opentelemetry.io/otel/trace v1.11.2 // indirect
-	golang.org/x/net v0.2.0 // indirect
+	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
