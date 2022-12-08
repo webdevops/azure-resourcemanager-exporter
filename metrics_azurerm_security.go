@@ -7,7 +7,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 )
@@ -34,7 +33,7 @@ func (m *MetricsCollectorAzureRmSecurity) Setup(collector *collector.Collector) 
 			"assessmentType",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.securitycenterCompliance)
+	m.Collector.RegisterMetricList("securitycenterCompliance", m.prometheus.securitycenterCompliance, true)
 
 	m.prometheus.advisorRecommendations = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -52,13 +51,10 @@ func (m *MetricsCollectorAzureRmSecurity) Setup(collector *collector.Collector) 
 			"risk",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.advisorRecommendations)
+	m.Collector.RegisterMetricList("advisorRecommendations", m.prometheus.advisorRecommendations, true)
 }
 
-func (m *MetricsCollectorAzureRmSecurity) Reset() {
-	m.prometheus.securitycenterCompliance.Reset()
-	m.prometheus.advisorRecommendations.Reset()
-}
+func (m *MetricsCollectorAzureRmSecurity) Reset() {}
 
 func (m *MetricsCollectorAzureRmSecurity) Collect(callback chan<- func()) {
 	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
@@ -76,7 +72,7 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(subscri
 		logger.Panic(err)
 	}
 
-	infoMetric := prometheusCommon.NewMetricsList()
+	infoMetric := m.Collector.GetMetricList("securitycenterCompliance")
 
 	pager := client.NewListPager(*subscription.ID, nil)
 
@@ -117,10 +113,6 @@ func (m *MetricsCollectorAzureRmSecurity) collectAzureSecurityCompliance(subscri
 				infoMetric.Add(infoLabels, to.Float64(result.Percentage))
 			}
 		}
-	}
-
-	callback <- func() {
-		infoMetric.GaugeSet(m.prometheus.securitycenterCompliance)
 	}
 }
 

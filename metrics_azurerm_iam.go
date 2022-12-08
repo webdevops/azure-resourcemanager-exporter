@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
-	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 )
@@ -34,7 +33,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *collector.Collector) {
 			"subscriptionID",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.roleAssignmentCount)
+	m.Collector.RegisterMetricList("roleAssignmentCount", m.prometheus.roleAssignmentCount, true)
 
 	m.prometheus.roleAssignment = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -50,7 +49,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *collector.Collector) {
 			"roleDefinitionID",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.roleAssignment)
+	m.Collector.RegisterMetricList("roleAssignment", m.prometheus.roleAssignment, true)
 
 	m.prometheus.roleDefinition = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -65,7 +64,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *collector.Collector) {
 			"roleType",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.roleDefinition)
+	m.Collector.RegisterMetricList("roleDefinition", m.prometheus.roleDefinition, true)
 
 	m.prometheus.principal = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -79,15 +78,10 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *collector.Collector) {
 			"principalType",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.principal)
+	m.Collector.RegisterMetricList("principal", m.prometheus.principal, true)
 }
 
-func (m *MetricsCollectorAzureRmIam) Reset() {
-	m.prometheus.roleAssignmentCount.Reset()
-	m.prometheus.roleDefinition.Reset()
-	m.prometheus.roleAssignment.Reset()
-	m.prometheus.principal.Reset()
-}
+func (m *MetricsCollectorAzureRmIam) Reset() {}
 
 func (m *MetricsCollectorAzureRmIam) Collect(callback chan<- func()) {
 	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
@@ -105,7 +99,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsub
 		logger.Panic(err)
 	}
 
-	infoMetric := prometheusCommon.NewMetricsList()
+	infoMetric := m.Collector.GetMetricList("roleDefinition")
 
 	pager := client.NewListPager(*subscription.ID, nil)
 
@@ -133,10 +127,6 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsub
 			infoMetric.AddInfo(infoLabels)
 		}
 	}
-
-	callback <- func() {
-		infoMetric.GaugeSet(m.prometheus.roleDefinition)
-	}
 }
 
 func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
@@ -147,8 +137,9 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsub
 		logger.Panic(err)
 	}
 
-	infoMetric := prometheusCommon.NewMetricsList()
-	principalMetric := prometheusCommon.NewMetricsList()
+	infoMetric := m.Collector.GetMetricList("roleAssignment")
+	principalMetric := m.Collector.GetMetricList("principal")
+	roleAssignmentCountMetric := m.Collector.GetMetricList("roleAssignmentCount")
 
 	pager := client.NewListForSubscriptionPager(nil)
 
@@ -203,11 +194,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsub
 		})
 	}
 
-	callback <- func() {
-		infoMetric.GaugeSet(m.prometheus.roleAssignment)
-		principalMetric.GaugeSet(m.prometheus.principal)
-		m.prometheus.roleAssignmentCount.With(prometheus.Labels{
-			"subscriptionID": to.StringLower(subscription.SubscriptionID),
-		}).Set(count)
-	}
+	roleAssignmentCountMetric.Add(prometheus.Labels{
+		"subscriptionID": to.StringLower(subscription.SubscriptionID),
+	}, count)
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
-	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 )
@@ -44,7 +43,7 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *collector.Collector) {
 			"summary",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.resourceHealth)
+	m.Collector.RegisterMetricList("resourceHealth", m.prometheus.resourceHealth, true)
 
 	m.prometheus.resourceHealthReportTime = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -57,7 +56,7 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *collector.Collector) {
 			"resourceGroup",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.resourceHealthReportTime)
+	m.Collector.RegisterMetricList("resourceHealthReportTime", m.prometheus.resourceHealthReportTime, true)
 
 	m.prometheus.resourceHealthRootCauseAttributionTime = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -70,14 +69,10 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *collector.Collector) {
 			"resourceGroup",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.resourceHealthRootCauseAttributionTime)
+	m.Collector.RegisterMetricList("resourceHealthRootCauseAttributionTime", m.prometheus.resourceHealthRootCauseAttributionTime, true)
 }
 
-func (m *MetricsCollectorAzureRmHealth) Reset() {
-	m.prometheus.resourceHealth.Reset()
-	m.prometheus.resourceHealthReportTime.Reset()
-	m.prometheus.resourceHealthRootCauseAttributionTime.Reset()
-}
+func (m *MetricsCollectorAzureRmHealth) Reset() {}
 
 func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
 	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
@@ -94,9 +89,9 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 		logger.Panic(err)
 	}
 
-	resourceHealthMetric := prometheusCommon.NewMetricsList()
-	resourceHealthReportTimeMetric := prometheusCommon.NewMetricsList()
-	resourceHealthRootCauseAttributionTimeMetric := prometheusCommon.NewMetricsList()
+	resourceHealthMetric := m.Collector.GetMetricList("resourceHealth")
+	resourceHealthReportTimeMetric := m.Collector.GetMetricList("resourceHealthReportTime")
+	resourceHealthRootCauseAttributionTimeMetric := m.Collector.GetMetricList("resourceHealthRootCauseAttributionTime")
 
 	availabilityStateValues := armresourcehealth.PossibleAvailabilityStateValuesValues()
 
@@ -180,11 +175,5 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 				}
 			}
 		}
-	}
-
-	callback <- func() {
-		resourceHealthMetric.GaugeSet(m.prometheus.resourceHealth)
-		resourceHealthReportTimeMetric.GaugeSet(m.prometheus.resourceHealthReportTime)
-		resourceHealthRootCauseAttributionTimeMetric.GaugeSet(m.prometheus.resourceHealthRootCauseAttributionTime)
 	}
 }

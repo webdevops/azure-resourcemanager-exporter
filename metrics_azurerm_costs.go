@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
-	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 )
@@ -31,66 +30,11 @@ type (
 			costmanagementDetailActualCost *prometheus.GaugeVec
 		}
 	}
-
-	MetricsCollectorAzureRmCostsMetrics struct {
-		Expiry                   *time.Time
-		ConsumptionBudgetInfo    *prometheusCommon.MetricList
-		ConsumptionBudgetLimit   *prometheusCommon.MetricList
-		ConsumptionBudgetCurrent *prometheusCommon.MetricList
-		ConsumptionBudgetUsage   *prometheusCommon.MetricList
-
-		CostmanagementOverallUsage      *prometheusCommon.MetricList
-		CostmanagementOverallActualCost *prometheusCommon.MetricList
-
-		CostmanagementDetailUsage      *prometheusCommon.MetricList
-		CostmanagementDetailActualCost *prometheusCommon.MetricList
-	}
 )
-
-func (m *MetricsCollectorAzureRmCostsMetrics) Init() {
-	if m.ConsumptionBudgetInfo == nil {
-		m.ConsumptionBudgetInfo = prometheusCommon.NewMetricsList()
-	}
-	m.ConsumptionBudgetInfo.Init()
-
-	if m.ConsumptionBudgetLimit == nil {
-		m.ConsumptionBudgetLimit = prometheusCommon.NewMetricsList()
-	}
-	m.ConsumptionBudgetLimit.Init()
-
-	if m.ConsumptionBudgetCurrent == nil {
-		m.ConsumptionBudgetCurrent = prometheusCommon.NewMetricsList()
-	}
-	m.ConsumptionBudgetCurrent.Init()
-
-	if m.ConsumptionBudgetUsage == nil {
-		m.ConsumptionBudgetUsage = prometheusCommon.NewMetricsList()
-	}
-	m.ConsumptionBudgetUsage.Init()
-
-	if m.CostmanagementOverallUsage == nil {
-		m.CostmanagementOverallUsage = prometheusCommon.NewMetricsList()
-	}
-	m.CostmanagementOverallUsage.Init()
-
-	if m.CostmanagementOverallActualCost == nil {
-		m.CostmanagementOverallActualCost = prometheusCommon.NewMetricsList()
-	}
-	m.CostmanagementOverallActualCost.Init()
-
-	if m.CostmanagementDetailUsage == nil {
-		m.CostmanagementDetailUsage = prometheusCommon.NewMetricsList()
-	}
-	m.CostmanagementDetailUsage.Init()
-
-	if m.CostmanagementDetailActualCost == nil {
-		m.CostmanagementDetailActualCost = prometheusCommon.NewMetricsList()
-	}
-	m.CostmanagementDetailActualCost.Init()
-}
 
 func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
+	m.Collector.SetCache(opts.GetCachePath("costs.json"))
 
 	m.prometheus.consumptionBudgetInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -106,7 +50,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"timeGrain",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.consumptionBudgetInfo)
+	m.Collector.RegisterMetricList("consumptionBudgetInfo", m.prometheus.consumptionBudgetInfo, true)
 
 	m.prometheus.consumptionBudgetLimit = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -119,7 +63,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"budgetName",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.consumptionBudgetLimit)
+	m.Collector.RegisterMetricList("consumptionBudgetLimit", m.prometheus.consumptionBudgetLimit, true)
 
 	m.prometheus.consumptionBudgetUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -132,7 +76,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"budgetName",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.consumptionBudgetUsage)
+	m.Collector.RegisterMetricList("consumptionBudgetUsage", m.prometheus.consumptionBudgetUsage, true)
 
 	m.prometheus.consumptionBudgetCurrent = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -146,7 +90,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"unit",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.consumptionBudgetCurrent)
+	m.Collector.RegisterMetricList("consumptionBudgetCurrent", m.prometheus.consumptionBudgetCurrent, true)
 
 	m.prometheus.costmanagementOverallUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -160,7 +104,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"timeframe",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.costmanagementOverallUsage)
+	m.Collector.RegisterMetricList("costmanagementOverallUsage", m.prometheus.costmanagementOverallUsage, true)
 
 	m.prometheus.costmanagementOverallActualCost = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -174,7 +118,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"timeframe",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.costmanagementOverallActualCost)
+	m.Collector.RegisterMetricList("costmanagementOverallActualCost", m.prometheus.costmanagementOverallActualCost, true)
 
 	m.prometheus.costmanagementDetailUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -190,7 +134,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"timeframe",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.costmanagementDetailUsage)
+	m.Collector.RegisterMetricList("costmanagementDetailUsage", m.prometheus.costmanagementDetailUsage, true)
 
 	m.prometheus.costmanagementDetailActualCost = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -206,82 +150,25 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"timeframe",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.costmanagementDetailActualCost)
+	m.Collector.RegisterMetricList("costmanagementDetailActualCost", m.prometheus.costmanagementDetailActualCost, true)
 }
 
-func (m *MetricsCollectorAzureRmCosts) Reset() {
-	m.prometheus.consumptionBudgetInfo.Reset()
-	m.prometheus.consumptionBudgetLimit.Reset()
-	m.prometheus.consumptionBudgetCurrent.Reset()
-	m.prometheus.consumptionBudgetUsage.Reset()
-
-	m.prometheus.costmanagementDetailUsage.Reset()
-	m.prometheus.costmanagementDetailActualCost.Reset()
-}
+func (m *MetricsCollectorAzureRmCosts) Reset() {}
 
 func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
-	cachePath := opts.GetCachePath("costs.json")
-
-	metrics := &MetricsCollectorAzureRmCostsMetrics{}
-
-	doUpdateRun := true
-	if cachePath != nil {
-		err := cacheRestoreFromPath(*cachePath, metrics)
-		if err == nil {
-			if metrics.Expiry != nil && metrics.Expiry.After(time.Now()) {
-				// set next scrape run to expiry time
-				sleepTime := time.Until(*metrics.Expiry) + 1*time.Minute
-				m.Collector.SetNextSleepDuration(sleepTime)
-
-				doUpdateRun = false
-				m.Logger().Infof(`restored state from cache path "%s" (expiring %s)`, *cachePath, metrics.Expiry.UTC().String())
-			} else {
-				metrics = &MetricsCollectorAzureRmCostsMetrics{}
-			}
-		} else {
-			m.Logger().Errorf("failed to load cache: %v", err)
-		}
-	}
-
-	metrics.Init()
-
-	if doUpdateRun {
-		err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
-			m.collectSubscription(subscription, logger, metrics)
-		})
-		if err != nil {
-			m.Logger().Panic(err)
-		}
-
-		expiryTime := time.Now().Add(*opts.Scrape.TimeCosts)
-		metrics.Expiry = &expiryTime
-	}
-
-	if cachePath != nil {
-		err := cacheSaveToPath(*cachePath, metrics)
-		if err != nil {
-			m.Logger().Panic(err)
-		}
-	}
-
-	callback <- func() {
-		metrics.ConsumptionBudgetInfo.GaugeSet(m.prometheus.consumptionBudgetInfo)
-		metrics.ConsumptionBudgetLimit.GaugeSet(m.prometheus.consumptionBudgetLimit)
-		metrics.ConsumptionBudgetCurrent.GaugeSet(m.prometheus.consumptionBudgetCurrent)
-		metrics.ConsumptionBudgetUsage.GaugeSet(m.prometheus.consumptionBudgetUsage)
-
-		metrics.CostmanagementOverallUsage.GaugeSet(m.prometheus.costmanagementOverallUsage)
-		metrics.CostmanagementOverallActualCost.GaugeSet(m.prometheus.costmanagementOverallActualCost)
-		metrics.CostmanagementDetailUsage.GaugeSet(m.prometheus.costmanagementDetailUsage)
-		metrics.CostmanagementDetailActualCost.GaugeSet(m.prometheus.costmanagementDetailActualCost)
+	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+		m.collectSubscription(subscription, logger)
+	})
+	if err != nil {
+		m.Logger().Panic(err)
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry, metrics *MetricsCollectorAzureRmCostsMetrics) {
+func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry) {
 	for _, timeframe := range opts.Costs.Timeframe {
 		m.collectCostManagementMetrics(
 			logger.WithField("costreport", "Usage"),
-			metrics.CostmanagementOverallUsage,
+			m.Collector.GetMetricList("costmanagementOverallUsage"),
 			subscription,
 			armcostmanagement.ExportTypeUsage,
 			nil,
@@ -290,7 +177,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 
 		m.collectCostManagementMetrics(
 			logger.WithField("costreport", "ActualCost"),
-			metrics.CostmanagementOverallActualCost,
+			m.Collector.GetMetricList("costmanagementOverallActualCost"),
 			subscription,
 			armcostmanagement.ExportTypeActualCost,
 			nil,
@@ -302,7 +189,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 
 			m.collectCostManagementMetrics(
 				logger.WithField("costreport", "Usage"),
-				metrics.CostmanagementDetailUsage,
+				m.Collector.GetMetricList("costmanagementDetailUsage"),
 				subscription,
 				armcostmanagement.ExportTypeUsage,
 				&dimension,
@@ -311,7 +198,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 
 			m.collectCostManagementMetrics(
 				logger.WithField("costreport", "ActualCost"),
-				metrics.CostmanagementDetailActualCost,
+				m.Collector.GetMetricList("costmanagementDetailActualCost"),
 				subscription,
 				armcostmanagement.ExportTypeActualCost,
 				&dimension,
@@ -325,16 +212,20 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 
 	m.collectBugdetMetrics(
 		logger.WithField("consumption", "Budgets"),
-		metrics,
 		subscription,
 	)
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, metrics *MetricsCollectorAzureRmCostsMetrics, subscription *armsubscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, subscription *armsubscriptions.Subscription) {
 	client, err := armconsumption.NewBudgetsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
+
+	infoMetric := m.Collector.GetMetricList("consumptionBudgetInfo")
+	usageMetric := m.Collector.GetMetricList("consumptionBudgetUsage")
+	limitMetric := m.Collector.GetMetricList("consumptionBudgetLimit")
+	currentMetric := m.Collector.GetMetricList("consumptionBudgetCurrent")
 
 	pager := client.NewListPager(*subscription.ID, nil)
 
@@ -352,7 +243,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, m
 			resourceId := to.String(budget.ID)
 			azureResource, _ := armclient.ParseResourceId(resourceId)
 
-			metrics.ConsumptionBudgetInfo.AddInfo(prometheus.Labels{
+			infoMetric.AddInfo(prometheus.Labels{
 				"resourceID":     stringToStringLower(resourceId),
 				"subscriptionID": azureResource.Subscription,
 				"resourceGroup":  azureResource.ResourceGroup,
@@ -362,7 +253,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, m
 			})
 
 			if budget.Properties.Amount != nil {
-				metrics.ConsumptionBudgetLimit.Add(prometheus.Labels{
+				limitMetric.Add(prometheus.Labels{
 					"resourceID":     stringToStringLower(resourceId),
 					"subscriptionID": azureResource.Subscription,
 					"budgetName":     to.String(budget.Name),
@@ -370,7 +261,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, m
 			}
 
 			if budget.Properties.CurrentSpend != nil {
-				metrics.ConsumptionBudgetCurrent.Add(prometheus.Labels{
+				currentMetric.Add(prometheus.Labels{
 					"resourceID":     stringToStringLower(resourceId),
 					"subscriptionID": azureResource.Subscription,
 					"budgetName":     to.String(budget.Name),
@@ -379,7 +270,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, m
 			}
 
 			if budget.Properties.Amount != nil && budget.Properties.CurrentSpend != nil {
-				metrics.ConsumptionBudgetUsage.Add(prometheus.Labels{
+				usageMetric.Add(prometheus.Labels{
 					"resourceID":     stringToStringLower(resourceId),
 					"subscriptionID": azureResource.Subscription,
 					"budgetName":     to.String(budget.Name),
@@ -389,7 +280,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, m
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.Entry, metricList *prometheusCommon.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimension *string, timeframe string) {
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.Entry, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimension *string, timeframe string) {
 	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)

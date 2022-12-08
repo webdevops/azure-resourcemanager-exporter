@@ -10,7 +10,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 )
@@ -82,17 +81,13 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *collector.Collector) {
 		},
 	)
 
-	prometheus.MustRegister(m.prometheus.quota)
-	prometheus.MustRegister(m.prometheus.quotaCurrent)
-	prometheus.MustRegister(m.prometheus.quotaLimit)
-	prometheus.MustRegister(m.prometheus.quotaUsage)
+	m.Collector.RegisterMetricList("quota", m.prometheus.quota, true)
+	m.Collector.RegisterMetricList("quotaCurrent", m.prometheus.quotaCurrent, true)
+	m.Collector.RegisterMetricList("quotaLimit", m.prometheus.quotaLimit, true)
+	m.Collector.RegisterMetricList("quotaUsage", m.prometheus.quotaUsage, true)
 }
 
-func (m *MetricsCollectorAzureRmQuota) Reset() {
-	m.prometheus.quota.Reset()
-	m.prometheus.quotaCurrent.Reset()
-	m.prometheus.quotaLimit.Reset()
-}
+func (m *MetricsCollectorAzureRmQuota) Reset() {}
 
 func (m *MetricsCollectorAzureRmQuota) Collect(callback chan<- func()) {
 	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
@@ -139,10 +134,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 		logger.Panic(err)
 	}
 
-	quotaMetric := prometheusCommon.NewMetricsList()
-	quotaCurrentMetric := prometheusCommon.NewMetricsList()
-	quotaLimitMetric := prometheusCommon.NewMetricsList()
-	quotaUsageMetric := prometheusCommon.NewMetricsList()
+	quotaMetric := m.Collector.GetMetricList("quota")
+	quotaCurrentMetric := m.Collector.GetMetricList("quotaCurrent")
+	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
+	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
 	for _, location := range opts.Azure.Location {
 		pager := client.NewListPager(location, nil)
@@ -186,13 +181,6 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 				}
 			}
 		}
-	}
-
-	callback <- func() {
-		quotaMetric.GaugeSet(m.prometheus.quota)
-		quotaCurrentMetric.GaugeSet(m.prometheus.quotaCurrent)
-		quotaLimitMetric.GaugeSet(m.prometheus.quotaLimit)
-		quotaUsageMetric.GaugeSet(m.prometheus.quotaUsage)
 	}
 }
 
@@ -203,10 +191,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 		logger.Panic(err)
 	}
 
-	quotaMetric := prometheusCommon.NewMetricsList()
-	quotaCurrentMetric := prometheusCommon.NewMetricsList()
-	quotaLimitMetric := prometheusCommon.NewMetricsList()
-	quotaUsageMetric := prometheusCommon.NewMetricsList()
+	quotaMetric := m.Collector.GetMetricList("quota")
+	quotaCurrentMetric := m.Collector.GetMetricList("quotaCurrent")
+	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
+	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
 	for _, location := range opts.Azure.Location {
 		pager := client.NewListPager(location, nil)
@@ -251,12 +239,6 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 			}
 		}
 	}
-
-	callback <- func() {
-		quotaMetric.GaugeSet(m.prometheus.quota)
-		quotaCurrentMetric.GaugeSet(m.prometheus.quotaCurrent)
-		quotaLimitMetric.GaugeSet(m.prometheus.quotaLimit)
-	}
 }
 
 // collectAzureComputeUsage collects storage usages
@@ -266,10 +248,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 		logger.Panic(err)
 	}
 
-	quotaMetric := prometheusCommon.NewMetricsList()
-	quotaCurrentMetric := prometheusCommon.NewMetricsList()
-	quotaLimitMetric := prometheusCommon.NewMetricsList()
-	quotaUsageMetric := prometheusCommon.NewMetricsList()
+	quotaMetric := m.Collector.GetMetricList("quota")
+	quotaCurrentMetric := m.Collector.GetMetricList("quotaCurrent")
+	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
+	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
 	for _, location := range opts.Azure.Location {
 		pager := client.NewListByLocationPager(location, nil)
@@ -314,12 +296,6 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 			}
 		}
 	}
-
-	callback <- func() {
-		quotaMetric.GaugeSet(m.prometheus.quota)
-		quotaCurrentMetric.GaugeSet(m.prometheus.quotaCurrent)
-		quotaLimitMetric.GaugeSet(m.prometheus.quotaLimit)
-	}
 }
 
 // collectAzureComputeUsage collects machinelearning usages
@@ -329,10 +305,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscrip
 		logger.Panic(err)
 	}
 
-	quotaMetric := prometheusCommon.NewMetricsList()
-	quotaCurrentMetric := prometheusCommon.NewMetricsList()
-	quotaLimitMetric := prometheusCommon.NewMetricsList()
-	quotaUsageMetric := prometheusCommon.NewMetricsList()
+	quotaMetric := m.Collector.GetMetricList("quota")
+	quotaCurrentMetric := m.Collector.GetMetricList("quotaCurrent")
+	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
+	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
 	for _, location := range opts.Azure.Location {
 		pager := client.NewListPager(location, nil)
@@ -376,11 +352,5 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscrip
 				}
 			}
 		}
-	}
-
-	callback <- func() {
-		quotaMetric.GaugeSet(m.prometheus.quota)
-		quotaCurrentMetric.GaugeSet(m.prometheus.quotaCurrent)
-		quotaLimitMetric.GaugeSet(m.prometheus.quotaLimit)
 	}
 }

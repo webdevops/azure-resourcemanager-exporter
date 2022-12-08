@@ -46,7 +46,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 			"ipAddress",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.publicIpInfo)
+	m.Collector.RegisterMetricList("publicIpInfo", m.prometheus.publicIpInfo, false)
 
 	m.prometheus.publicIpPortscanStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -58,7 +58,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 			"type",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.publicIpPortscanStatus)
+	m.Collector.RegisterMetricList("publicIpPortscanStatus", m.prometheus.publicIpPortscanStatus, false)
 
 	m.prometheus.publicIpPortscanPort = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -72,7 +72,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 			"description",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.publicIpPortscanPort)
+	m.Collector.RegisterMetricList("publicIpPortscanPort", m.prometheus.publicIpPortscanPort, false)
 
 	m.portscanner.Callbacks.FinishScan = func(c *Portscanner) {
 		m.Logger().Infof("finished for %v IPs", len(m.portscanner.PublicIps))
@@ -147,7 +147,6 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 }
 
 func (m *MetricsCollectorPortscanner) Reset() {
-
 }
 
 func (m *MetricsCollectorPortscanner) Collect(callback chan<- func()) {

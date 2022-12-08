@@ -5,7 +5,6 @@ import (
 	"github.com/microsoftgraph/msgraph-sdk-go/applications"
 	"github.com/microsoftgraph/msgraph-sdk-go/models"
 	"github.com/prometheus/client_golang/prometheus"
-	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 )
@@ -33,7 +32,7 @@ func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
 			"appDisplayName",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.apps)
+	m.Collector.RegisterMetricList("apps", m.prometheus.apps, true)
 
 	m.prometheus.appsCredentials = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -48,13 +47,10 @@ func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
 			"type",
 		},
 	)
-	prometheus.MustRegister(m.prometheus.appsCredentials)
+	m.Collector.RegisterMetricList("appsCredentials", m.prometheus.appsCredentials, true)
 }
 
-func (m *MetricsCollectorGraphApps) Reset() {
-	m.prometheus.apps.Reset()
-	m.prometheus.appsCredentials.Reset()
-}
+func (m *MetricsCollectorGraphApps) Reset() {}
 
 func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 	opts := applications.ApplicationsRequestBuilderGetRequestConfiguration{
@@ -69,8 +65,8 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 		m.Logger().Panic(err)
 	}
 
-	appsMetrics := prometheusCommon.NewMetricsList()
-	appsCredentialMetrics := prometheusCommon.NewMetricsList()
+	appsMetrics := m.Collector.GetMetricList("apps")
+	appsCredentialMetrics := m.Collector.GetMetricList("appsCredentials")
 
 	pageIterator, err := msgraphcore.NewPageIterator(result, MsGraphClient.RequestAdapter(), models.CreateApplicationCollectionResponseFromDiscriminatorValue)
 	if err != nil {
@@ -139,10 +135,5 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 	})
 	if err != nil {
 		m.Logger().Panic(err)
-	}
-
-	callback <- func() {
-		appsMetrics.GaugeSet(m.prometheus.apps)
-		appsCredentialMetrics.GaugeSet(m.prometheus.appsCredentials)
 	}
 }

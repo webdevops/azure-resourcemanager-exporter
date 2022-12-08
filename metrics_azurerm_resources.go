@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
-	prometheusCommon "github.com/webdevops/go-common/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 )
@@ -42,7 +41,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 			opts.Azure.ResourceTags,
 		),
 	)
-	prometheus.MustRegister(m.prometheus.resource)
+	m.Collector.RegisterMetricList("resource", m.prometheus.resource, true)
 
 	m.prometheus.resourceGroup = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -60,13 +59,10 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 			opts.Azure.ResourceGroupTags,
 		),
 	)
-	prometheus.MustRegister(m.prometheus.resourceGroup)
+	m.Collector.RegisterMetricList("resourceGroup", m.prometheus.resourceGroup, true)
 }
 
-func (m *MetricsCollectorAzureRmResources) Reset() {
-	m.prometheus.resource.Reset()
-	m.prometheus.resourceGroup.Reset()
-}
+func (m *MetricsCollectorAzureRmResources) Reset() {}
 
 func (m *MetricsCollectorAzureRmResources) Collect(callback chan<- func()) {
 	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
@@ -86,7 +82,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscriptio
 		logger.Panic(err)
 	}
 
-	infoMetric := prometheusCommon.NewMetricsList()
+	infoMetric := m.Collector.GetMetricList("resourceGroup")
 
 	pager := client.NewListPager(nil)
 
@@ -115,10 +111,6 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscriptio
 			infoMetric.AddInfo(infoLabels)
 		}
 	}
-
-	callback <- func() {
-		infoMetric.GaugeSet(m.prometheus.resourceGroup)
-	}
 }
 
 func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
@@ -127,7 +119,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 		logger.Panic(err)
 	}
 
-	resourceMetric := prometheusCommon.NewMetricsList()
+	resourceMetric := m.Collector.GetMetricList("resource")
 
 	pager := client.NewListPager(nil)
 
@@ -158,9 +150,5 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 			infoLabels = armclient.AddResourceTagsToPrometheusLabels(infoLabels, resource.Tags, opts.Azure.ResourceTags)
 			resourceMetric.AddInfo(infoLabels)
 		}
-	}
-
-	callback <- func() {
-		resourceMetric.GaugeSet(m.prometheus.resource)
 	}
 }
