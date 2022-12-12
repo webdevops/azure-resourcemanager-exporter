@@ -107,8 +107,8 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/webdevops/go-common v0.0.0-20221208182440-5a0cbaaf246d h1:fow/24X4uDWhF7Yjx4G0Z3XJUIXw5tLljS+PCKGxHsc=
-github.com/webdevops/go-common v0.0.0-20221208182440-5a0cbaaf246d/go.mod h1:B0RfIGlWhy4+UJT75beHRRGyVbDn/iuaBavIIeK4VNQ=
+github.com/webdevops/go-common v0.0.0-20221212123718-243b337ba8c7 h1:0Kyfky54X1yFdLgB5kDB7f46ippEZFIDsx3eufCdX7E=
+github.com/webdevops/go-common v0.0.0-20221212123718-243b337ba8c7/go.mod h1:B0RfIGlWhy4+UJT75beHRRGyVbDn/iuaBavIIeK4VNQ=
 github.com/yosida95/uritemplate/v3 v3.0.2 h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4=
 github.com/yosida95/uritemplate/v3 v3.0.2/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=
 go.opentelemetry.io/otel v1.11.2 h1:YBZcQlsVekzFsFbjygXMOXSs6pialIZxcjfO/mBDmR0=
