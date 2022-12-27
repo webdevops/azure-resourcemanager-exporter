@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	msgraphcore "github.com/microsoftgraph/msgraph-sdk-go-core"
 	"github.com/microsoftgraph/msgraph-sdk-go/applications"
 	"github.com/microsoftgraph/msgraph-sdk-go/models"
@@ -91,7 +93,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 				appsCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
-					"credentialID":   to.StringLower(credential.GetKeyId()),
+					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
 					"credentialType": "password",
 					"type":           "startDate",
 				}, credential.GetStartDateTime().UTC())
@@ -101,7 +103,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 				appsCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
-					"credentialID":   to.StringLower(credential.GetKeyId()),
+					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
 					"credentialType": "password",
 					"type":           "endDate",
 				}, credential.GetEndDateTime().UTC())
@@ -114,7 +116,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 				appsCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
-					"credentialID":   to.StringLower(credential.GetKeyId()),
+					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
 					"credentialType": "key",
 					"type":           "startDate",
 				}, credential.GetStartDateTime().UTC())
@@ -124,7 +126,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 				appsCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
-					"credentialID":   to.StringLower(credential.GetKeyId()),
+					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
 					"credentialType": "key",
 					"type":           "endDate",
 				}, credential.GetEndDateTime().UTC())

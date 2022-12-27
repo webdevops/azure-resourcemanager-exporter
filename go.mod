@@ -7,8 +7,8 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/prometheus/common v0.38.0 // indirect
-	github.com/prometheus/procfs v0.8.0 // indirect
+	github.com/prometheus/common v0.39.0 // indirect
+	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
 	github.com/sirupsen/logrus v1.9.0
 	golang.org/x/crypto v0.4.0 // indirect
@@ -27,20 +27,20 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.9.0
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.1.0
-	github.com/microsoftgraph/msgraph-sdk-go v0.48.0
-	github.com/microsoftgraph/msgraph-sdk-go-core v0.30.1
-	github.com/webdevops/go-common v0.0.0-20221212123718-243b337ba8c7
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
+	github.com/microsoftgraph/msgraph-sdk-go v0.49.0
+	github.com/microsoftgraph/msgraph-sdk-go-core v0.31.1
+	github.com/webdevops/go-common v0.0.0-20221227141021-327630917268
 )
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.2.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.2.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.1.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.1.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/cjlapao/common-go v0.0.35 // indirect
+	github.com/cjlapao/common-go v0.0.37 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -48,9 +48,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/microsoft/kiota-abstractions-go v0.14.0 // indirect
+	github.com/microsoft/kiota-abstractions-go v0.15.1 // indirect
 	github.com/microsoft/kiota-authentication-azure-go v0.5.0 // indirect
-	github.com/microsoft/kiota-http-go v0.9.0 // indirect
+	github.com/microsoft/kiota-http-go v0.11.0 // indirect
 	github.com/microsoft/kiota-serialization-json-go v0.7.2 // indirect
 	github.com/microsoft/kiota-serialization-text-go v0.6.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
