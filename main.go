@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -90,16 +89,6 @@ func initArgparser() {
 			fmt.Println()
 			argparser.WriteHelp(os.Stdout)
 			os.Exit(1)
-		}
-	}
-
-	if opts.Cache.Path != "" {
-		cacheDirectory := filepath.Dir(opts.Cache.Path)
-		if _, err := os.Stat(cacheDirectory); os.IsNotExist(err) {
-			err := os.Mkdir(cacheDirectory, 0700)
-			if err != nil {
-				log.Panic(err)
-			}
 		}
 	}
 

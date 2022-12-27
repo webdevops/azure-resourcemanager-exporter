@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -70,7 +69,7 @@ type (
 
 		// caching
 		Cache struct {
-			Path string `long:"cache.path" env:"CACHE_PATH" description:"Cache path (to folder)"`
+			Path string `long:"cache.path" env:"CACHE_PATH" description:"Cache path (to folder, file://path... or azblob://storageaccount.blob.core.windows.net/containername)"`
 		}
 
 		Server struct {
@@ -84,7 +83,7 @@ type (
 
 func (o *Opts) GetCachePath(path string) (ret *string) {
 	if o.Cache.Path != "" {
-		tmp := filepath.Join(o.Cache.Path, path)
+		tmp := o.Cache.Path + "/" + path
 		ret = &tmp
 	}
 

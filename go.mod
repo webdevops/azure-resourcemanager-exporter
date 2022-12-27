@@ -30,13 +30,14 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
 	github.com/microsoftgraph/msgraph-sdk-go v0.49.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.31.1
-	github.com/webdevops/go-common v0.0.0-20221227141021-327630917268
+	github.com/webdevops/go-common v0.0.0-20221227202629-e71b175cd9e3
 )
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.2.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.2.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.1.2 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.6.1 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

@@ -27,6 +27,8 @@ github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.9.
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.9.0/go.mod h1:iwDIDV5jIo+eXQf6RA7PwyJnycTQxX4s4MGKSy+m1LA=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0 h1:Ma67P/GGprNwsslzEH6+Kb8nybI8jpDTm4Wmzu2ReK8=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0/go.mod h1:c+Lifp3EDEamAkPVzMooRNOK6CZjNSdEnf1A7jsI9u4=
+github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.6.1 h1:YvQv9Mz6T8oR5ypQOL6erY0Z5t71ak1uHV4QFokCOZk=
+github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.6.1/go.mod h1:c6WvOhtmjNUWbLfOG1qxM/q0SPvQNSVJvolm+C52dIU=
 github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0 h1:VgSJlZH5u0k2qxSpqyghcFQKmvYckj46uymKK5XzkBM=
 github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0/go.mod h1:BDJ5qMFKx9DugEg3+uQSDCdbYPr5s9vBTrL9P8TpqOU=
 github.com/anvie/port-scanner v0.0.0-20180225151059-8159197d3770 h1:1KEvfMGAjISVzk3Ti6pfaOgtoC3naoU0LfiJooZDNO8=
@@ -107,8 +109,8 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/webdevops/go-common v0.0.0-20221227141021-327630917268 h1:JmxIuiSaithsCQg2r9c0Ud9clUVoiGTdDzY4OOoewoM=
-github.com/webdevops/go-common v0.0.0-20221227141021-327630917268/go.mod h1:3JAckHJ9YLQLdgAtkpqZt6HzLmBEFK1eu+F3uLUfnG8=
+github.com/webdevops/go-common v0.0.0-20221227202629-e71b175cd9e3 h1:9IubZJZfjMdxKVmPWrQKQEmE6IjDyVzAY9NfCVchw/c=
+github.com/webdevops/go-common v0.0.0-20221227202629-e71b175cd9e3/go.mod h1:qxPnj4pts4x6165d64jXJWCDsp1vCQAc7ENW9ssYiZA=
 github.com/yosida95/uritemplate/v3 v3.0.2 h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4=
 github.com/yosida95/uritemplate/v3 v3.0.2/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=
 go.opentelemetry.io/otel v1.11.2 h1:YBZcQlsVekzFsFbjygXMOXSs6pialIZxcjfO/mBDmR0=
