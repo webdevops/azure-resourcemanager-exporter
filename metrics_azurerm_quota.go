@@ -311,6 +311,11 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscrip
 	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
 	for _, location := range opts.Azure.Location {
+		// FIXME: skip for chinanorth2, see https://github.com/Azure/azure-sdk-for-go/issues/19736
+		if strings.EqualFold(location, "chinanorth2") {
+			continue
+		}
+
 		pager := client.NewListPager(location, nil)
 
 		for pager.More() {
