@@ -73,12 +73,14 @@ github.com/microsoft/kiota-authentication-azure-go v0.5.0 h1:RVA/tTgMnDIN3u4qPZt
 github.com/microsoft/kiota-authentication-azure-go v0.5.0/go.mod h1:1Io6h+88FlDRmrajdjSnXPz8oyObUVjNuQZLhrF9kQk=
 github.com/microsoft/kiota-http-go v0.11.0 h1:0K0y/wZcTvEEX2Xdj5tngJqknqYQpArLdtjB/fo88Dc=
 github.com/microsoft/kiota-http-go v0.11.0/go.mod h1:4D6vMjT7jQ3IRAJrpFoaDtfS9eMaSjQKHY6ETSV2cc0=
+github.com/microsoft/kiota-serialization-form-go v0.2.0 h1:jgPE+8DtrWhL+KwnAwRm13HnMNydbelC/NP9wRGwDUo=
+github.com/microsoft/kiota-serialization-form-go v0.2.0/go.mod h1:chOuh09tO7IrNtubAumdlG5wnrcYdMkjV7joVVGDyGs=
 github.com/microsoft/kiota-serialization-json-go v0.7.2 h1:DSb4fNDi5O+DqJwrHo+vRy2kSvfxG5VtN6m1EHzn5Vw=
 github.com/microsoft/kiota-serialization-json-go v0.7.2/go.mod h1:Ojum5prlijopyCOZ2XctRcVlE2pU8h+43r3tMdiWoDU=
 github.com/microsoft/kiota-serialization-text-go v0.6.0 h1:3N2vftYZlwKdog69AN7ha+FZT0QxPG7xp/hLv0/W2OQ=
 github.com/microsoft/kiota-serialization-text-go v0.6.0/go.mod h1:OUA4dNH+f6afiJUs+rQAatJos7QVF5PJkyrqoD89lx4=
-github.com/microsoftgraph/msgraph-sdk-go v0.49.0 h1:ZCjnH6AElZ20wXXTzJn3sfZeG+2Q2+KGvUsFrmhJzZY=
-github.com/microsoftgraph/msgraph-sdk-go v0.49.0/go.mod h1:pZ3XhqN+Ll9trl1HEGQhyS905PcqHv9EhuCMMxPR9EQ=
+github.com/microsoftgraph/msgraph-sdk-go v0.50.0 h1:yfPBDr7+tSdq8jKiNCvY5XzQji1kZzOHXvxQ9XxQ4E4=
+github.com/microsoftgraph/msgraph-sdk-go v0.50.0/go.mod h1:XoTT9lzRSersVV4/lsFup3sOLfOLEf2dMsLckiAAKq8=
 github.com/microsoftgraph/msgraph-sdk-go-core v0.31.1 h1:aVvnO5l8qLCEcvELc5n9grt7UXhAVtpog1QeQKLMlTE=
 github.com/microsoftgraph/msgraph-sdk-go-core v0.31.1/go.mod h1:RE4F2qGCTehGtQGc9Txafc4l+XMpbjYuO4amDLFgOWE=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
@@ -109,8 +111,8 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/webdevops/go-common v0.0.0-20221227202629-e71b175cd9e3 h1:9IubZJZfjMdxKVmPWrQKQEmE6IjDyVzAY9NfCVchw/c=
-github.com/webdevops/go-common v0.0.0-20221227202629-e71b175cd9e3/go.mod h1:qxPnj4pts4x6165d64jXJWCDsp1vCQAc7ENW9ssYiZA=
+github.com/webdevops/go-common v0.0.0-20221228200424-0f2faa8d4bee h1:zkN/8Vf52dJwhugrQefmEk9W96qqRgF1sI7j9zOd1ZE=
+github.com/webdevops/go-common v0.0.0-20221228200424-0f2faa8d4bee/go.mod h1:Gx5gwV0DMaMoyUKmfRRY4/Hp9aPFjNf3G8/J9HXFkpg=
 github.com/yosida95/uritemplate/v3 v3.0.2 h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4=
 github.com/yosida95/uritemplate/v3 v3.0.2/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=
 go.opentelemetry.io/otel v1.11.2 h1:YBZcQlsVekzFsFbjygXMOXSs6pialIZxcjfO/mBDmR0=
