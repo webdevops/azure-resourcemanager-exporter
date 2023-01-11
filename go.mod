@@ -28,8 +28,8 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.9.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
-	github.com/microsoftgraph/msgraph-sdk-go v0.51.0
-	github.com/microsoftgraph/msgraph-sdk-go-core v0.32.0
+	github.com/microsoftgraph/msgraph-sdk-go v0.50.0
+	github.com/microsoftgraph/msgraph-sdk-go-core v0.31.1
 	github.com/webdevops/go-common v0.0.0-20221228200424-0f2faa8d4bee
 )
 
@@ -49,9 +49,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/microsoft/kiota-abstractions-go v0.16.0 // indirect
+	github.com/microsoft/kiota-abstractions-go v0.15.1 // indirect
 	github.com/microsoft/kiota-authentication-azure-go v0.5.0 // indirect
-	github.com/microsoft/kiota-http-go v0.13.0 // indirect
+	github.com/microsoft/kiota-http-go v0.11.0 // indirect
 	github.com/microsoft/kiota-serialization-form-go v0.2.0 // indirect
 	github.com/microsoft/kiota-serialization-json-go v0.7.2 // indirect
 	github.com/microsoft/kiota-serialization-text-go v0.6.0 // indirect
