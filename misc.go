@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	roleDefinitionIdRegExp = regexp.MustCompile("(?i)/subscriptions/[^/]+/providers/Microsoft.Authorization/roleDefinitions/([^/]*)")
+	roleDefinitionIdRegExp        = regexp.MustCompile("(?i)/subscriptions/[^/]+/providers/Microsoft.Authorization/roleDefinitions/([^/]*)")
+	prometheusLabelReplacerRegExp = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 )
 
 func stringToStringLower(val string) string {

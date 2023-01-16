@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -167,7 +168,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			case strings.EqualFold(dimension, "ResourceGroupName"):
 				labelName = "resourceGroup"
 			default:
-				labelName = dimension
+				labelName = prometheusLabelReplacerRegExp.ReplaceAllString(dimension, "_")
 			}
 
 			costLabels = append(costLabels, labelName)
@@ -297,11 +298,24 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 		logger.Panic(err)
 	}
 
-	dimensionType := armcostmanagement.QueryColumnTypeDimension
 	queryGrouping := []*armcostmanagement.QueryGrouping{}
 
 	for _, row := range dimensions {
 		dimension := row
+
+		dimensionType := armcostmanagement.QueryColumnTypeDimension
+
+		if strings.Contains(dimension, ":") {
+			dimensionParts := strings.SplitN(dimension, ":", 2)
+			switch strings.ToLower(dimensionParts[0]) {
+			case "tag":
+				dimensionType = armcostmanagement.QueryColumnTypeTag
+				dimension = dimensionParts[1]
+			default:
+				logger.Fatalf(`cost dimension %v is not supported`, dimension)
+			}
+		}
+
 		queryGrouping = append(
 			queryGrouping,
 			&armcostmanagement.QueryGrouping{
@@ -310,6 +324,9 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 			},
 		)
 	}
+
+	foo, _ := json.Marshal(queryGrouping)
+	fmt.Println(string(foo))
 
 	granularity := armcostmanagement.GranularityType("none")
 	timeframeType := armcostmanagement.TimeframeType(timeframe)
@@ -389,7 +406,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 		}
 
 		for dimension, colNumber := range columnDimensions {
-			labelName := dimension
+			labelName := prometheusLabelReplacerRegExp.ReplaceAllString(dimension, "_")
 
 			switch {
 			case strings.EqualFold(dimension, "ResourceGroupName"):
