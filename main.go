@@ -191,16 +191,26 @@ func initLogger() {
 
 func initAzureConnection() {
 	var err error
-	AzureClient, err = armclient.NewArmClientWithCloudName(*opts.Azure.Environment, log.StandardLogger())
+
+	if opts.Azure.Environment != nil {
+		if err := os.Setenv("AZURE_ENVIRONMENT", *opts.Azure.Environment); err != nil {
+			log.Warnf(`unable to set envvar AZURE_ENVIRONMENT: %v`, err.Error())
+		}
+	}
+
+	AzureClient, err = armclient.NewArmClientFromEnvironment(log.StandardLogger())
 	if err != nil {
 		log.Panic(err.Error())
 	}
-
 	AzureClient.SetUserAgent(UserAgent + gitTag)
 
 	// limit subscriptions (if filter is set)
 	if len(opts.Azure.Subscription) >= 1 {
 		AzureClient.SetSubscriptionFilter(opts.Azure.Subscription...)
+	}
+
+	if err := AzureClient.Connect(); err != nil {
+		log.Panic(err.Error())
 	}
 
 	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient)
