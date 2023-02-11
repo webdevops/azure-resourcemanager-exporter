@@ -13,6 +13,9 @@ import (
 type MetricsCollectorAzureRmResources struct {
 	collector.Processor
 
+	resourceTagConfig      armclient.ResourceTagConfig
+	resourceGroupTagConfig armclient.ResourceTagConfig
+
 	prometheus struct {
 		resource      *prometheus.GaugeVec
 		resourceGroup *prometheus.GaugeVec
@@ -20,14 +23,25 @@ type MetricsCollectorAzureRmResources struct {
 }
 
 func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector) {
+	var err error
 	m.Processor.Setup(collector)
+
+	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceTags)
+	if err != nil {
+		m.Logger().Panicf(`unable to parse resourceTag configuration "%s": %v"`, opts.Azure.ResourceTags, err.Error())
+	}
+
+	m.resourceGroupTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceGroupTags)
+	if err != nil {
+		m.Logger().Panicf(`unable to parse resourceGroupTag configuration "%s": %v"`, opts.Azure.ResourceGroupTags, err.Error())
+	}
 
 	m.prometheus.resource = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_resource_info",
 			Help: "Azure Resource information",
 		},
-		armclient.AddResourceTagsToPrometheusLabelsDefinition(
+		m.resourceTagConfig.AddToPrometheusLabels(
 			[]string{
 				"resourceID",
 				"resourceName",
@@ -38,7 +52,6 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 				"location",
 				"provisioningState",
 			},
-			opts.Azure.ResourceTags,
 		),
 	)
 	m.Collector.RegisterMetricList("resource", m.prometheus.resource, true)
@@ -48,7 +61,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 			Name: "azurerm_resourcegroup_info",
 			Help: "Azure ResourceManager resourcegroup information",
 		},
-		armclient.AddResourceTagsToPrometheusLabelsDefinition(
+		m.resourceGroupTagConfig.AddToPrometheusLabels(
 			[]string{
 				"resourceID",
 				"subscriptionID",
@@ -56,7 +69,6 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 				"location",
 				"provisioningState",
 			},
-			opts.Azure.ResourceGroupTags,
 		),
 	)
 	m.Collector.RegisterMetricList("resourceGroup", m.prometheus.resourceGroup, true)
@@ -107,7 +119,8 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscriptio
 				"location":          to.StringLower(resourceGroup.Location),
 				"provisioningState": to.StringLower(resourceGroup.Properties.ProvisioningState),
 			}
-			infoLabels = armclient.AddResourceTagsToPrometheusLabels(infoLabels, resourceGroup.Tags, opts.Azure.ResourceGroupTags)
+
+			infoLabels = AzureClient.TagManager.AddResourceTagsToPrometheusLabels(m.Context(), infoLabels, resourceId, m.resourceGroupTagConfig)
 			infoMetric.AddInfo(infoLabels)
 		}
 	}
@@ -147,7 +160,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 				"location":          to.StringLower(resource.Location),
 				"provisioningState": to.StringLower(resource.ProvisioningState),
 			}
-			infoLabels = armclient.AddResourceTagsToPrometheusLabels(infoLabels, resource.Tags, opts.Azure.ResourceTags)
+			infoLabels = AzureClient.TagManager.AddResourceTagsToPrometheusLabels(m.Context(), infoLabels, resourceId, m.resourceTagConfig)
 			resourceMetric.AddInfo(infoLabels)
 		}
 	}

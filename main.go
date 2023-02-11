@@ -92,11 +92,6 @@ func initArgparser() {
 		}
 	}
 
-	// deprecated option
-	if len(opts.Azure.ResourceGroupTags) > 0 {
-		opts.Azure.ResourceTags = opts.Azure.ResourceGroupTags
-	}
-
 	// scrape time
 	if opts.Scrape.TimeGeneral == nil {
 		opts.Scrape.TimeGeneral = &opts.Scrape.Time
