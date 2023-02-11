@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -324,9 +323,6 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 			},
 		)
 	}
-
-	foo, _ := json.Marshal(queryGrouping)
-	fmt.Println(string(foo))
 
 	granularity := armcostmanagement.GranularityType("none")
 	timeframeType := armcostmanagement.TimeframeType(timeframe)
