@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
+	"github.com/webdevops/go-common/azuresdk/azidentity"
 	"github.com/webdevops/go-common/azuresdk/prometheus/tracing"
 	"github.com/webdevops/go-common/msgraphsdk/msgraphclient"
 	"github.com/webdevops/go-common/prometheus/collector"
@@ -188,8 +189,8 @@ func initAzureConnection() {
 	var err error
 
 	if opts.Azure.Environment != nil {
-		if err := os.Setenv("AZURE_ENVIRONMENT", *opts.Azure.Environment); err != nil {
-			log.Warnf(`unable to set envvar AZURE_ENVIRONMENT: %v`, err.Error())
+		if err := os.Setenv(azidentity.EnvAzureEnvironment, *opts.Azure.Environment); err != nil {
+			log.Warnf(`unable to set envvar "%s": %v`, azidentity.EnvAzureEnvironment, err.Error())
 		}
 	}
 
