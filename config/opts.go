@@ -28,17 +28,19 @@ type (
 
 		// scrape times
 		Scrape struct {
-			Time               time.Duration  `long:"scrape.time"                    env:"SCRAPE_TIME"                    description:"Default scrape time (time.duration)"                      default:"5m"`
-			TimeExporter       *time.Duration `long:"scrape.time.exporter"           env:"SCRAPE_TIME_EXPORTER"           description:"Scrape time for exporter metrics (time.duration)"         default:"10s"`
-			TimeGeneral        *time.Duration `long:"scrape.time.general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
-			TimeResource       *time.Duration `long:"scrape.time.resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`
-			TimeQuota          *time.Duration `long:"scrape.time.quota"              env:"SCRAPE_TIME_QUOTA"              description:"Scrape time for quota metrics  (time.duration)"`
-			TimeSecurity       *time.Duration `long:"scrape.time.security"           env:"SCRAPE_TIME_SECURITY"           description:"Scrape time for Security metrics (time.duration)"`
-			TimeResourceHealth *time.Duration `long:"scrape.time.resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
-			TimeIam            *time.Duration `long:"scrape.time.iam"                env:"SCRAPE_TIME_IAM"                description:"Scrape time for IAM metrics (time.duration)"`
-			TimeGraph          *time.Duration `long:"scrape.time.graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
-			TimeCosts          *time.Duration `long:"scrape.time.costs"              env:"SCRAPE_TIME_COSTS"              description:"Scrape time for costs/consumtion metrics (time.duration; BETA)" default:"0"`
-			TimePortscan       *time.Duration `long:"scrape.time.portscan"           env:"SCRAPE_TIME_PORTSCAN"           description:"Scrape time for public ips for portscan (time.duration)"`
+			Time struct {
+				Default        time.Duration  `long:"scrape.time"                    env:"SCRAPE_TIME"                    description:"Default scrape time (time.duration)"                      default:"5m"`
+				Exporter       *time.Duration `long:"scrape.time.exporter"           env:"SCRAPE_TIME_EXPORTER"           description:"Scrape time for exporter metrics (time.duration)"         default:"10s"`
+				General        *time.Duration `long:"scrape.time.general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
+				Resource       *time.Duration `long:"scrape.time.resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`
+				Quota          *time.Duration `long:"scrape.time.quota"              env:"SCRAPE_TIME_QUOTA"              description:"Scrape time for quota metrics  (time.duration)"`
+				Security       *time.Duration `long:"scrape.time.security"           env:"SCRAPE_TIME_SECURITY"           description:"Scrape time for Security metrics (time.duration)"`
+				ResourceHealth *time.Duration `long:"scrape.time.resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
+				Iam            *time.Duration `long:"scrape.time.iam"                env:"SCRAPE_TIME_IAM"                description:"Scrape time for IAM metrics (time.duration)"`
+				Graph          *time.Duration `long:"scrape.time.graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`
+				Costs          *time.Duration `long:"scrape.time.costs"              env:"SCRAPE_TIME_COSTS"              description:"Scrape time for costs/consumtion metrics (time.duration; BETA)" default:"0"`
+				Portscan       *time.Duration `long:"scrape.time.portscan"           env:"SCRAPE_TIME_PORTSCAN"           description:"Scrape time for public ips for portscan (time.duration)"`
+			}
 		}
 
 		ResourceHealth struct {

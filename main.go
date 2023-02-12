@@ -93,43 +93,43 @@ func initArgparser() {
 	}
 
 	// scrape time
-	if opts.Scrape.TimeGeneral == nil {
-		opts.Scrape.TimeGeneral = &opts.Scrape.Time
+	if opts.Scrape.Time.General == nil {
+		opts.Scrape.Time.General = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimeResource == nil {
-		opts.Scrape.TimeResource = &opts.Scrape.Time
+	if opts.Scrape.Time.Resource == nil {
+		opts.Scrape.Time.Resource = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimeQuota == nil {
-		opts.Scrape.TimeQuota = &opts.Scrape.Time
+	if opts.Scrape.Time.Quota == nil {
+		opts.Scrape.Time.Quota = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimeCosts == nil {
-		opts.Scrape.TimeCosts = &opts.Scrape.Time
+	if opts.Scrape.Time.Costs == nil {
+		opts.Scrape.Time.Costs = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimeIam == nil {
-		opts.Scrape.TimeIam = &opts.Scrape.Time
+	if opts.Scrape.Time.Iam == nil {
+		opts.Scrape.Time.Iam = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimeSecurity == nil {
-		opts.Scrape.TimeSecurity = &opts.Scrape.Time
+	if opts.Scrape.Time.Security == nil {
+		opts.Scrape.Time.Security = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimeResourceHealth == nil {
-		opts.Scrape.TimeResourceHealth = &opts.Scrape.Time
+	if opts.Scrape.Time.ResourceHealth == nil {
+		opts.Scrape.Time.ResourceHealth = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimeGraph == nil {
-		opts.Scrape.TimeGraph = &opts.Scrape.Time
+	if opts.Scrape.Time.Graph == nil {
+		opts.Scrape.Time.Graph = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimePortscan == nil {
-		opts.Scrape.TimePortscan = &opts.Scrape.Time
+	if opts.Scrape.Time.Portscan == nil {
+		opts.Scrape.Time.Portscan = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.TimePortscan == nil || opts.Scrape.TimePortscan.Seconds() == 0 && opts.Portscan.Enabled {
+	if opts.Scrape.Time.Portscan == nil || opts.Scrape.Time.Portscan.Seconds() == 0 && opts.Portscan.Enabled {
 		log.Fatalf(`portscan is enabled but has invalid scape time (zero)`)
 	}
 
@@ -227,9 +227,9 @@ func initMetricCollector() {
 	var collectorName string
 
 	collectorName = "General"
-	if opts.Scrape.TimeGeneral.Seconds() > 0 {
+	if opts.Scrape.Time.General.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeGeneral)
+		c.SetScapeTime(*opts.Scrape.Time.General)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -238,9 +238,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Resource"
-	if opts.Scrape.TimeResource.Seconds() > 0 {
+	if opts.Scrape.Time.Resource.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeResource)
+		c.SetScapeTime(*opts.Scrape.Time.Resource)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -249,9 +249,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Quota"
-	if opts.Scrape.TimeQuota.Seconds() > 0 {
+	if opts.Scrape.Time.Quota.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeQuota)
+		c.SetScapeTime(*opts.Scrape.Time.Quota)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -260,9 +260,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Costs"
-	if opts.Scrape.TimeCosts.Seconds() > 0 {
+	if opts.Scrape.Time.Costs.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeCosts)
+		c.SetScapeTime(*opts.Scrape.Time.Costs)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -271,9 +271,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Security"
-	if opts.Scrape.TimeSecurity.Seconds() > 0 {
+	if opts.Scrape.Time.Security.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmSecurity{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeSecurity)
+		c.SetScapeTime(*opts.Scrape.Time.Security)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -282,9 +282,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "ResourceHealth"
-	if opts.Scrape.TimeResourceHealth.Seconds() > 0 {
+	if opts.Scrape.Time.ResourceHealth.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeResourceHealth)
+		c.SetScapeTime(*opts.Scrape.Time.ResourceHealth)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -293,10 +293,10 @@ func initMetricCollector() {
 	}
 
 	collectorName = "IAM"
-	if opts.Scrape.TimeIam.Seconds() > 0 {
+	if opts.Scrape.Time.Iam.Seconds() > 0 {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeIam)
+		c.SetScapeTime(*opts.Scrape.Time.Iam)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -305,10 +305,10 @@ func initMetricCollector() {
 	}
 
 	collectorName = "GraphApps"
-	if opts.Scrape.TimeGraph.Seconds() > 0 {
+	if opts.Scrape.Time.Graph.Seconds() > 0 {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimeGraph)
+		c.SetScapeTime(*opts.Scrape.Time.Graph)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
@@ -317,9 +317,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Portscan"
-	if opts.Portscan.Enabled && opts.Scrape.TimePortscan.Seconds() > 0 {
+	if opts.Portscan.Enabled && opts.Scrape.Time.Portscan.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.TimePortscan)
+		c.SetScapeTime(*opts.Scrape.Time.Portscan)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
