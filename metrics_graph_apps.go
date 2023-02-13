@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 
+	abstractions "github.com/microsoft/kiota-abstractions-go"
 	msgraphcore "github.com/microsoftgraph/msgraph-sdk-go-core"
 	"github.com/microsoftgraph/msgraph-sdk-go/applications"
 	"github.com/microsoftgraph/msgraph-sdk-go/models"
