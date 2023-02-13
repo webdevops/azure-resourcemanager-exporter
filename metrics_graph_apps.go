@@ -55,8 +55,10 @@ func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorGraphApps) Reset() {}
 
 func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
+	headers := abstractions.NewRequestHeaders()
+	headers.Add("ConsistencyLevel", "eventual")
 	opts := applications.ApplicationsRequestBuilderGetRequestConfiguration{
-		Headers: nil,
+		Headers: headers,
 		Options: nil,
 		QueryParameters: &applications.ApplicationsRequestBuilderGetQueryParameters{
 			Filter: &opts.Graph.ApplicationFilter,
