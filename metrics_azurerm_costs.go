@@ -41,6 +41,19 @@ type (
 		Name       string
 		Dimensions []string
 	}
+
+	CostQueryConfig struct {
+		Dimensions []*CostQueryConfigDimension
+	}
+
+	CostQueryConfigDimension struct {
+		Name string
+		Type armcostmanagement.QueryColumnType
+
+		ResultColumnName   string
+		ResultColumnNumber int
+		LabelName          string
+	}
 )
 
 func (m *MetricsCollectorAzureRmCosts) collectQueries() {
@@ -297,31 +310,48 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 		logger.Panic(err)
 	}
 
-	queryGrouping := []*armcostmanagement.QueryGrouping{}
+	costConfig := CostQueryConfig{
+		Dimensions: make([]*CostQueryConfigDimension, len(dimensions)),
+	}
 
-	for _, row := range dimensions {
+	for i, row := range dimensions {
 		dimension := row
 
-		dimensionType := armcostmanagement.QueryColumnTypeDimension
+		labelName := dimension
+		switch {
+		case strings.EqualFold(dimension, "ResourceGroupName"):
+			labelName = "resourceGroup"
+		}
+
+		dimensionConfig := CostQueryConfigDimension{
+			Name:               dimension,
+			Type:               armcostmanagement.QueryColumnTypeDimension,
+			ResultColumnName:   dimension,
+			ResultColumnNumber: -1,
+			LabelName:          prometheusLabelReplacerRegExp.ReplaceAllString(labelName, "_"),
+		}
 
 		if strings.Contains(dimension, ":") {
 			dimensionParts := strings.SplitN(dimension, ":", 2)
 			switch strings.ToLower(dimensionParts[0]) {
 			case "tag":
-				dimensionType = armcostmanagement.QueryColumnTypeTag
-				dimension = dimensionParts[1]
+				dimensionConfig.Type = "TagKey"
+				dimensionConfig.Name = dimensionParts[1]
+				dimensionConfig.ResultColumnName = "TagValue"
 			default:
 				logger.Fatalf(`cost dimension %v is not supported`, dimension)
 			}
 		}
 
-		queryGrouping = append(
-			queryGrouping,
-			&armcostmanagement.QueryGrouping{
-				Name: &dimension,
-				Type: &dimensionType,
-			},
-		)
+		costConfig.Dimensions[i] = &dimensionConfig
+	}
+
+	queryGrouping := make([]*armcostmanagement.QueryGrouping, len(costConfig.Dimensions))
+	for i, dimensionConfig := range costConfig.Dimensions {
+		queryGrouping[i] = &armcostmanagement.QueryGrouping{
+			Name: &dimensionConfig.Name,
+			Type: &dimensionConfig.Type,
+		}
 	}
 
 	granularity := armcostmanagement.GranularityType("none")
@@ -362,7 +392,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 	// detect column numbers
 	columnNumberCost := -1
 	columnNumberCurrency := -1
-	columnDimensions := map[string]int{}
+
 	for num, col := range list.Columns {
 		if col.Name == nil {
 			continue
@@ -375,17 +405,24 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 			columnNumberCurrency = num
 		}
 
-		for _, dimension := range dimensions {
-			if strings.EqualFold(dimension, *col.Name) {
-				columnDimensions[dimension] = num
+		for _, dimensionConfig := range costConfig.Dimensions {
+			if strings.EqualFold(dimensionConfig.ResultColumnName, *col.Name) {
+				dimensionConfig.ResultColumnNumber = num
 			}
 		}
 	}
 
 	// check if we detected all columns
-	if columnNumberCost == -1 || columnNumberCurrency == -1 || len(columnDimensions) != len(dimensions) {
+	if columnNumberCost == -1 || columnNumberCurrency == -1 {
 		logger.Warnln("unable to detect columns")
 		return
+	}
+
+	for _, dimensionConfig := range costConfig.Dimensions {
+		if dimensionConfig.ResultColumnNumber == -1 {
+			logger.Warnf(`unable to detect column "%s"`, dimensionConfig.Name)
+			return
+		}
 	}
 
 	// process metrics
@@ -401,15 +438,11 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 			"timeframe":      timeframe,
 		}
 
-		for dimension, colNumber := range columnDimensions {
-			labelName := prometheusLabelReplacerRegExp.ReplaceAllString(dimension, "_")
-
-			switch {
-			case strings.EqualFold(dimension, "ResourceGroupName"):
-				labelName = "resourceGroup"
+		for _, dimensionConfig := range costConfig.Dimensions {
+			labels[dimensionConfig.LabelName] = ""
+			if row[dimensionConfig.ResultColumnNumber] != nil {
+				labels[dimensionConfig.LabelName] = row[dimensionConfig.ResultColumnNumber].(string)
 			}
-
-			labels[labelName] = row[colNumber].(string)
 		}
 
 		metricList.Add(labels, usage)
