@@ -34,7 +34,7 @@ type (
 				General        *time.Duration `long:"scrape.time.general"            env:"SCRAPE_TIME_GENERAL"            description:"Scrape time for general metrics (time.duration)"`
 				Resource       *time.Duration `long:"scrape.time.resource"           env:"SCRAPE_TIME_RESOURCE"           description:"Scrape time for resource metrics  (time.duration)"`
 				Quota          *time.Duration `long:"scrape.time.quota"              env:"SCRAPE_TIME_QUOTA"              description:"Scrape time for quota metrics  (time.duration)"`
-				Security       *time.Duration `long:"scrape.time.security"           env:"SCRAPE_TIME_SECURITY"           description:"Scrape time for Security metrics (time.duration)"`
+				Defender       *time.Duration `long:"scrape.time.defender"           env:"SCRAPE_TIME_DEFENDER"           description:"Scrape time for Defender metrics (time.duration)"`
 				ResourceHealth *time.Duration `long:"scrape.time.resourcehealth"     env:"SCRAPE_TIME_RESOURCEHEALTH"     description:"Scrape time for ResourceHealth metrics (time.duration)"`
 				Iam            *time.Duration `long:"scrape.time.iam"                env:"SCRAPE_TIME_IAM"                description:"Scrape time for IAM metrics (time.duration)"`
 				Graph          *time.Duration `long:"scrape.time.graph"              env:"SCRAPE_TIME_GRAPH"              description:"Scrape time for Graph metrics (time.duration)"`

@@ -114,8 +114,8 @@ func initArgparser() {
 		opts.Scrape.Time.Iam = &opts.Scrape.Time.Default
 	}
 
-	if opts.Scrape.Time.Security == nil {
-		opts.Scrape.Time.Security = &opts.Scrape.Time.Default
+	if opts.Scrape.Time.Defender == nil {
+		opts.Scrape.Time.Defender = &opts.Scrape.Time.Default
 	}
 
 	if opts.Scrape.Time.ResourceHealth == nil {
@@ -144,6 +144,7 @@ func initArgparser() {
 		"SCRAPE_TIME_NETWORK":           "not supported anymore",
 		"SCRAPE_TIME_DATABASE":          "not supported anymore",
 		"SCRAPE_TIME_COMPUTING":         "deprecated, please use SCRAPE_TIME_COMPUTE",
+		"SCRAPE_TIME_SECURITY":          "deprecated, please use SCRAPE_TIME_DEFENDER",
 	}
 	for envVar, reason := range deprecatedEnvVars {
 		if os.Getenv(envVar) != "" {
@@ -271,10 +272,10 @@ func initMetricCollector() {
 		log.WithField("collector", collectorName).Infof("collector disabled")
 	}
 
-	collectorName = "Security"
-	if opts.Scrape.Time.Security.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmSecurity{}, log.StandardLogger())
-		c.SetScapeTime(*opts.Scrape.Time.Security)
+	collectorName = "Defender"
+	if opts.Scrape.Time.Defender.Seconds() > 0 {
+		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, log.StandardLogger())
+		c.SetScapeTime(*opts.Scrape.Time.Defender)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
 		}
