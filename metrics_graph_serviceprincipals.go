@@ -63,7 +63,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 		Options: nil,
 		QueryParameters: &serviceprincipals.ItemMemberOfMicrosoftGraphServicePrincipalRequestBuilderGetQueryParameters{
 			Filter: &opts.Graph.ServicePrincipalFilter,
-			Count: Count: &opts.Graph.ServicePrincipalCount,
+			Count: &opts.Graph.ServicePrincipalCount,
 		},
 	}
 	result, err := MsGraphClient.ServiceClient().serviceprincipals().Get(m.Context(), &opts)
