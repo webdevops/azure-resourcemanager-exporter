@@ -57,16 +57,18 @@ func (m *MetricsCollectorGraphServicePrincipals) Reset() {}
 
 func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func()) {
 	headers := abstractions.NewRequestHeaders()
+	const requestCount = true
+	rcount := requestCount
 	headers.Add("ConsistencyLevel", "eventual")
-	opts := serviceprincipals.ItemMemberOfMicrosoftGraphServicePrincipalRequestBuilderGetRequestConfiguration{
+	opts := serviceprincipals.ServicePrincipalsRequestBuilderGetRequestConfiguration{
 		Headers: headers,
 		Options: nil,
-		QueryParameters: &serviceprincipals.ItemMemberOfMicrosoftGraphServicePrincipalRequestBuilderGetQueryParameters{
+		QueryParameters: &serviceprincipals.ServicePrincipalsRequestBuilderGetQueryParameters{
 			Filter: &opts.Graph.ServicePrincipalFilter,
-			Count: &opts.Graph.ServicePrincipalCount,
+			Count: &rcount,
 		},
 	}
-	result, err := MsGraphClient.ServiceClient().serviceprincipals().Get(m.Context(), &opts)
+	result, err := MsGraphClient.ServiceClient().ServicePrincipals().Get(m.Context(), &opts)
 	if err != nil {
 		m.Logger().Panic(err)
 	}
@@ -80,18 +82,18 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 	}
 
 	err = pageIterator.Iterate(m.Context(), func(pageItem interface{}) bool {
-		application := pageItem.(*models.Application)
+		serviceprincipal := pageItem.(*models.ServicePrincipal)
 
-		appId := to.StringLower(serviceprinicpal.GetAppId())
-		objId := to.StringLower(serviceprinicpal.GetId())
+		appId := to.StringLower(serviceprincipal.GetAppId())
+		objId := to.StringLower(serviceprincipal.GetId())
 
 		serviceprincipalsMetrics.AddInfo(prometheus.Labels{
 			"appAppID":       appId,
 			"appObjectID":    objId,
-			"appDisplayName": to.String(serviceprinicpal.GetDisplayName()),
+			"appDisplayName": to.String(serviceprincipal.GetDisplayName()),
 		})
 
-		for _, credential := range serviceprinicpal.GetPasswordCredentials() {
+		for _, credential := range serviceprincipal.GetPasswordCredentials() {
 			credential.GetDisplayName()
 			if credential.GetStartDateTime() != nil {
 				serviceprincipalsCredentialMetrics.AddTime(prometheus.Labels{
@@ -114,7 +116,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 			}
 		}
 
-		for _, credential := range serviceprinicpal.GetKeyCredentials() {
+		for _, credential := range serviceprincipal.GetKeyCredentials() {
 			credential.GetDisplayName()
 			if credential.GetStartDateTime() != nil {
 				serviceprincipalsCredentialMetrics.AddTime(prometheus.Labels{

@@ -321,7 +321,7 @@ func initMetricCollector() {
 	collectorName = "GraphServicePrincipals"
 	if opts.Scrape.Time.Graph.Seconds() > 0 {
 		initMsGraphConnection()
-		c := collector.New(collectorName, &MetricsCollectorGraphSerevicePrincipals{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorGraphServicePrincipals{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.Graph)
 		if err := c.Start(); err != nil {
 			log.Panic(err.Error())
