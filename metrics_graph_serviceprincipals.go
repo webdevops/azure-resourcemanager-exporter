@@ -5,8 +5,8 @@ import (
 
 	abstractions "github.com/microsoft/kiota-abstractions-go"
 	msgraphcore "github.com/microsoftgraph/msgraph-sdk-go-core"
-	"github.com/microsoftgraph/msgraph-sdk-go/serviceprincipals"
 	"github.com/microsoftgraph/msgraph-sdk-go/models"
+	"github.com/microsoftgraph/msgraph-sdk-go/serviceprincipals"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
@@ -65,7 +65,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 		Options: nil,
 		QueryParameters: &serviceprincipals.ServicePrincipalsRequestBuilderGetQueryParameters{
 			Filter: &opts.Graph.ServicePrincipalFilter,
-			Count: &rcount,
+			Count:  &rcount,
 		},
 	}
 	result, err := MsGraphClient.ServiceClient().ServicePrincipals().Get(m.Context(), &opts)

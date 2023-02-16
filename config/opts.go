@@ -49,7 +49,7 @@ type (
 
 		// graph settings
 		Graph struct {
-			ApplicationFilter string `long:"graph.application.filter"    env:"GRAPH_APPLICATION_FILTER"               description:"MS Graph application $filter query eg: startswith(displayName,'A')"`
+			ApplicationFilter      string `long:"graph.application.filter"    env:"GRAPH_APPLICATION_FILTER"               description:"MS Graph application $filter query eg: startswith(displayName,'A')"`
 			ServicePrincipalFilter string `long:"graph.serviceprincipal.filter"    env:"GRAPH_SERVICEPRINCIPAL_FILTER"               description:"MS Graph serviceprincipal $filter query eg: startswith(displayName,'A')"`
 		}
 

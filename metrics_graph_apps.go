@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	abstractions "github.com/microsoft/kiota-abstractions-go"
 	msgraphcore "github.com/microsoftgraph/msgraph-sdk-go-core"
 	"github.com/microsoftgraph/msgraph-sdk-go/applications"
@@ -9,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
+	"strings"
 )
 
 type MetricsCollectorGraphApps struct {
@@ -18,7 +18,6 @@ type MetricsCollectorGraphApps struct {
 		apps            *prometheus.GaugeVec
 		appsCredentials *prometheus.GaugeVec
 	}
-
 }
 
 func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
@@ -65,7 +64,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 		Options: nil,
 		QueryParameters: &applications.ApplicationsRequestBuilderGetQueryParameters{
 			Filter: &opts.Graph.ApplicationFilter,
-			Count: &rcount,
+			Count:  &rcount,
 		},
 	}
 	result, err := MsGraphClient.ServiceClient().Applications().Get(m.Context(), &opts)
