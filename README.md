@@ -59,6 +59,7 @@ Application Options:
       --resourcehealth.summary.maxlength= Max length of ResourceHealth summary label (0 = disable summary label) (default: 0)
                                           [$RESOURCEHEALTH_SUMMARY_MAXLENGTH]
       --graph.application.filter=         MS Graph application $filter query eg: startswith(displayName,'A') [$GRAPH_APPLICATION_FILTER]
+      --graph.serviceprincipal.filter=    MS Graph serviceprincipal $filter query eg: startswith(displayName,'A') [$GRAPH_SERVICEPRINCIPAL_FILTER]
       --costs.timeframe=                  Timeframe for cost reportings  (space delimiter) (default: MonthToDate, YearToDate)
                                           [$COSTS_TIMEFRAME]
       --costs.dimension=                  Dimensions for detailed cost metrics (eg
