@@ -123,7 +123,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
-					"credentialType": "key",
+					"credentialType": strings.ToLower(*credential.GetType()),
 					"type":           "startDate",
 				}, credential.GetStartDateTime().UTC())
 			}
@@ -133,7 +133,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
-					"credentialType": "key",
+					"credentialType": strings.ToLower(*credential.GetType()),
 					"type":           "endDate",
 				}, credential.GetEndDateTime().UTC())
 			}
