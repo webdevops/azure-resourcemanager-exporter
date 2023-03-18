@@ -26,6 +26,9 @@ type (
 
 		queries map[string]MetricsCollectorAzureRmCostsQuery
 
+		resourceTagConfig      armclient.ResourceTagConfig
+		resourceGroupTagConfig armclient.ResourceTagConfig
+
 		prometheus struct {
 			consumptionBudgetInfo    *prometheus.GaugeVec
 			consumptionBudgetLimit   *prometheus.GaugeVec
@@ -98,8 +101,19 @@ func (m *MetricsCollectorAzureRmCosts) collectQueries() {
 }
 
 func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
+	var err error
 	m.Processor.Setup(collector)
 	m.Collector.SetCache(opts.GetCachePath("costs.json"))
+
+	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceTags)
+	if err != nil {
+		m.Logger().Panicf(`unable to parse resourceTag configuration "%s": %v"`, opts.Azure.ResourceTags, err.Error())
+	}
+
+	m.resourceGroupTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceGroupTags)
+	if err != nil {
+		m.Logger().Panicf(`unable to parse resourceGroupTag configuration "%s": %v"`, opts.Azure.ResourceGroupTags, err.Error())
+	}
 
 	m.collectQueries()
 
@@ -179,6 +193,14 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			switch {
 			case strings.EqualFold(dimension, "ResourceGroupName"):
 				labelName = "resourceGroup"
+
+				// add additional resourceGroup labels
+				costLabels = m.resourceGroupTagConfig.AddToPrometheusLabels(costLabels)
+			case strings.EqualFold(dimension, "ResourceId"):
+				labelName = "resourceID"
+
+				// add additional resourceGroup labels
+				costLabels = m.resourceTagConfig.AddToPrometheusLabels(costLabels)
 			default:
 				labelName = prometheusLabelReplacerRegExp.ReplaceAllString(dimension, "_")
 			}
@@ -321,6 +343,8 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 		switch {
 		case strings.EqualFold(dimension, "ResourceGroupName"):
 			labelName = "resourceGroup"
+		case strings.EqualFold(dimension, "ResourceID"):
+			labelName = "resourceID"
 		}
 
 		dimensionConfig := CostQueryConfigDimension{
@@ -442,6 +466,20 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 			labels[dimensionConfig.LabelName] = ""
 			if row[dimensionConfig.ResultColumnNumber] != nil {
 				labels[dimensionConfig.LabelName] = row[dimensionConfig.ResultColumnNumber].(string)
+
+				switch dimensionConfig.LabelName {
+				case "resourceGroup":
+					// add resourceGroups labels using tag manager
+					resourceId := fmt.Sprintf(
+						"/subscriptions/%s/resourceGroups/%s",
+						to.StringLower(subscription.SubscriptionID),
+						row[dimensionConfig.ResultColumnNumber].(string),
+					)
+					labels = AzureClient.TagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, resourceId, m.resourceGroupTagConfig)
+				case "resourceID":
+					// add resource labels using tag manager
+					labels = AzureClient.TagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, row[dimensionConfig.ResultColumnNumber].(string), m.resourceTagConfig)
+				}
 			}
 		}
 
