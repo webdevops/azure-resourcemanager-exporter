@@ -32,7 +32,7 @@ require (
 	github.com/microsoft/kiota-abstractions-go v0.17.3
 	github.com/microsoftgraph/msgraph-sdk-go v0.58.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.34.1
-	github.com/webdevops/go-common v0.0.0-20230318105406-f2c2ba493fee
+	github.com/webdevops/go-common v0.0.0-20230318150253-47b1abcf3173
 )
 
 require (
