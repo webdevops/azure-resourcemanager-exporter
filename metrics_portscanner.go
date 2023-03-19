@@ -10,6 +10,7 @@ import (
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
+	"go.uber.org/zap"
 )
 
 type MetricsCollectorPortscanner struct {
@@ -94,7 +95,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, pip armnetwork.PublicIPAddress) {
 		ipAddress := to.StringLower(pip.Properties.IPAddress)
 
-		m.Logger().WithField("ipAddress", ipAddress).Infof("start port scanning")
+		m.Logger().With(zap.String("ipAddress", ipAddress)).Infof("start port scanning")
 
 		// set the ipAdress to be scanned
 		m.Collector.GetMetricList("publicIpPortscanStatus").Add(prometheus.Labels{
@@ -170,7 +171,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 
 	for _, val := range subscriptions {
 		subscription := val
-		contextLogger := m.Logger().WithField("azureSubscription", subscription)
+		contextLogger := m.Logger().With(zap.String("azureSubscription", *subscription.SubscriptionID))
 
 		client, err := armnetwork.NewPublicIPAddressesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 		if err != nil {

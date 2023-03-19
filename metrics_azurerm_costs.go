@@ -10,10 +10,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
+	"go.uber.org/zap"
 )
 
 const (
@@ -226,7 +226,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmCosts) Reset() {}
 
 func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 		m.collectSubscription(subscription, logger)
 	})
 	if err != nil {
@@ -234,12 +234,12 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 	for _, timeframe := range opts.Costs.Timeframe {
 		for _, query := range m.queries {
 			logger.Infof(`fetching cost report for query %v`, query.Name)
 			m.collectCostManagementMetrics(
-				logger.WithField("costreport", "ActualCost"),
+				logger.With(zap.String("costreport", "ActualCost")),
 				m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
 				subscription,
 				armcostmanagement.ExportTypeActualCost,
@@ -254,12 +254,12 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 
 	logger.Info(`fetching cost budget report`)
 	m.collectBugdetMetrics(
-		logger.WithField("consumption", "Budgets"),
+		logger.With(zap.String("consumption", "Budgets")),
 		subscription,
 	)
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, subscription *armsubscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredLogger, subscription *armsubscriptions.Subscription) {
 	client, err := armconsumption.NewBudgetsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
@@ -326,7 +326,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, s
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.Entry, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimensions []string, timeframe string) {
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimensions []string, timeframe string) {
 	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)

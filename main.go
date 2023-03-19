@@ -7,16 +7,15 @@ import (
 	"os"
 	"regexp"
 	"runtime"
-	"strings"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/azuresdk/azidentity"
 	"github.com/webdevops/go-common/azuresdk/prometheus/tracing"
 	"github.com/webdevops/go-common/msgraphsdk/msgraphclient"
 	"github.com/webdevops/go-common/prometheus/collector"
+	"go.uber.org/zap"
 
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
 )
@@ -51,18 +50,19 @@ type Portrange struct {
 
 func main() {
 	initArgparser()
-	initLogger()
+	defer initLogger().Sync() // nolint:errcheck
 
-	log.Infof("starting azure-resourcemanager-exporter v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
-	log.Info(string(opts.GetJson()))
+	logger.Infof("starting azure-resourcemanager-exporter v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
+	logger.Info(string(opts.GetJson()))
+	logger.Warnf("test")
 
-	log.Infof("init Azure connection")
+	logger.Infof("init Azure connection")
 	initAzureConnection()
 
-	log.Infof("starting metrics collection")
+	logger.Infof("starting metrics collection")
 	initMetricCollector()
 
-	log.Infof("starting http server on %s", opts.Server.Bind)
+	logger.Infof("starting http server on %s", opts.Server.Bind)
 	startHttpServer()
 }
 
@@ -131,7 +131,7 @@ func initArgparser() {
 	}
 
 	if opts.Scrape.Time.Portscan == nil || opts.Scrape.Time.Portscan.Seconds() == 0 && opts.Portscan.Enabled {
-		log.Fatalf(`portscan is enabled but has invalid scape time (zero)`)
+		logger.Fatalf(`portscan is enabled but has invalid scape time (zero)`)
 	}
 
 	// check deprecated env vars
@@ -148,41 +148,8 @@ func initArgparser() {
 	}
 	for envVar, reason := range deprecatedEnvVars {
 		if os.Getenv(envVar) != "" {
-			log.Fatalf("env var %v is %v", envVar, reason)
+			logger.Fatalf("env var %v is %v", envVar, reason)
 		}
-	}
-}
-
-func initLogger() {
-	// verbose level
-	if opts.Logger.Debug {
-		log.SetLevel(log.DebugLevel)
-	}
-
-	// trace level
-	if opts.Logger.Trace {
-		log.SetReportCaller(true)
-		log.SetLevel(log.TraceLevel)
-		log.SetFormatter(&log.TextFormatter{
-			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-				s := strings.Split(f.Function, "/")
-				funcName := s[len(s)-1]
-				return funcName, fmt.Sprintf("%s:%d", f.File, f.Line)
-			},
-		})
-	}
-
-	// json log format
-	if opts.Logger.Json {
-		log.SetReportCaller(true)
-		log.SetFormatter(&log.JSONFormatter{
-			DisableTimestamp: true,
-			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-				s := strings.Split(f.Function, "/")
-				funcName := s[len(s)-1]
-				return funcName, fmt.Sprintf("%s:%d", f.File, f.Line)
-			},
-		})
 	}
 }
 
@@ -191,13 +158,13 @@ func initAzureConnection() {
 
 	if opts.Azure.Environment != nil {
 		if err := os.Setenv(azidentity.EnvAzureEnvironment, *opts.Azure.Environment); err != nil {
-			log.Warnf(`unable to set envvar "%s": %v`, azidentity.EnvAzureEnvironment, err.Error())
+			logger.Warnf(`unable to set envvar "%s": %v`, azidentity.EnvAzureEnvironment, err.Error())
 		}
 	}
 
-	AzureClient, err = armclient.NewArmClientFromEnvironment(log.StandardLogger())
+	AzureClient, err = armclient.NewArmClientFromEnvironment(logger)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Fatal(err.Error())
 	}
 	AzureClient.SetUserAgent(UserAgent + gitTag)
 
@@ -207,7 +174,7 @@ func initAzureConnection() {
 	}
 
 	if err := AzureClient.Connect(); err != nil {
-		log.Fatal(err.Error())
+		logger.Fatal(err.Error())
 	}
 
 	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient)
@@ -216,9 +183,9 @@ func initAzureConnection() {
 func initMsGraphConnection() {
 	var err error
 	if MsGraphClient == nil {
-		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*opts.Azure.Environment, *opts.Azure.Tenant, log.StandardLogger())
+		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*opts.Azure.Environment, *opts.Azure.Tenant, logger)
 		if err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		MsGraphClient.SetUserAgent(UserAgent + gitTag)
@@ -230,103 +197,103 @@ func initMetricCollector() {
 
 	collectorName = "General"
 	if opts.Scrape.Time.General.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.General)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "Resource"
 	if opts.Scrape.Time.Resource.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.Resource)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "Quota"
 	if opts.Scrape.Time.Quota.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.Quota)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "Costs"
 	if opts.Scrape.Time.Costs.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.Costs)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "Defender"
 	if opts.Scrape.Time.Defender.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.Defender)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "ResourceHealth"
 	if opts.Scrape.Time.ResourceHealth.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.ResourceHealth)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "IAM"
 	if opts.Scrape.Time.Iam.Seconds() > 0 {
 		initMsGraphConnection()
-		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.Iam)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "GraphApps"
 	if opts.Scrape.Time.Graph.Seconds() > 0 {
 		initMsGraphConnection()
-		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.Graph)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "Portscan"
 	if opts.Portscan.Enabled && opts.Scrape.Time.Portscan.Seconds() > 0 {
-		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, log.StandardLogger())
+		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.Portscan)
 		if err := c.Start(); err != nil {
-			log.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	} else {
-		log.WithField("collector", collectorName).Infof("collector disabled")
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 }
 
@@ -337,14 +304,14 @@ func startHttpServer() {
 	// healthz
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
-			log.Error(err)
+			logger.Error(err)
 		}
 	})
 
 	// readyz
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
-			log.Error(err)
+			logger.Error(err)
 		}
 	})
 
@@ -358,5 +325,5 @@ func startHttpServer() {
 		ReadTimeout:  opts.Server.ReadTimeout,
 		WriteTimeout: opts.Server.WriteTimeout,
 	}
-	log.Fatal(srv.ListenAndServe())
+	logger.Fatal(srv.ListenAndServe())
 }

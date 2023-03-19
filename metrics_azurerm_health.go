@@ -7,10 +7,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcehealth/armresourcehealth"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
+	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmHealth struct {
@@ -75,7 +75,7 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmHealth) Reset() {}
 
 func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 		m.collectSubscription(subscription, logger, callback)
 	})
 	if err != nil {
@@ -83,7 +83,7 @@ func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
 	client, err := armresourcehealth.NewAvailabilityStatusesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
@@ -148,13 +148,13 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 							}
 						}
 
-						m.Logger().WithFields(log.Fields{
-							"subscriptionID":    azureResource.Subscription,
-							"resourceID":        stringToStringLower(resourceId),
-							"resourceGroup":     azureResource.ResourceGroup,
-							"availabilityState": stringToStringLower(string(availabilityState)),
-							"resourceHealth":    resourceHealthLogObject,
-						}).Info("unhealthy resource detected")
+						m.Logger().With(
+							zap.String("subscriptionID", azureResource.Subscription),
+							zap.String("resourceID", stringToStringLower(resourceId)),
+							zap.String("resourceGroup", azureResource.ResourceGroup),
+							zap.String("availabilityState", stringToStringLower(string(availabilityState))),
+							zap.Any("resourceHealth", resourceHealthLogObject),
+						).Info("unhealthy resource detected")
 
 						if opts.ResourceHealth.SummaryMaxLength > 0 {
 							summary = truncateStrings(to.String(resourceHealth.Properties.Summary), opts.ResourceHealth.SummaryMaxLength, "...")

@@ -32,7 +32,8 @@ require (
 	github.com/microsoft/kiota-abstractions-go v0.17.3
 	github.com/microsoftgraph/msgraph-sdk-go v0.58.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.34.1
-	github.com/webdevops/go-common v0.0.0-20230318150253-47b1abcf3173
+	github.com/webdevops/go-common v0.0.0-20230319203820-f869c024d265
+	go.uber.org/zap v1.24.0
 )
 
 require (
@@ -65,6 +66,8 @@ require (
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
