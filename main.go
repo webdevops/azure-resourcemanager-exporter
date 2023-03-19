@@ -197,7 +197,7 @@ func initAzureConnection() {
 
 	AzureClient, err = armclient.NewArmClientFromEnvironment(log.StandardLogger())
 	if err != nil {
-		log.Panic(err.Error())
+		log.Fatal(err.Error())
 	}
 	AzureClient.SetUserAgent(UserAgent + gitTag)
 
@@ -207,7 +207,7 @@ func initAzureConnection() {
 	}
 
 	if err := AzureClient.Connect(); err != nil {
-		log.Panic(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient)
@@ -218,7 +218,7 @@ func initMsGraphConnection() {
 	if MsGraphClient == nil {
 		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*opts.Azure.Environment, *opts.Azure.Tenant, log.StandardLogger())
 		if err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 
 		MsGraphClient.SetUserAgent(UserAgent + gitTag)
@@ -233,7 +233,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.General)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
@@ -244,7 +244,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.Resource)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
@@ -255,7 +255,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.Quota)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
@@ -266,7 +266,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.Costs)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
@@ -277,7 +277,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.Defender)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
@@ -288,7 +288,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.ResourceHealth)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
@@ -300,7 +300,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.Iam)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
@@ -312,7 +312,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.Graph)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
@@ -323,7 +323,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, log.StandardLogger())
 		c.SetScapeTime(*opts.Scrape.Time.Portscan)
 		if err := c.Start(); err != nil {
-			log.Panic(err.Error())
+			log.Fatal(err.Error())
 		}
 	} else {
 		log.WithField("collector", collectorName).Infof("collector disabled")
