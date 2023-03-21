@@ -40,7 +40,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Setup(collector *collector.Coll
 	m.prometheus.serviceprincipalsCredentials = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_graph_serviceprincipal_credential",
-			Help: "Azure GraphQL application credentials status",
+			Help: "Azure GraphQL serviceprincipal credentials status",
 		},
 		[]string{
 			"appAppID",
