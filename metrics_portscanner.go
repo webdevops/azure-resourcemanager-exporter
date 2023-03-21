@@ -1,7 +1,8 @@
 package main
 
 import (
-	"os"
+	"fmt"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -9,6 +10,7 @@ import (
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
+	"go.uber.org/zap"
 )
 
 type MetricsCollectorPortscanner struct {
@@ -26,11 +28,10 @@ type MetricsCollectorPortscanner struct {
 
 func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
+	m.Collector.SetCache(opts.GetCachePath("portscanner.json"))
 
 	m.portscanner = &Portscanner{}
 	m.portscanner.Init()
-
-	cachePath := opts.GetCachePath("portscan.json")
 
 	m.prometheus.publicIpInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -75,18 +76,13 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.Collector.RegisterMetricList("publicIpPortscanPort", m.prometheus.publicIpPortscanPort, false)
 
 	m.portscanner.Callbacks.FinishScan = func(c *Portscanner) {
-		m.Logger().Infof("finished for %v IPs", len(m.portscanner.PublicIps))
-
-		if cachePath != nil {
-			m.Logger().Infof("saved to cache")
-			m.portscanner.CacheSave(*cachePath)
-		}
+		m.Logger().Infof("finished for %v IPs", len(m.portscanner.Data.PublicIps))
 	}
 
 	m.portscanner.Callbacks.StartupScan = func(c *Portscanner) {
 		m.Logger().Infof(
 			"starting for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
-			len(c.PublicIps),
+			len(c.Data.PublicIps),
 			opts.Portscan.Parallel,
 			opts.Portscan.Threads,
 			opts.Portscan.Timeout,
@@ -99,50 +95,55 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, pip armnetwork.PublicIPAddress) {
 		ipAddress := to.StringLower(pip.Properties.IPAddress)
 
-		m.Logger().WithField("ipAddress", ipAddress).Infof("start port scanning")
+		m.Logger().With(zap.String("ipAddress", ipAddress)).Infof("start port scanning")
 
 		// set the ipAdress to be scanned
-		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
+		m.Collector.GetMetricList("publicIpPortscanStatus").Add(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type":      "finished",
-		}).Set(0)
+		}, 0)
 	}
 
 	m.portscanner.Callbacks.FinishScanIpAdress = func(c *Portscanner, pip armnetwork.PublicIPAddress, elapsed float64) {
 		ipAddress := to.StringLower(pip.Properties.IPAddress)
 
 		// set ipAddess to be finsihed
-		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
+		m.Collector.GetMetricList("publicIpPortscanStatus").AddInfo(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type":      "finished",
-		}).Set(1)
+		})
 
 		// set the elapsed time
-		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
+		m.Collector.GetMetricList("publicIpPortscanStatus").Add(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type":      "elapsed",
-		}).Set(elapsed)
+		}, elapsed)
 
 		// set update time
-		m.prometheus.publicIpPortscanStatus.With(prometheus.Labels{
+		m.Collector.GetMetricList("publicIpPortscanStatus").AddTime(prometheus.Labels{
 			"ipAddress": ipAddress,
 			"type":      "updated",
-		}).SetToCurrentTime()
+		}, time.Now())
 	}
 
 	m.portscanner.Callbacks.ResultCleanup = func(c *Portscanner) {
-		m.prometheus.publicIpPortscanPort.Reset()
+		m.Collector.GetMetricList("publicIpPortscanPort").Reset()
 	}
 
 	m.portscanner.Callbacks.ResultPush = func(c *Portscanner, result PortscannerResult) {
-		m.prometheus.publicIpPortscanPort.With(result.Labels).Set(result.Value)
+		m.Collector.GetMetricList("publicIpPortscanPort").Add(result.Labels, result.Value)
 	}
 
-	if cachePath != nil {
-		if _, err := os.Stat(*cachePath); !os.IsNotExist(err) {
-			m.Logger().Infof("load from cache")
-			m.portscanner.CacheLoad(*cachePath)
-		}
+	m.portscanner.Callbacks.RestoreCache = func(c *Portscanner) interface{} {
+		fmt.Println("GET DATA")
+		fmt.Println(m.Collector.GetData("portscanner"))
+		return m.Collector.GetData("portscanner")
+	}
+
+	m.portscanner.Callbacks.StoreCache = func(c *Portscanner, data interface{}) {
+		fmt.Println("SET DATA")
+		fmt.Println(data)
+		m.Collector.SetData("portscanner", data)
 	}
 }
 
@@ -155,12 +156,14 @@ func (m *MetricsCollectorPortscanner) Collect(callback chan<- func()) {
 		m.Logger().Panic(err)
 	}
 
+	m.portscanner.CacheLoad()
 	publicIpList := m.fetchPublicIpAdresses(subscriptionList)
 	m.portscanner.SetAzurePublicIpList(publicIpList)
 
 	if len(publicIpList) > 0 {
 		m.portscanner.Start()
 	}
+	m.portscanner.CacheSave()
 }
 
 func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[string]*armsubscriptions.Subscription) (pipList []*armnetwork.PublicIPAddress) {
@@ -168,7 +171,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 
 	for _, val := range subscriptions {
 		subscription := val
-		contextLogger := m.Logger().WithField("azureSubscription", subscription)
+		contextLogger := m.Logger().With(zap.String("azureSubscription", *subscription.SubscriptionID))
 
 		client, err := armnetwork.NewPublicIPAddressesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 		if err != nil {
@@ -195,19 +198,21 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 		}
 	}
 
+	infoMetric := m.Collector.GetMetricList("publicIpInfo")
+
 	m.prometheus.publicIpInfo.Reset()
 	for _, pip := range pipList {
 		resourceId := to.String(pip.ID)
 		azureResource, _ := armclient.ParseResourceId(resourceId)
 
-		m.prometheus.publicIpInfo.With(prometheus.Labels{
+		infoMetric.AddInfo(prometheus.Labels{
 			"subscriptionID":   azureResource.Subscription,
 			"resourceID":       to.StringLower(pip.ID),
 			"resourceGroup":    azureResource.ResourceGroup,
 			"name":             azureResource.ResourceName,
 			"ipAddressVersion": stringToStringLower(string(*pip.Properties.PublicIPAddressVersion)),
 			"ipAddress":        to.StringLower(pip.Properties.IPAddress),
-		}).Set(1)
+		})
 	}
 
 	return pipList

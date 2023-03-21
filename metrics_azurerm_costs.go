@@ -10,10 +10,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
+	"go.uber.org/zap"
 )
 
 const (
@@ -25,6 +25,9 @@ type (
 		collector.Processor
 
 		queries map[string]MetricsCollectorAzureRmCostsQuery
+
+		resourceTagConfig      armclient.ResourceTagConfig
+		resourceGroupTagConfig armclient.ResourceTagConfig
 
 		prometheus struct {
 			consumptionBudgetInfo    *prometheus.GaugeVec
@@ -98,8 +101,19 @@ func (m *MetricsCollectorAzureRmCosts) collectQueries() {
 }
 
 func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
+	var err error
 	m.Processor.Setup(collector)
 	m.Collector.SetCache(opts.GetCachePath("costs.json"))
+
+	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceTags)
+	if err != nil {
+		m.Logger().Panicf(`unable to parse resourceTag configuration "%s": %v"`, opts.Azure.ResourceTags, err.Error())
+	}
+
+	m.resourceGroupTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceGroupTags)
+	if err != nil {
+		m.Logger().Panicf(`unable to parse resourceGroupTag configuration "%s": %v"`, opts.Azure.ResourceGroupTags, err.Error())
+	}
 
 	m.collectQueries()
 
@@ -107,7 +121,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 	// Budget
 	m.prometheus.consumptionBudgetInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_costs_bugdet_info",
+			Name: "azurerm_costs_budget_info",
 			Help: "Azure ResourceManager consumption budget info",
 		},
 		[]string{
@@ -123,7 +137,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 
 	m.prometheus.consumptionBudgetLimit = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_costs_bugdet_limit",
+			Name: "azurerm_costs_budget_limit",
 			Help: "Azure ResourceManager consumption budget limit",
 		},
 		[]string{
@@ -137,7 +151,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 
 	m.prometheus.consumptionBudgetUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_costs_bugdet_usage",
+			Name: "azurerm_costs_budget_usage",
 			Help: "Azure ResourceManager consumption budget usage percentage",
 		},
 		[]string{
@@ -151,7 +165,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 
 	m.prometheus.consumptionBudgetCurrent = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_costs_bugdet_current",
+			Name: "azurerm_costs_budget_current",
 			Help: "Azure ResourceManager consumption budget current",
 		},
 		[]string{
@@ -179,6 +193,14 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			switch {
 			case strings.EqualFold(dimension, "ResourceGroupName"):
 				labelName = "resourceGroup"
+
+				// add additional resourceGroup labels
+				costLabels = m.resourceGroupTagConfig.AddToPrometheusLabels(costLabels)
+			case strings.EqualFold(dimension, "ResourceId"):
+				labelName = "resourceID"
+
+				// add additional resourceGroup labels
+				costLabels = m.resourceTagConfig.AddToPrometheusLabels(costLabels)
 			default:
 				labelName = prometheusLabelReplacerRegExp.ReplaceAllString(dimension, "_")
 			}
@@ -204,7 +226,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmCosts) Reset() {}
 
 func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 		m.collectSubscription(subscription, logger)
 	})
 	if err != nil {
@@ -212,12 +234,12 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 	for _, timeframe := range opts.Costs.Timeframe {
 		for _, query := range m.queries {
 			logger.Infof(`fetching cost report for query %v`, query.Name)
 			m.collectCostManagementMetrics(
-				logger.WithField("costreport", "ActualCost"),
+				logger.With(zap.String("costreport", "ActualCost")),
 				m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
 				subscription,
 				armcostmanagement.ExportTypeActualCost,
@@ -232,12 +254,12 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 
 	logger.Info(`fetching cost budget report`)
 	m.collectBugdetMetrics(
-		logger.WithField("consumption", "Budgets"),
+		logger.With(zap.String("consumption", "Budgets")),
 		subscription,
 	)
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, subscription *armsubscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredLogger, subscription *armsubscriptions.Subscription) {
 	client, err := armconsumption.NewBudgetsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
@@ -304,7 +326,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *log.Entry, s
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.Entry, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimensions []string, timeframe string) {
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimensions []string, timeframe string) {
 	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
@@ -321,6 +343,8 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 		switch {
 		case strings.EqualFold(dimension, "ResourceGroupName"):
 			labelName = "resourceGroup"
+		case strings.EqualFold(dimension, "ResourceID"):
+			labelName = "resourceID"
 		}
 
 		dimensionConfig := CostQueryConfigDimension{
@@ -442,6 +466,20 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *log.
 			labels[dimensionConfig.LabelName] = ""
 			if row[dimensionConfig.ResultColumnNumber] != nil {
 				labels[dimensionConfig.LabelName] = row[dimensionConfig.ResultColumnNumber].(string)
+
+				switch dimensionConfig.LabelName {
+				case "resourceGroup":
+					// add resourceGroups labels using tag manager
+					resourceId := fmt.Sprintf(
+						"/subscriptions/%s/resourceGroups/%s",
+						to.StringLower(subscription.SubscriptionID),
+						row[dimensionConfig.ResultColumnNumber].(string),
+					)
+					labels = AzureClient.TagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, resourceId, m.resourceGroupTagConfig)
+				case "resourceID":
+					// add resource labels using tag manager
+					labels = AzureClient.TagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, row[dimensionConfig.ResultColumnNumber].(string), m.resourceTagConfig)
+				}
 			}
 		}
 

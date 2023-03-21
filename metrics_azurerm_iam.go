@@ -4,10 +4,10 @@ import (
 	armauthorization "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
+	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmIam struct {
@@ -84,7 +84,7 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmIam) Reset() {}
 
 func (m *MetricsCollectorAzureRmIam) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 		m.collectRoleDefinitions(subscription, logger, callback)
 		m.collectRoleAssignments(subscription, logger, callback)
 	})
@@ -93,7 +93,7 @@ func (m *MetricsCollectorAzureRmIam) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
 	client, err := armauthorization.NewRoleDefinitionsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
@@ -129,7 +129,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsub
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
 	principalIdMap := map[string]string{}
 
 	client, err := armauthorization.NewRoleAssignmentsClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())

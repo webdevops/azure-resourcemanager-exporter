@@ -8,10 +8,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
+	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmDefender struct {
@@ -112,7 +112,7 @@ func (m *MetricsCollectorAzureRmDefender) Setup(collector *collector.Collector) 
 func (m *MetricsCollectorAzureRmDefender) Reset() {}
 
 func (m *MetricsCollectorAzureRmDefender) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *log.Entry) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 		m.collectAzureSecureScore(subscription, logger, callback)
 		m.collectAzureSecurityCompliance(subscription, logger, callback)
 		m.collectAzureAdvisorRecommendations(subscription, logger, callback)
@@ -122,7 +122,7 @@ func (m *MetricsCollectorAzureRmDefender) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmDefender) collectAzureSecureScore(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmDefender) collectAzureSecureScore(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
 	client, err := armsecurity.NewSecureScoresClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
@@ -151,7 +151,7 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureSecureScore(subscription *
 	}
 }
 
-func (m *MetricsCollectorAzureRmDefender) collectAzureSecurityCompliance(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmDefender) collectAzureSecurityCompliance(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
 	client, err := armsecurity.NewCompliancesClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
@@ -206,7 +206,7 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureSecurityCompliance(subscri
 	}
 }
 
-func (m *MetricsCollectorAzureRmDefender) collectAzureAdvisorRecommendations(subscription *armsubscriptions.Subscription, logger *log.Entry, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmDefender) collectAzureAdvisorRecommendations(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
 	client, err := armadvisor.NewRecommendationsClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)

@@ -9,8 +9,8 @@ import (
 	scanner "github.com/anvie/port-scanner"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/remeh/sizedwaitgroup"
-	log "github.com/sirupsen/logrus"
 	"github.com/webdevops/go-common/utils/to"
+	"go.uber.org/zap"
 )
 
 type PortscannerResult struct {
@@ -20,14 +20,15 @@ type PortscannerResult struct {
 }
 
 type Portscanner struct {
-	List      map[string][]PortscannerResult
-	PublicIps map[string]*armnetwork.PublicIPAddress
-	Enabled   bool `json:"-"`
-	mux       sync.Mutex
+	Data    *PortscannerData
+	Enabled bool `json:"-"`
+	mux     sync.Mutex
 
-	logger *log.Entry
+	logger *zap.SugaredLogger
 
 	Callbacks struct {
+		RestoreCache       func(c *Portscanner) interface{}
+		StoreCache         func(c *Portscanner, data interface{})
 		StartupScan        func(c *Portscanner)
 		FinishScan         func(c *Portscanner)
 		StartScanIpAdress  func(c *Portscanner, pip armnetwork.PublicIPAddress)
@@ -37,13 +38,22 @@ type Portscanner struct {
 	} `json:"-"`
 }
 
+type PortscannerData struct {
+	List      map[string][]PortscannerResult
+	PublicIps map[string]*armnetwork.PublicIPAddress
+}
+
 func (c *Portscanner) Init() {
 	c.Enabled = false
-	c.List = map[string][]PortscannerResult{}
-	c.PublicIps = map[string]*armnetwork.PublicIPAddress{}
+	c.Data = &PortscannerData{
+		List:      map[string][]PortscannerResult{},
+		PublicIps: map[string]*armnetwork.PublicIPAddress{},
+	}
 
-	c.logger = log.WithField("component", "portscanner")
+	c.logger = logger.With(zap.String("component", "portscanner"))
 
+	c.Callbacks.RestoreCache = func(c *Portscanner) interface{} { return nil }
+	c.Callbacks.StoreCache = func(c *Portscanner, data interface{}) {}
 	c.Callbacks.StartupScan = func(c *Portscanner) {}
 	c.Callbacks.FinishScan = func(c *Portscanner) {}
 	c.Callbacks.StartScanIpAdress = func(c *Portscanner, pip armnetwork.PublicIPAddress) {}
@@ -56,14 +66,24 @@ func (c *Portscanner) Enable() {
 	c.Enabled = true
 }
 
-func (c *Portscanner) CacheLoad(path string) {
+func (c *Portscanner) CacheLoad() {
 	c.mux.Lock()
 
-	err := cacheRestoreFromPath(path, c)
-	if err == nil {
-		c.logger.Infof(`restored state from cache path "%v"`, path)
-	} else {
-		c.logger.Errorf("failed to load portscanner cache: %v", err)
+	if val := c.Callbacks.RestoreCache(c); val != nil {
+		if data, ok := val.(*PortscannerData); ok {
+			c.logger.Infof(`restored state from cache`)
+			c.Data = data
+
+			if c.Data.List == nil {
+				c.Data.List = map[string][]PortscannerResult{}
+			}
+
+			if c.Data.PublicIps == nil {
+				c.Data.PublicIps = map[string]*armnetwork.PublicIPAddress{}
+			}
+		} else {
+			c.logger.Errorf("failed to load portscanner cache")
+		}
 	}
 
 	c.mux.Unlock()
@@ -73,16 +93,9 @@ func (c *Portscanner) CacheLoad(path string) {
 	c.Publish()
 }
 
-func (c *Portscanner) CacheSave(path string) {
+func (c *Portscanner) CacheSave() {
 	c.mux.Lock()
-
-	err := cacheSaveToPath(path, c)
-	if err == nil {
-		c.logger.Infof(`saved state to cache path "%v"`, path)
-	} else {
-		c.logger.Panic(err)
-	}
-
+	c.Callbacks.StoreCache(c, c.Data)
 	c.mux.Unlock()
 }
 
@@ -96,7 +109,7 @@ func (c *Portscanner) SetAzurePublicIpList(pipList []*armnetwork.PublicIPAddress
 		ipAddressList[ipAddress] = pip
 	}
 
-	c.PublicIps = ipAddressList
+	c.Data.PublicIps = ipAddressList
 	c.mux.Unlock()
 }
 
@@ -104,7 +117,7 @@ func (c *Portscanner) addResults(pip armnetwork.PublicIPAddress, results []Ports
 	ipAddress := to.String(pip.Properties.IPAddress)
 	// update result cache and update prometheus
 	c.mux.Lock()
-	c.List[ipAddress] = results
+	c.Data.List[ipAddress] = results
 	c.pushResults()
 	c.mux.Unlock()
 }
@@ -114,15 +127,15 @@ func (c *Portscanner) Cleanup() {
 	c.mux.Lock()
 
 	orphanedIpList := []string{}
-	for ipAddress := range c.List {
-		if _, ok := c.PublicIps[ipAddress]; !ok {
+	for ipAddress := range c.Data.List {
+		if _, ok := c.Data.PublicIps[ipAddress]; !ok {
 			orphanedIpList = append(orphanedIpList, ipAddress)
 		}
 	}
 
 	// delete oprhaned IPs
 	for _, ipAddress := range orphanedIpList {
-		delete(c.List, ipAddress)
+		delete(c.Data.List, ipAddress)
 	}
 
 	c.mux.Unlock()
@@ -136,7 +149,7 @@ func (c *Portscanner) Publish() {
 }
 
 func (c *Portscanner) pushResults() {
-	for _, results := range c.List {
+	for _, results := range c.Data.List {
 		for _, result := range results {
 			c.Callbacks.ResultPush(c, result)
 		}
@@ -153,7 +166,7 @@ func (c *Portscanner) Start() {
 	c.Publish()
 
 	swg := sizedwaitgroup.New(opts.Portscan.Parallel)
-	for _, pip := range c.PublicIps {
+	for _, pip := range c.Data.PublicIps {
 		swg.Add()
 		go func(pip armnetwork.PublicIPAddress, portscanTimeout time.Duration) {
 			defer swg.Done()
@@ -182,10 +195,10 @@ func (c *Portscanner) scanIp(pip armnetwork.PublicIPAddress, portscanTimeout tim
 	ipAddress := to.String(pip.Properties.IPAddress)
 	startTime := time.Now().Unix()
 
-	contextLogger := c.logger.WithField("ipAddress", ipAddress)
+	contextLogger := c.logger.With(zap.String("ipAddress", ipAddress))
 
 	// check if public ip is still owned
-	if _, ok := c.PublicIps[ipAddress]; !ok {
+	if _, ok := c.Data.PublicIps[ipAddress]; !ok {
 		return
 	}
 
@@ -195,7 +208,7 @@ func (c *Portscanner) scanIp(pip armnetwork.PublicIPAddress, portscanTimeout tim
 		openedPorts := ps.GetOpenedPort(portrange.FirstPort, portrange.LastPort)
 
 		for _, port := range openedPorts {
-			contextLogger.WithField("port", port).Debugf("detected open port %v", port)
+			contextLogger.With(zap.Int("port", port)).Debugf("detected open port %v", port)
 			result = append(
 				result,
 				PortscannerResult{
