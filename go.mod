@@ -28,8 +28,8 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.9.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
-	github.com/microsoft/kiota-abstractions-go v0.17.3
-	github.com/microsoftgraph/msgraph-sdk-go v0.58.0
+	github.com/microsoft/kiota-abstractions-go v0.18.0
+	github.com/microsoftgraph/msgraph-sdk-go v0.59.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.34.1
 	github.com/webdevops/go-common v0.0.0-20230321224558-dfd6f83107af
 	go.uber.org/zap v1.24.0
@@ -52,9 +52,9 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/microsoft/kiota-authentication-azure-go v0.6.0 // indirect
-	github.com/microsoft/kiota-http-go v0.16.0 // indirect
+	github.com/microsoft/kiota-http-go v0.16.1 // indirect
 	github.com/microsoft/kiota-serialization-form-go v0.9.0 // indirect
-	github.com/microsoft/kiota-serialization-json-go v0.8.2 // indirect
+	github.com/microsoft/kiota-serialization-json-go v0.9.0 // indirect
 	github.com/microsoft/kiota-serialization-text-go v0.7.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
@@ -65,8 +65,8 @@ require (
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/atomic v1.10.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
