@@ -237,7 +237,7 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 	for _, timeframe := range opts.Costs.Timeframe {
 		for _, query := range m.queries {
-			logger.Infof(`fetching cost report for query %v`, query.Name)
+			logger.Infof(`fetching cost report for query "%v" and timeframe "%v"`, query.Name, timeframe)
 			m.collectCostManagementMetrics(
 				logger.With(zap.String("costreport", "ActualCost")),
 				m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
