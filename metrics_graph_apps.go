@@ -58,11 +58,14 @@ func (m *MetricsCollectorGraphApps) Reset() {}
 func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 	headers := abstractions.NewRequestHeaders()
 	headers.Add("ConsistencyLevel", "eventual")
+	const requestCount = true
+	rcount := requestCount
 	opts := applications.ApplicationsRequestBuilderGetRequestConfiguration{
 		Headers: headers,
 		Options: nil,
 		QueryParameters: &applications.ApplicationsRequestBuilderGetQueryParameters{
 			Filter: &opts.Graph.ApplicationFilter,
+			Count:  &rcount,
 		},
 	}
 	result, err := MsGraphClient.ServiceClient().Applications().Get(m.Context(), &opts)

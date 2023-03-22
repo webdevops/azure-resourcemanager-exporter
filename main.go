@@ -285,6 +285,18 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
+	collectorName = "GraphServicePrincipals"
+	if opts.Scrape.Time.Graph.Seconds() > 0 {
+		initMsGraphConnection()
+		c := collector.New(collectorName, &MetricsCollectorGraphServicePrincipals{}, logger)
+		c.SetScapeTime(*opts.Scrape.Time.Graph)
+		if err := c.Start(); err != nil {
+			logger.Panic(err.Error())
+		}
+	} else {
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+	}
+
 	collectorName = "Portscan"
 	if opts.Portscan.Enabled && opts.Scrape.Time.Portscan.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger)
