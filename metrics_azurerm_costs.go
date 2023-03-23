@@ -133,7 +133,6 @@ func (m *MetricsCollectorAzureRmCosts) collectQueries() {
 func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 	var err error
 	m.Processor.Setup(collector)
-	m.Collector.SetCache(opts.GetCachePath("costs.json"))
 
 	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceTags)
 	if err != nil {

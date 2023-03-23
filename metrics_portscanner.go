@@ -28,7 +28,6 @@ type MetricsCollectorPortscanner struct {
 
 func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
-	m.Collector.SetCache(opts.GetCachePath("portscanner.json"))
 
 	m.portscanner = &Portscanner{}
 	m.portscanner.Init()
