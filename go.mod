@@ -28,10 +28,10 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.9.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
-	github.com/microsoft/kiota-abstractions-go v0.18.0
+	github.com/microsoft/kiota-abstractions-go v0.19.0
 	github.com/microsoftgraph/msgraph-sdk-go v0.59.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.34.1
-	github.com/webdevops/go-common v0.0.0-20230321224558-dfd6f83107af
+	github.com/webdevops/go-common v0.0.0-20230323215350-23bb4d4209c4
 	go.uber.org/zap v1.24.0
 )
 
