@@ -42,11 +42,13 @@ type (
 
 	MetricsCollectorAzureRmCostsQuery struct {
 		Name       string
-		Dimensions []string
+		Dimensions []MetricsCollectorAzureRmCostsQueryDimension
+		MetricName string
+		MetricHelp string
 	}
-
-	CostQueryConfig struct {
-		Dimensions []*CostQueryConfigDimension
+	MetricsCollectorAzureRmCostsQueryDimension struct {
+		Dimension string
+		Label     string
 	}
 
 	CostQueryConfigDimension struct {
@@ -71,17 +73,45 @@ func (m *MetricsCollectorAzureRmCosts) collectQueries() {
 		m.queries[query.Name] = query
 	}
 
+	createCostQuery := func(name string, config string) MetricsCollectorAzureRmCostsQuery {
+		dimensionList := strings.Split(config, ",")
+
+		query := MetricsCollectorAzureRmCostsQuery{
+			Name:       name,
+			MetricName: fmt.Sprintf(`azurerm_costs_%v`, name),
+			MetricHelp: fmt.Sprintf(`Azure ResourceManager costmanagement query with dimensions %v`, strings.Join(dimensionList, ",")),
+			Dimensions: []MetricsCollectorAzureRmCostsQueryDimension{},
+		}
+
+		for _, dimension := range dimensionList {
+			labelName := lowerFirst(prometheusLabelReplacerRegExp.ReplaceAllString(dimension, "_"))
+
+			switch {
+			case strings.EqualFold(dimension, "ResourceGroupName"):
+				labelName = "resourceGroup"
+			case strings.EqualFold(dimension, "ResourceId"):
+				labelName = "resourceID"
+			}
+
+			query.Dimensions = append(
+				query.Dimensions,
+				MetricsCollectorAzureRmCostsQueryDimension{
+					Dimension: dimension,
+					Label:     labelName,
+				},
+			)
+		}
+
+		return query
+	}
+
 	for _, queryConfig := range opts.Costs.Queries {
 		if !strings.Contains(queryConfig, "=") {
 			m.Logger().Fatalf(`query config "%v" is not valid`, queryConfig)
 		}
 
-		query := MetricsCollectorAzureRmCostsQuery{}
-
 		queryConfigParts := strings.SplitN(queryConfig, "=", 2)
-		query.Name = queryConfigParts[0]
-		query.Dimensions = strings.Split(queryConfigParts[1], ",")
-
+		query := createCostQuery(queryConfigParts[0], queryConfigParts[1])
 		addQuery(query)
 	}
 
@@ -91,10 +121,10 @@ func (m *MetricsCollectorAzureRmCosts) collectQueries() {
 		envVal := envParts[1]
 
 		if strings.HasPrefix(envName, CostsQueryEnvVarPrefix) {
-			query := MetricsCollectorAzureRmCostsQuery{}
-			query.Name = strings.TrimPrefix(envName, CostsQueryEnvVarPrefix)
-			query.Dimensions = strings.Split(envVal, ",")
-
+			query := createCostQuery(
+				strings.TrimPrefix(envName, CostsQueryEnvVarPrefix),
+				envVal,
+			)
 			addQuery(query)
 		}
 	}
@@ -189,29 +219,22 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 		}
 
 		for _, dimension := range query.Dimensions {
-			var labelName string
-			switch {
-			case strings.EqualFold(dimension, "ResourceGroupName"):
-				labelName = "resourceGroup"
-
+			switch dimension.Label {
+			case "resourceGroup":
 				// add additional resourceGroup labels
 				costLabels = m.resourceGroupTagConfig.AddToPrometheusLabels(costLabels)
-			case strings.EqualFold(dimension, "ResourceId"):
-				labelName = "resourceID"
-
+			case "resourceID":
 				// add additional resourceGroup labels
 				costLabels = m.resourceTagConfig.AddToPrometheusLabels(costLabels)
-			default:
-				labelName = prometheusLabelReplacerRegExp.ReplaceAllString(dimension, "_")
 			}
 
-			costLabels = append(costLabels, labelName)
+			costLabels = append(costLabels, dimension.Label)
 		}
 
 		queryGaugeVec := prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: fmt.Sprintf(`azurerm_costs_%v`, query.Name),
-				Help: fmt.Sprintf(`Azure ResourceManager costmanagement query with dimensions %v`, strings.Join(query.Dimensions, ",")),
+				Name: query.MetricName,
+				Help: query.MetricHelp,
 			},
 			costLabels,
 		)
@@ -243,7 +266,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 				m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
 				subscription,
 				armcostmanagement.ExportTypeActualCost,
-				query.Dimensions,
+				query,
 				timeframe,
 			)
 		}
@@ -326,37 +349,25 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredL
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, dimensions []string, timeframe string) {
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, query MetricsCollectorAzureRmCostsQuery, timeframe string) {
 	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
 
-	costConfig := CostQueryConfig{
-		Dimensions: make([]*CostQueryConfigDimension, len(dimensions)),
-	}
+	dimensionList := make([]*CostQueryConfigDimension, len(query.Dimensions))
 
-	for i, row := range dimensions {
-		dimension := row
-
-		labelName := dimension
-		switch {
-		case strings.EqualFold(dimension, "ResourceGroupName"):
-			labelName = "resourceGroup"
-		case strings.EqualFold(dimension, "ResourceID"):
-			labelName = "resourceID"
-		}
-
+	for i, dimension := range query.Dimensions {
 		dimensionConfig := CostQueryConfigDimension{
-			Name:               dimension,
+			Name:               dimension.Dimension,
 			Type:               armcostmanagement.QueryColumnTypeDimension,
-			ResultColumnName:   dimension,
+			ResultColumnName:   dimension.Dimension,
 			ResultColumnNumber: -1,
-			LabelName:          prometheusLabelReplacerRegExp.ReplaceAllString(labelName, "_"),
+			LabelName:          dimension.Label,
 		}
 
-		if strings.Contains(dimension, ":") {
-			dimensionParts := strings.SplitN(dimension, ":", 2)
+		if strings.Contains(dimension.Dimension, ":") {
+			dimensionParts := strings.SplitN(dimension.Dimension, ":", 2)
 			switch strings.ToLower(dimensionParts[0]) {
 			case "tag":
 				dimensionConfig.Type = "TagKey"
@@ -367,11 +378,11 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 			}
 		}
 
-		costConfig.Dimensions[i] = &dimensionConfig
+		dimensionList[i] = &dimensionConfig
 	}
 
-	queryGrouping := make([]*armcostmanagement.QueryGrouping, len(costConfig.Dimensions))
-	for i, dimensionConfig := range costConfig.Dimensions {
+	queryGrouping := make([]*armcostmanagement.QueryGrouping, len(dimensionList))
+	for i, dimensionConfig := range dimensionList {
 		queryGrouping[i] = &armcostmanagement.QueryGrouping{
 			Name: &dimensionConfig.Name,
 			Type: &dimensionConfig.Type,
@@ -429,7 +440,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 			columnNumberCurrency = num
 		}
 
-		for _, dimensionConfig := range costConfig.Dimensions {
+		for _, dimensionConfig := range dimensionList {
 			if strings.EqualFold(dimensionConfig.ResultColumnName, *col.Name) {
 				dimensionConfig.ResultColumnNumber = num
 			}
@@ -442,7 +453,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		return
 	}
 
-	for _, dimensionConfig := range costConfig.Dimensions {
+	for _, dimensionConfig := range dimensionList {
 		if dimensionConfig.ResultColumnNumber == -1 {
 			logger.Warnf(`unable to detect column "%s"`, dimensionConfig.Name)
 			return
@@ -462,12 +473,14 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 			"timeframe":      timeframe,
 		}
 
-		for _, dimensionConfig := range costConfig.Dimensions {
+		for _, dimensionConfig := range dimensionList {
 			labels[dimensionConfig.LabelName] = ""
 			if row[dimensionConfig.ResultColumnNumber] != nil {
 				labels[dimensionConfig.LabelName] = row[dimensionConfig.ResultColumnNumber].(string)
 
 				switch dimensionConfig.LabelName {
+				case "subscriptionName":
+					labels[dimensionConfig.LabelName] = to.String(subscription.DisplayName)
 				case "resourceGroup":
 					// add resourceGroups labels using tag manager
 					resourceId := fmt.Sprintf(

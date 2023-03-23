@@ -3,6 +3,7 @@ package main
 import (
 	"regexp"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -39,4 +40,12 @@ func truncateStrings(s string, n int, suffix string) string {
 		n--
 	}
 	return s[:n] + suffix
+}
+
+func lowerFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	r, n := utf8.DecodeRuneInString(s)
+	return string(unicode.ToLower(r)) + s[n:]
 }
