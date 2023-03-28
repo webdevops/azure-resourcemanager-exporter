@@ -76,14 +76,12 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 	serviceprincipalsMetrics := m.Collector.GetMetricList("serviceprincipals")
 	serviceprincipalsCredentialMetrics := m.Collector.GetMetricList("serviceprincipalsCredentials")
 
-	pageIterator, err := msgraphcore.NewPageIterator(result, MsGraphClient.RequestAdapter(), models.CreateServicePrincipalCollectionResponseFromDiscriminatorValue)
+	i, err := msgraphcore.NewPageIterator[models.ServicePrincipalable](result, MsGraphClient.RequestAdapter(), models.CreateServicePrincipalCollectionResponseFromDiscriminatorValue)
 	if err != nil {
 		m.Logger().Panic(err)
 	}
 
-	err = pageIterator.Iterate(m.Context(), func(pageItem interface{}) bool {
-		serviceprincipal := pageItem.(*models.ServicePrincipal)
-
+	err = i.Iterate(m.Context(), func(serviceprincipal models.ServicePrincipalable) bool {
 		appId := to.StringLower(serviceprincipal.GetAppId())
 		objId := to.StringLower(serviceprincipal.GetId())
 

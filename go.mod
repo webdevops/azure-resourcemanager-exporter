@@ -17,20 +17,20 @@ require (
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.5.0-beta.1
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/advisor/armadvisor v1.0.0
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2 v2.0.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/advisor/armadvisor v1.1.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2 v2.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/machinelearning/armmachinelearning/v3 v3.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork v1.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcehealth/armresourcehealth v1.0.0
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.0.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.9.0
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.2.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.3.0
 	github.com/microsoft/kiota-abstractions-go v0.19.0
 	github.com/microsoftgraph/msgraph-sdk-go v0.59.0
-	github.com/microsoftgraph/msgraph-sdk-go-core v0.34.1
+	github.com/microsoftgraph/msgraph-sdk-go-core v0.35.0
 	github.com/webdevops/go-common v0.0.0-20230323215350-23bb4d4209c4
 	go.uber.org/zap v1.24.0
 )
@@ -38,7 +38,7 @@ require (
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.0-beta.4 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.2.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.0.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.1.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

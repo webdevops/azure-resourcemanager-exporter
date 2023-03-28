@@ -76,14 +76,12 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 	appsMetrics := m.Collector.GetMetricList("apps")
 	appsCredentialMetrics := m.Collector.GetMetricList("appsCredentials")
 
-	pageIterator, err := msgraphcore.NewPageIterator(result, MsGraphClient.RequestAdapter(), models.CreateApplicationCollectionResponseFromDiscriminatorValue)
+	i, err := msgraphcore.NewPageIterator[models.Applicationable](result, MsGraphClient.RequestAdapter(), models.CreateApplicationCollectionResponseFromDiscriminatorValue)
 	if err != nil {
 		m.Logger().Panic(err)
 	}
 
-	err = pageIterator.Iterate(m.Context(), func(pageItem interface{}) bool {
-		application := pageItem.(*models.Application)
-
+	err = i.Iterate(m.Context(), func(application models.Applicationable) bool {
 		appId := to.StringLower(application.GetAppId())
 		objId := to.StringLower(application.GetId())
 
