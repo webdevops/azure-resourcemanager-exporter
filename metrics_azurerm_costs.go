@@ -268,10 +268,10 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 				query,
 				timeframe,
 			)
-		}
 
-		// avoid rate limit
-		time.Sleep(opts.Costs.RequestDelay)
+			// avoid rate limit
+			time.Sleep(opts.Costs.RequestDelay)
+		}
 	}
 
 	logger.Info(`fetching cost budget report`)
