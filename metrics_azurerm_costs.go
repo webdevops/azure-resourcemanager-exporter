@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -14,6 +15,8 @@ import (
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
 	"go.uber.org/zap"
+
+	metrics "github.com/webdevops/azure-resourcemanager-exporter/policy"
 )
 
 const (
@@ -261,7 +264,9 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 		for _, query := range m.queries {
 			logger.Infof(`fetching cost report for query "%v" and timeframe "%v"`, query.Name, timeframe)
 			m.collectCostManagementMetrics(
-				logger.With(zap.String("costreport", "ActualCost")),
+				logger.With(
+					zap.String("costQuery", query.Name),
+				),
 				m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
 				subscription,
 				armcostmanagement.ExportTypeActualCost,
@@ -349,7 +354,14 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredL
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, query MetricsCollectorAzureRmCostsQuery, timeframe string) {
-	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
+	clientOpts := AzureClient.NewArmClientOptions()
+	clientOpts.Retry = policy.RetryOptions{
+		MaxRetries:    1,
+		RetryDelay:    1 * time.Minute,
+		MaxRetryDelay: 5 * time.Minute,
+	}
+	clientOpts.PerCallPolicies = append(clientOpts.PerCallPolicies, metrics.CostRateLimitPolicy{Logger: logger})
+	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), clientOpts)
 	if err != nil {
 		logger.Panic(err)
 	}
