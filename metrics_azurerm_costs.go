@@ -355,10 +355,11 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredL
 
 func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, query MetricsCollectorAzureRmCostsQuery, timeframe string) {
 	clientOpts := AzureClient.NewArmClientOptions()
+	// cost queries should not retry soo fast, we have a strict rate limit on azure side
 	clientOpts.Retry = policy.RetryOptions{
-		MaxRetries:    1,
-		RetryDelay:    1 * time.Minute,
-		MaxRetryDelay: 5 * time.Minute,
+		MaxRetries:    3,
+		RetryDelay:    30 * time.Second,
+		MaxRetryDelay: 2 * time.Minute,
 	}
 	clientOpts.PerCallPolicies = append(clientOpts.PerCallPolicies, metrics.CostRateLimitPolicy{Logger: logger})
 	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), clientOpts)

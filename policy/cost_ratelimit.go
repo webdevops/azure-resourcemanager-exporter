@@ -12,6 +12,7 @@ type CostRateLimitPolicy struct {
 }
 
 func (p CostRateLimitPolicy) Do(req *policy.Request) (*http.Response, error) {
+	p.Logger.Debugf("sending cost query")
 	// Forward the request to the next policy in the pipeline.
 	resp, err := req.Next()
 
@@ -28,6 +29,6 @@ func (p CostRateLimitPolicy) Do(req *policy.Request) (*http.Response, error) {
 
 func (p CostRateLimitPolicy) checkFoRateLimit(name, header string, resp *http.Response) {
 	if val := resp.Header.Get(header); val != "" {
-		p.Logger.Infof(`detected ratelimit "%v" of "%v"`, name, val)
+		p.Logger.Debugf(`detected ratelimit "%v" of "%v"`, name, val)
 	}
 }
