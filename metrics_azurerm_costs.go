@@ -407,8 +407,8 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	params := armcostmanagement.QueryDefinition{
 		Dataset: &armcostmanagement.QueryDataset{
 			Aggregation: map[string]*armcostmanagement.QueryAggregation{
-				"PreTaxCost": {
-					Name:     to.StringPtr("PreTaxCost"),
+				"Cost": {
+					Name:     to.StringPtr("Cost"),
 					Function: &aggregationFunction,
 				},
 			},
@@ -445,7 +445,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		}
 
 		switch stringToStringLower(*col.Name) {
-		case "pretaxcost":
+		case "cost":
 			columnNumberCost = num
 		case "currency":
 			columnNumberCurrency = num
