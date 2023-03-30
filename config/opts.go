@@ -55,6 +55,7 @@ type (
 		Costs struct {
 			Timeframe    []string      `long:"costs.timeframe"     env:"COSTS_TIMEFRAME"  env-delim:" " description:"Timeframe for cost reportings  (space delimiter)" default:"MonthToDate" default:"YearToDate"` //nolint:staticcheck
 			Queries      []string      `long:"costs.query"                                              description:"Cost query in format: 'queryname=dimension' or 'queryname=dimension1,dimension2,dimension3'. Dimensions can be: 'ResourceGroupName','ResourceLocation','ConsumedService','ResourceType','ResourceId','MeterId','BillingMonth','MeterCategory','MeterSubcategory','Meter','AccountName','DepartmentName','SubscriptionId','SubscriptionName','ServiceName','ServiceTier','EnrollmentAccountName','BillingAccountId','ResourceGuid','BillingPeriod','InvoiceNumber','ChargeType','PublisherType','ReservationId','ReservationName','Frequency','PartNumber','CostAllocationRuleName','MarkupRuleName','PricingModel'. Can be specified in env vars as COSTS_QUERY_queryname=Dimensions"`
+			ValueField   string        `long:"costs.value"                                              description:"Value field for cost query" choice:"Cost" choice:"PreTaxCost" default:"PreTaxCost"` //nolint:staticcheck
 			RequestDelay time.Duration `long:"costs.request.delay" env:"COSTS_REQUEST_DELAY" description:"Delay API requests by this time to avoid ratelimits" default:"10s"`
 		}
 

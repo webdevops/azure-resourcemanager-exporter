@@ -409,7 +409,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		Dataset: &armcostmanagement.QueryDataset{
 			Aggregation: map[string]*armcostmanagement.QueryAggregation{
 				"Cost": {
-					Name:     to.StringPtr("Cost"),
+					Name:     to.StringPtr(opts.Costs.ValueField),
 					Function: &aggregationFunction,
 				},
 			},
@@ -439,6 +439,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	// detect column numbers
 	columnNumberCost := -1
 	columnNumberCurrency := -1
+	costValueFieldName := strings.ToLower(opts.Costs.ValueField)
 
 	for num, col := range list.Columns {
 		if col.Name == nil {
@@ -446,7 +447,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		}
 
 		switch stringToStringLower(*col.Name) {
-		case "cost":
+		case costValueFieldName:
 			columnNumberCost = num
 		case "currency":
 			columnNumberCurrency = num
