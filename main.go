@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"time"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -232,6 +233,12 @@ func initMetricCollector() {
 	if opts.Scrape.Time.Costs.Seconds() > 0 {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger)
 		c.SetScapeTime(*opts.Scrape.Time.Costs)
+		// higher backoff times because of strict cost rate limits
+		c.SetBackoffDurations(
+			2*time.Minute,
+			5*time.Minute,
+			10*time.Minute,
+		)
 		c.SetCache(opts.GetCachePath("costs.json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
