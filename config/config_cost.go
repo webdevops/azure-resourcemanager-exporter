@@ -16,10 +16,12 @@ type (
 	}
 
 	CollectorCostsQuery struct {
-		Name       string   `yaml:"name"`
-		TimeFrames []string `yaml:"timeFrames"`
-		Dimensions []string `yaml:"dimensions"`
-		ValueField string   `yaml:"valueField"`
+		Name       string            `yaml:"name"`
+		Scope      *string           `yaml:"scope"`
+		TimeFrames []string          `yaml:"timeFrames"`
+		Dimensions []string          `yaml:"dimensions"`
+		ValueField string            `yaml:"valueField"`
+		Labels     map[string]string `yaml:"labels"`
 
 		config *configCollectorCostsQueryConfig
 	}
