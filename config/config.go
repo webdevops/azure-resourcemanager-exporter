@@ -9,16 +9,16 @@ type (
 	Config struct {
 		Azure      Azure `yaml:"azure"`
 		Collectors struct {
-			Exporter       CollectorBase  `yaml:"exporter"`
-			General        CollectorBase  `yaml:"general"`
-			Resource       CollectorBase  `yaml:"resource"`
-			Quota          CollectorBase  `yaml:"quota"`
-			Defender       CollectorBase  `yaml:"defender"`
-			ResourceHealth CollectorBase  `yaml:"resourceHealth"`
-			Iam            CollectorBase  `yaml:"iam"`
-			Graph          CollectorGraph `yaml:"graph"`
-			Costs          CollectorCosts `yaml:"costs"`
-			Portscan       CollectorBase  `yaml:"portscan"`
+			Exporter       CollectorBase           `yaml:"exporter"`
+			General        CollectorBase           `yaml:"general"`
+			Resource       CollectorBase           `yaml:"resource"`
+			Quota          CollectorBase           `yaml:"quota"`
+			Defender       CollectorBase           `yaml:"defender"`
+			ResourceHealth CollectorResourceHealth `yaml:"resourceHealth"`
+			Iam            CollectorBase           `yaml:"iam"`
+			Graph          CollectorGraph          `yaml:"graph"`
+			Costs          CollectorCosts          `yaml:"costs"`
+			Portscan       CollectorPortscan       `yaml:"portscan"`
 		} `yaml:"collectors"`
 	}
 
@@ -35,6 +35,12 @@ type (
 		// Cron *string
 	}
 
+	CollectorResourceHealth struct {
+		CollectorBase `yaml:",inline"`
+
+		SummaryMaxLength uint `yaml:"summaryMaxLength"`
+	}
+
 	CollectorGraph struct {
 		CollectorBase `yaml:",inline"`
 
@@ -42,6 +48,10 @@ type (
 			Application      *string `yaml:"application"`
 			ServicePrincipal *string `yaml:"servicePrincipal"`
 		} `yaml:"filter"`
+	}
+
+	CollectorPortscan struct {
+		CollectorBase `yaml:",inline"`
 	}
 )
 

@@ -25,6 +25,7 @@ collectors:
 
   resourceHealth:
     scrapeTime: 5m
+    summaryMaxLength: 0
 
   iam:
     scrapeTime: 5m

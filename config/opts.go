@@ -22,10 +22,6 @@ type (
 			Environment *string `long:"azure.environment"              env:"AZURE_ENVIRONMENT"         description:"Azure environment name" default:"AZUREPUBLICCLOUD"`
 		}
 
-		ResourceHealth struct {
-			SummaryMaxLength int `long:"resourcehealth.summary.maxlength"           env:"RESOURCEHEALTH_SUMMARY_MAXLENGTH"  description:"Max length of ResourceHealth summary label (0 = disable summary label)"  default:"0"`
-		}
-
 		// portscan settings
 		Portscan struct {
 			Enabled   bool          `long:"portscan"                      env:"PORTSCAN"                                 description:"Enable portscan for public IPs"`
