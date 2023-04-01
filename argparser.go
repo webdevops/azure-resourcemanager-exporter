@@ -12,10 +12,10 @@ func argparserParsePortrange() (errorMessage error) {
 	var firstPort int64
 	var lastPort int64
 
-	if len(opts.Portscan.PortRange) > 0 {
+	if len(Opts.Portscan.PortRange) > 0 {
 		portscanPortRange = []Portrange{}
 
-		for _, portrange := range opts.Portscan.PortRange {
+		for _, portrange := range Opts.Portscan.PortRange {
 			// parse via regexp
 			portscanRangeSubMatch := portrangeRegexp.FindStringSubmatch(portrange)
 

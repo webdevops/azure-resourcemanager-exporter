@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,6 +9,10 @@ import (
 	"regexp"
 	"runtime"
 	"time"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/webdevops/azure-resourcemanager-exporter/config"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -17,8 +22,6 @@ import (
 	"github.com/webdevops/go-common/msgraphsdk/msgraphclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"go.uber.org/zap"
-
-	"github.com/webdevops/azure-resourcemanager-exporter/config"
 )
 
 const (
@@ -28,7 +31,8 @@ const (
 
 var (
 	argparser *flags.Parser
-	opts      config.Opts
+	Opts      config.Opts
+	Config    config.Config
 
 	AzureClient                *armclient.ArmClient
 	AzureSubscriptionsIterator *armclient.SubscriptionsIterator
@@ -52,10 +56,11 @@ type Portrange struct {
 func main() {
 	initArgparser()
 	defer initLogger().Sync() // nolint:errcheck
+	initConfig()
 
 	logger.Infof("starting azure-resourcemanager-exporter v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
-	logger.Info(string(opts.GetJson()))
-	logger.Warnf("test")
+	logger.Info(string(Opts.GetJson()))
+	logger.Info(string(Config.GetJson()))
 
 	logger.Infof("init Azure connection")
 	initAzureConnection()
@@ -63,12 +68,12 @@ func main() {
 	logger.Infof("starting metrics collection")
 	initMetricCollector()
 
-	logger.Infof("starting http server on %s", opts.Server.Bind)
+	logger.Infof("starting http server on %s", Opts.Server.Bind)
 	startHttpServer()
 }
 
 func initArgparser() {
-	argparser = flags.NewParser(&opts, flags.Default)
+	argparser = flags.NewParser(&Opts, flags.Default)
 	_, err := argparser.Parse()
 
 	// check if there is an parse error
@@ -83,7 +88,7 @@ func initArgparser() {
 		}
 	}
 
-	if opts.Portscan.Enabled {
+	if Opts.Portscan.Enabled {
 		// parse --portscan-range
 		err := argparserParsePortrange()
 		if err != nil {
@@ -92,47 +97,6 @@ func initArgparser() {
 			argparser.WriteHelp(os.Stdout)
 			os.Exit(1)
 		}
-	}
-
-	// scrape time
-	if opts.Scrape.Time.General == nil {
-		opts.Scrape.Time.General = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.Resource == nil {
-		opts.Scrape.Time.Resource = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.Quota == nil {
-		opts.Scrape.Time.Quota = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.Costs == nil {
-		opts.Scrape.Time.Costs = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.Iam == nil {
-		opts.Scrape.Time.Iam = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.Defender == nil {
-		opts.Scrape.Time.Defender = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.ResourceHealth == nil {
-		opts.Scrape.Time.ResourceHealth = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.Graph == nil {
-		opts.Scrape.Time.Graph = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.Portscan == nil {
-		opts.Scrape.Time.Portscan = &opts.Scrape.Time.Default
-	}
-
-	if opts.Scrape.Time.Portscan == nil || opts.Scrape.Time.Portscan.Seconds() == 0 && opts.Portscan.Enabled {
-		logger.Fatalf(`portscan is enabled but has invalid scape time (zero)`)
 	}
 
 	// check deprecated env vars
@@ -154,11 +118,27 @@ func initArgparser() {
 	}
 }
 
+func initConfig() {
+	logger.Infof(`reading config from "%v"`, Opts.Config)
+	/* #nosec */
+	file, err := os.Open(Opts.Config)
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+
+	decoder := yaml.NewDecoder(bufio.NewReader(file))
+	decoder.KnownFields(true)
+	err = decoder.Decode(&Config)
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+}
+
 func initAzureConnection() {
 	var err error
 
-	if opts.Azure.Environment != nil {
-		if err := os.Setenv(azidentity.EnvAzureEnvironment, *opts.Azure.Environment); err != nil {
+	if Opts.Azure.Environment != nil {
+		if err := os.Setenv(azidentity.EnvAzureEnvironment, *Opts.Azure.Environment); err != nil {
 			logger.Warnf(`unable to set envvar "%s": %v`, azidentity.EnvAzureEnvironment, err.Error())
 		}
 	}
@@ -170,8 +150,8 @@ func initAzureConnection() {
 	AzureClient.SetUserAgent(UserAgent + gitTag)
 
 	// limit subscriptions (if filter is set)
-	if len(opts.Azure.Subscription) >= 1 {
-		AzureClient.SetSubscriptionFilter(opts.Azure.Subscription...)
+	if len(Config.Azure.Subscriptions) >= 1 {
+		AzureClient.SetSubscriptionFilter(Config.Azure.Subscriptions...)
 	}
 
 	if err := AzureClient.Connect(); err != nil {
@@ -184,7 +164,7 @@ func initAzureConnection() {
 func initMsGraphConnection() {
 	var err error
 	if MsGraphClient == nil {
-		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*opts.Azure.Environment, *opts.Azure.Tenant, logger)
+		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*Opts.Azure.Environment, *Opts.Azure.Tenant, logger)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -197,20 +177,18 @@ func initMetricCollector() {
 	var collectorName string
 
 	collectorName = "General"
-	if opts.Scrape.Time.General.Seconds() > 0 {
+	if Config.Collectors.General.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.General)
+		c.SetScapeTime(*Config.Collectors.General.ScrapeTime)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
-	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "Resource"
-	if opts.Scrape.Time.Resource.Seconds() > 0 {
+	if Config.Collectors.Resource.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.Resource)
+		c.SetScapeTime(*Config.Collectors.Resource.ScrapeTime)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -219,9 +197,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Quota"
-	if opts.Scrape.Time.Quota.Seconds() > 0 {
+	if Config.Collectors.Quota.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.Quota)
+		c.SetScapeTime(*Config.Collectors.Quota.ScrapeTime)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -230,16 +208,16 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Costs"
-	if opts.Scrape.Time.Costs.Seconds() > 0 {
+	if Config.Collectors.Costs.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.Costs)
+		c.SetScapeTime(*Config.Collectors.Costs.ScrapeTime)
 		// higher backoff times because of strict cost rate limits
 		c.SetBackoffDurations(
 			2*time.Minute,
 			5*time.Minute,
 			10*time.Minute,
 		)
-		c.SetCache(opts.GetCachePath("costs.json"))
+		c.SetCache(Opts.GetCachePath("costs.json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -248,9 +226,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Defender"
-	if opts.Scrape.Time.Defender.Seconds() > 0 {
+	if Config.Collectors.Defender.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.Defender)
+		c.SetScapeTime(*Config.Collectors.Defender.ScrapeTime)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -259,9 +237,9 @@ func initMetricCollector() {
 	}
 
 	collectorName = "ResourceHealth"
-	if opts.Scrape.Time.ResourceHealth.Seconds() > 0 {
+	if Config.Collectors.ResourceHealth.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.ResourceHealth)
+		c.SetScapeTime(*Config.Collectors.ResourceHealth.ScrapeTime)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -270,10 +248,10 @@ func initMetricCollector() {
 	}
 
 	collectorName = "IAM"
-	if opts.Scrape.Time.Iam.Seconds() > 0 {
+	if Config.Collectors.Iam.IsEnabled() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.Iam)
+		c.SetScapeTime(*Config.Collectors.Iam.ScrapeTime)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -282,11 +260,11 @@ func initMetricCollector() {
 	}
 
 	collectorName = "GraphApplications"
-	if opts.Scrape.Time.Graph.Seconds() > 0 {
+	if Config.Collectors.Graph.IsEnabled() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.Graph)
-		c.SetCache(opts.GetCachePath("graphApplications.json"))
+		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
+		c.SetCache(Opts.GetCachePath("graphApplications.json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -295,11 +273,11 @@ func initMetricCollector() {
 	}
 
 	collectorName = "GraphServicePrincipals"
-	if opts.Scrape.Time.Graph.Seconds() > 0 {
+	if Config.Collectors.Graph.IsEnabled() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphServicePrincipals{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.Graph)
-		c.SetCache(opts.GetCachePath("graphServicePrincipals.json"))
+		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
+		c.SetCache(Opts.GetCachePath("graphServicePrincipals.json"))
 		if err := c.Start(); err != nil {
 			logger.Panic(err.Error())
 		}
@@ -308,10 +286,10 @@ func initMetricCollector() {
 	}
 
 	collectorName = "Portscan"
-	if opts.Portscan.Enabled && opts.Scrape.Time.Portscan.Seconds() > 0 {
+	if Config.Collectors.Portscan.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger)
-		c.SetScapeTime(*opts.Scrape.Time.Portscan)
-		c.SetCache(opts.GetCachePath("portscanner.json"))
+		c.SetScapeTime(*Config.Collectors.Portscan.ScrapeTime)
+		c.SetCache(Opts.GetCachePath("portscanner.json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -343,10 +321,10 @@ func startHttpServer() {
 	)
 
 	srv := &http.Server{
-		Addr:         opts.Server.Bind,
+		Addr:         Opts.Server.Bind,
 		Handler:      mux,
-		ReadTimeout:  opts.Server.ReadTimeout,
-		WriteTimeout: opts.Server.WriteTimeout,
+		ReadTimeout:  Opts.Server.ReadTimeout,
+		WriteTimeout: Opts.Server.WriteTimeout,
 	}
 	logger.Fatal(srv.ListenAndServe())
 }

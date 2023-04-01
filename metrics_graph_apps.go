@@ -64,7 +64,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 		Headers: headers,
 		Options: nil,
 		QueryParameters: &applications.ApplicationsRequestBuilderGetQueryParameters{
-			Filter: &opts.Graph.ApplicationFilter,
+			Filter: Config.Collectors.Graph.Filter.Application,
 			Count:  &rcount,
 		},
 	}

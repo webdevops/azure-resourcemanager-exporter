@@ -3,13 +3,11 @@ package main
 import (
 	"regexp"
 	"strings"
-	"unicode"
 	"unicode/utf8"
 )
 
 var (
-	roleDefinitionIdRegExp        = regexp.MustCompile("(?i)/subscriptions/[^/]+/providers/Microsoft.Authorization/roleDefinitions/([^/]*)")
-	prometheusLabelReplacerRegExp = regexp.MustCompile(`[^a-zA-Z0-9_]`)
+	roleDefinitionIdRegExp = regexp.MustCompile("(?i)/subscriptions/[^/]+/providers/Microsoft.Authorization/roleDefinitions/([^/]*)")
 )
 
 func stringToStringLower(val string) string {
@@ -40,12 +38,4 @@ func truncateStrings(s string, n int, suffix string) string {
 		n--
 	}
 	return s[:n] + suffix
-}
-
-func lowerFirst(s string) string {
-	if s == "" {
-		return ""
-	}
-	r, n := utf8.DecodeRuneInString(s)
-	return string(unicode.ToLower(r)) + s[n:]
 }

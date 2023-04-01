@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/webdevops/go-common/utils/to"
 	"go.uber.org/zap"
 
+	"github.com/webdevops/azure-resourcemanager-exporter/config"
 	metrics "github.com/webdevops/azure-resourcemanager-exporter/policy"
 )
 
@@ -26,8 +26,6 @@ const (
 type (
 	MetricsCollectorAzureRmCosts struct {
 		collector.Processor
-
-		queries map[string]MetricsCollectorAzureRmCostsQuery
 
 		resourceTagConfig      armclient.ResourceTagConfig
 		resourceGroupTagConfig armclient.ResourceTagConfig
@@ -64,90 +62,19 @@ type (
 	}
 )
 
-func (m *MetricsCollectorAzureRmCosts) collectQueries() {
-	m.queries = map[string]MetricsCollectorAzureRmCostsQuery{}
-
-	addQuery := func(query MetricsCollectorAzureRmCostsQuery) {
-		query.Name = strings.ToLower(strings.TrimSpace(query.Name))
-
-		if _, exists := m.queries[query.Name]; exists {
-			m.Logger().Fatalf(`found duplicate query config name "%v"`, query.Name)
-		}
-		m.queries[query.Name] = query
-	}
-
-	createCostQuery := func(name string, config string) MetricsCollectorAzureRmCostsQuery {
-		dimensionList := strings.Split(config, ",")
-
-		query := MetricsCollectorAzureRmCostsQuery{
-			Name:       name,
-			MetricName: fmt.Sprintf(`azurerm_costs_%v`, name),
-			MetricHelp: fmt.Sprintf(`Azure ResourceManager costmanagement query with dimensions %v`, strings.Join(dimensionList, ",")),
-			Dimensions: []MetricsCollectorAzureRmCostsQueryDimension{},
-		}
-
-		for _, dimension := range dimensionList {
-			labelName := lowerFirst(prometheusLabelReplacerRegExp.ReplaceAllString(dimension, "_"))
-
-			switch {
-			case strings.EqualFold(dimension, "ResourceGroupName"):
-				labelName = "resourceGroup"
-			case strings.EqualFold(dimension, "ResourceId"):
-				labelName = "resourceID"
-			}
-
-			query.Dimensions = append(
-				query.Dimensions,
-				MetricsCollectorAzureRmCostsQueryDimension{
-					Dimension: dimension,
-					Label:     labelName,
-				},
-			)
-		}
-
-		return query
-	}
-
-	for _, queryConfig := range opts.Costs.Queries {
-		if !strings.Contains(queryConfig, "=") {
-			m.Logger().Fatalf(`query config "%v" is not valid`, queryConfig)
-		}
-
-		queryConfigParts := strings.SplitN(queryConfig, "=", 2)
-		query := createCostQuery(queryConfigParts[0], queryConfigParts[1])
-		addQuery(query)
-	}
-
-	for _, val := range os.Environ() {
-		envParts := strings.SplitN(val, "=", 2)
-		envName := envParts[0]
-		envVal := envParts[1]
-
-		if strings.HasPrefix(envName, CostsQueryEnvVarPrefix) {
-			query := createCostQuery(
-				strings.TrimPrefix(envName, CostsQueryEnvVarPrefix),
-				envVal,
-			)
-			addQuery(query)
-		}
-	}
-}
-
 func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 	var err error
 	m.Processor.Setup(collector)
 
-	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceTags)
+	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceTags)
 	if err != nil {
-		m.Logger().Panicf(`unable to parse resourceTag configuration "%s": %v"`, opts.Azure.ResourceTags, err.Error())
+		m.Logger().Panicf(`unable to parse resourceTag configuration "%s": %v"`, Config.Azure.ResourceTags, err.Error())
 	}
 
-	m.resourceGroupTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceGroupTags)
+	m.resourceGroupTagConfig, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceGroupTags)
 	if err != nil {
-		m.Logger().Panicf(`unable to parse resourceGroupTag configuration "%s": %v"`, opts.Azure.ResourceGroupTags, err.Error())
+		m.Logger().Panicf(`unable to parse resourceGroupTag configuration "%s": %v"`, Config.Azure.ResourceGroupTags, err.Error())
 	}
-
-	m.collectQueries()
 
 	// ----------------------------------------------------
 	// Budget
@@ -213,14 +140,16 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 	// ----------------------------------------------------
 	// Costs (by Query)
 
-	for _, query := range m.queries {
+	for _, query := range Config.Collectors.Costs.Queries {
+		queryConfig := query.GetConfig()
+
 		costLabels := []string{
 			"subscriptionID",
 			"currency",
 			"timeframe",
 		}
 
-		for _, dimension := range query.Dimensions {
+		for _, dimension := range queryConfig.Dimensions {
 			switch dimension.Label {
 			case "resourceGroup":
 				// add additional resourceGroup labels
@@ -235,8 +164,8 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 
 		queryGaugeVec := prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: query.MetricName,
-				Help: query.MetricHelp,
+				Name: query.GetMetricName(),
+				Help: query.GetMetricHelp(),
 			},
 			costLabels,
 		)
@@ -260,8 +189,8 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
-	for _, timeframe := range opts.Costs.Timeframe {
-		for _, query := range m.queries {
+	for _, query := range Config.Collectors.Costs.Queries {
+		for _, timeframe := range query.TimeFrames {
 			logger.Infof(`fetching cost report for query "%v" and timeframe "%v"`, query.Name, timeframe)
 			m.collectCostManagementMetrics(
 				logger.With(
@@ -275,7 +204,7 @@ func (m *MetricsCollectorAzureRmCosts) collectSubscription(subscription *armsubs
 			)
 
 			// avoid rate limit
-			time.Sleep(opts.Costs.RequestDelay)
+			time.Sleep(Config.Collectors.Costs.RequestDelay)
 		}
 	}
 
@@ -353,7 +282,7 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredL
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, query MetricsCollectorAzureRmCostsQuery, timeframe string) {
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, subscription *armsubscriptions.Subscription, exportType armcostmanagement.ExportType, query config.CollectorCostsQuery, timeframe string) {
 	clientOpts := AzureClient.NewArmClientOptions()
 	// cost queries should not retry soo fast, we have a strict rate limit on azure side
 	clientOpts.Retry = policy.RetryOptions{
@@ -367,9 +296,10 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		logger.Panic(err)
 	}
 
-	dimensionList := make([]*CostQueryConfigDimension, len(query.Dimensions))
+	queryConfig := query.GetConfig()
 
-	for i, dimension := range query.Dimensions {
+	dimensionList := make([]*CostQueryConfigDimension, len(query.Dimensions))
+	for i, dimension := range queryConfig.Dimensions {
 		dimensionConfig := CostQueryConfigDimension{
 			Name:               dimension.Dimension,
 			Type:               armcostmanagement.QueryColumnTypeDimension,
@@ -408,8 +338,8 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	params := armcostmanagement.QueryDefinition{
 		Dataset: &armcostmanagement.QueryDataset{
 			Aggregation: map[string]*armcostmanagement.QueryAggregation{
-				"Cost": {
-					Name:     to.StringPtr(opts.Costs.ValueField),
+				query.ValueField: {
+					Name:     to.StringPtr(query.ValueField),
 					Function: &aggregationFunction,
 				},
 			},
@@ -439,7 +369,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	// detect column numbers
 	columnNumberCost := -1
 	columnNumberCurrency := -1
-	costValueFieldName := strings.ToLower(opts.Costs.ValueField)
+	costValueFieldName := strings.ToLower(query.ValueField)
 
 	for num, col := range list.Columns {
 		if col.Name == nil {
@@ -511,7 +441,4 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 
 		metricList.Add(labels, usage)
 	}
-
-	// avoid rate limit
-	time.Sleep(opts.Costs.RequestDelay)
 }

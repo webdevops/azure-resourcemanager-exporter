@@ -157,7 +157,7 @@ func (c *Portscanner) pushResults() {
 }
 
 func (c *Portscanner) Start() {
-	portscanTimeout := time.Duration(opts.Portscan.Timeout) * time.Second
+	portscanTimeout := time.Duration(Opts.Portscan.Timeout) * time.Second
 
 	c.Callbacks.StartupScan(c)
 
@@ -165,7 +165,7 @@ func (c *Portscanner) Start() {
 	c.Cleanup()
 	c.Publish()
 
-	swg := sizedwaitgroup.New(opts.Portscan.Parallel)
+	swg := sizedwaitgroup.New(Opts.Portscan.Parallel)
 	for _, pip := range c.Data.PublicIps {
 		swg.Add()
 		go func(pip armnetwork.PublicIPAddress, portscanTimeout time.Duration) {
@@ -202,7 +202,7 @@ func (c *Portscanner) scanIp(pip armnetwork.PublicIPAddress, portscanTimeout tim
 		return
 	}
 
-	ps := scanner.NewPortScanner(ipAddress, portscanTimeout, opts.Portscan.Threads)
+	ps := scanner.NewPortScanner(ipAddress, portscanTimeout, Opts.Portscan.Threads)
 
 	for _, portrange := range portscanPortRange {
 		openedPorts := ps.GetOpenedPort(portrange.FirstPort, portrange.LastPort)

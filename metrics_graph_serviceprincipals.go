@@ -64,7 +64,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 		Headers: headers,
 		Options: nil,
 		QueryParameters: &serviceprincipals.ServicePrincipalsRequestBuilderGetQueryParameters{
-			Filter: &opts.Graph.ServicePrincipalFilter,
+			Filter: Config.Collectors.Graph.Filter.ServicePrincipal,
 			Count:  &rcount,
 		},
 	}

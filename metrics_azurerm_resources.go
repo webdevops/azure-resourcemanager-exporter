@@ -25,14 +25,14 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 	var err error
 	m.Processor.Setup(collector)
 
-	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceTags)
+	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceTags)
 	if err != nil {
-		m.Logger().Panicf(`unable to parse resourceTag configuration "%s": %v"`, opts.Azure.ResourceTags, err.Error())
+		m.Logger().Panicf(`unable to parse resourceTag configuration "%s": %v"`, Config.Azure.ResourceTags, err.Error())
 	}
 
-	m.resourceGroupTagConfig, err = AzureClient.TagManager.ParseTagConfig(opts.Azure.ResourceGroupTags)
+	m.resourceGroupTagConfig, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceGroupTags)
 	if err != nil {
-		m.Logger().Panicf(`unable to parse resourceGroupTag configuration "%s": %v"`, opts.Azure.ResourceGroupTags, err.Error())
+		m.Logger().Panicf(`unable to parse resourceGroupTag configuration "%s": %v"`, Config.Azure.ResourceGroupTags, err.Error())
 	}
 
 	m.prometheus.resource = prometheus.NewGaugeVec(

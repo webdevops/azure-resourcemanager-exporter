@@ -1,0 +1,48 @@
+---
+
+azure:
+  #subscriptions: []
+  locations: [westeurope, northeurope]
+
+  resourceTags: []
+  resourceGroupTags: []
+
+collectors:
+  exporter:
+    scrapeTime: 5m
+
+  general:
+    scrapeTime: 5m
+
+  resource:
+    scrapeTime: 5m
+
+  quota:
+    scrapeTime: 5m
+
+  defender:
+    scrapeTime: 5m
+
+  resourceHealth:
+    scrapeTime: 5m
+
+  iam:
+    scrapeTime: 5m
+
+  graph:
+    scrapeTime: 5m
+    filter:
+      application:      ""
+      servicePrincipal: ""
+
+  costs:
+    scrapeTime: 12h
+
+    queries:
+      - name: by_resourceGroup
+        dimensions: [ResourceGroupName]
+        valueField: PreTaxCost # UsageQuantity, PreTaxCost, Cost, CostUSD, PreTaxCostUSD
+        timeFrames: [MonthToDate, YearToDate]
+
+  portscan:
+    scrapeTime: 12h

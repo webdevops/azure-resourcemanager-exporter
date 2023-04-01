@@ -33,6 +33,7 @@ require (
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.36.0
 	github.com/webdevops/go-common v0.0.0-20230330213545-b38d923fadb0
 	go.uber.org/zap v1.24.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -69,5 +70,4 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

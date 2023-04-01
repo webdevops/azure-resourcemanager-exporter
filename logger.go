@@ -11,7 +11,7 @@ var (
 
 func initLogger() *zap.SugaredLogger {
 	var config zap.Config
-	if opts.Logger.Development {
+	if Opts.Logger.Development {
 		config = zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	} else {
@@ -22,12 +22,12 @@ func initLogger() *zap.SugaredLogger {
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	// debug level
-	if opts.Logger.Debug {
+	if Opts.Logger.Debug {
 		config.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
 	}
 
 	// json log format
-	if opts.Logger.Json {
+	if Opts.Logger.Json {
 		config.Encoding = "json"
 
 		// if running in containers, logs already enriched with timestamp by the container runtime

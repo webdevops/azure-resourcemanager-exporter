@@ -82,9 +82,9 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 		m.Logger().Infof(
 			"starting for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
 			len(c.Data.PublicIps),
-			opts.Portscan.Parallel,
-			opts.Portscan.Threads,
-			opts.Portscan.Timeout,
+			Opts.Portscan.Parallel,
+			Opts.Portscan.Threads,
+			Opts.Portscan.Timeout,
 			portscanPortRange,
 		)
 
@@ -140,8 +140,6 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	}
 
 	m.portscanner.Callbacks.StoreCache = func(c *Portscanner, data interface{}) {
-		fmt.Println("SET DATA")
-		fmt.Println(data)
 		m.Collector.SetData("portscanner", data)
 	}
 }

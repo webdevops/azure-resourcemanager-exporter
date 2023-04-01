@@ -234,7 +234,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 // 	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
 // 	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 //
-// 	for _, location := range opts.Azure.Location {
+// 	for _, location := range Opts.Azure.Location {
 // 		scope := "/subscriptions/{subscriptionId}/providers/{provider}/locations/{location}"
 // 		scope = strings.ReplaceAll(scope, "{subscriptionId}", url.PathEscape(*subscription.SubscriptionID))
 // 		scope = strings.ReplaceAll(scope, "{provider}", url.PathEscape(provider))
@@ -295,7 +295,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
 	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
-	for _, location := range opts.Azure.Location {
+	for _, location := range Config.Azure.Locations {
 		pager := client.NewListPager(location, nil)
 
 		for pager.More() {
@@ -354,7 +354,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
 	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
-	for _, location := range opts.Azure.Location {
+	for _, location := range Config.Azure.Locations {
 		pager := client.NewListPager(location, nil)
 
 		for pager.More() {
@@ -413,7 +413,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
 	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
-	for _, location := range opts.Azure.Location {
+	for _, location := range Config.Azure.Locations {
 		pager := client.NewListByLocationPager(location, nil)
 
 		for pager.More() {
@@ -472,7 +472,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscrip
 	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
 	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
-	for _, location := range opts.Azure.Location {
+	for _, location := range Config.Azure.Locations {
 		pager := client.NewListPager(location, nil)
 
 		for pager.More() {
