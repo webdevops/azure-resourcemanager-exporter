@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
@@ -134,8 +133,6 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	}
 
 	m.portscanner.Callbacks.RestoreCache = func(c *Portscanner) interface{} {
-		fmt.Println("GET DATA")
-		fmt.Println(m.Collector.GetData("portscanner"))
 		return m.Collector.GetData("portscanner")
 	}
 
