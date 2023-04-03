@@ -34,25 +34,6 @@ type (
 		ScrapeTime *time.Duration `yaml:"scrapeTime"`
 		// Cron *string
 	}
-
-	CollectorResourceHealth struct {
-		CollectorBase `yaml:",inline"`
-
-		SummaryMaxLength uint `yaml:"summaryMaxLength"`
-	}
-
-	CollectorGraph struct {
-		CollectorBase `yaml:",inline"`
-
-		Filter struct {
-			Application      *string `yaml:"application"`
-			ServicePrincipal *string `yaml:"servicePrincipal"`
-		} `yaml:"filter"`
-	}
-
-	CollectorPortscan struct {
-		CollectorBase `yaml:",inline"`
-	}
 )
 
 func (c *CollectorBase) IsEnabled() bool {
