@@ -31,7 +31,7 @@ require (
 	github.com/microsoft/kiota-abstractions-go v0.19.0
 	github.com/microsoftgraph/msgraph-sdk-go v0.60.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v0.36.0
-	github.com/webdevops/go-common v0.0.0-20230330213545-b38d923fadb0
+	github.com/webdevops/go-common v0.0.0-20230403225740-11187aea7272
 	go.uber.org/zap v1.24.0
 	gopkg.in/yaml.v3 v3.0.1
 )
