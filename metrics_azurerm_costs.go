@@ -208,17 +208,19 @@ func (m *MetricsCollectorAzureRmCosts) collectRunQuery(query *config.CollectorCo
 	queryLogger := logger.With(zap.String("query", query.Name))
 	for _, timeframe := range query.TimeFrames {
 		timeframeLogger := queryLogger.With(zap.String("timeframe", timeframe))
-		if query.Scope != nil {
+		if query.Scopes != nil && len(*query.Scopes) > 0 {
 			// using custom scope
-			m.collectCostManagementMetrics(
-				timeframeLogger,
-				m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
-				*query.Scope,
-				armcostmanagement.ExportTypeActualCost,
-				query,
-				timeframe,
-				nil,
-			)
+			for _, scope := range *query.Scopes {
+				m.collectCostManagementMetrics(
+					timeframeLogger,
+					m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
+					scope,
+					armcostmanagement.ExportTypeActualCost,
+					query,
+					timeframe,
+					nil,
+				)
+			}
 		} else {
 			// using subscription iterator
 			iterator := AzureSubscriptionsIterator

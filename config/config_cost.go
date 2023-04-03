@@ -17,7 +17,7 @@ type (
 
 	CollectorCostsQuery struct {
 		Name          string            `yaml:"name"`
-		Scope         *string           `yaml:"scope"`
+		Scopes        *[]string         `yaml:"scopes"`
 		Subscriptions *[]string         `yaml:"subscriptions"`
 		TimeFrames    []string          `yaml:"timeFrames"`
 		Dimensions    []string          `yaml:"dimensions"`
