@@ -14,7 +14,7 @@ type (
 			Json        bool `long:"log.json"     env:"LOG_JSON"   description:"Switch log output to json format"`
 		}
 
-		Config string `long:"config"                   env:"CONFIG"           description:"Path to config file" required:"true"`
+		Config string `long:"config"  env:"CONFIG"  description:"Path to config file" required:"true"`
 
 		// azure
 		Azure struct {
