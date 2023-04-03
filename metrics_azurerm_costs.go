@@ -187,51 +187,12 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmCosts) Reset() {}
 
 func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
-	for _, query := range Config.Collectors.Costs.Queries {
-		if query.Scope != nil {
-			for _, timeframe := range query.TimeFrames {
-				logger.Infof(`fetching cost report for query "%v" and timeframe "%v"`, query.Name, timeframe)
-				m.collectCostManagementMetrics(
-					logger.With(
-						zap.String("costQuery", query.Name),
-					),
-					m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
-					*query.Scope,
-					armcostmanagement.ExportTypeActualCost,
-					query,
-					timeframe,
-					nil,
-				)
-
-				// avoid rate limit
-				time.Sleep(Config.Collectors.Costs.RequestDelay)
-			}
-		}
+	for _, row := range Config.Collectors.Costs.Queries {
+		query := row
+		m.collectRunQuery(&query, callback)
 	}
 
 	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
-		for _, query := range Config.Collectors.Costs.Queries {
-			if query.Scope == nil {
-				for _, timeframe := range query.TimeFrames {
-					logger.Infof(`fetching cost report for query "%v" and timeframe "%v"`, query.Name, timeframe)
-					m.collectCostManagementMetrics(
-						logger.With(
-							zap.String("costQuery", query.Name),
-						),
-						m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
-						*subscription.ID,
-						armcostmanagement.ExportTypeActualCost,
-						query,
-						timeframe,
-						subscription,
-					)
-
-					// avoid rate limit
-					time.Sleep(Config.Collectors.Costs.RequestDelay)
-				}
-			}
-		}
-
 		logger.Info(`fetching cost budget report`)
 		m.collectBugdetMetrics(
 			logger.With(zap.String("consumption", "Budgets")),
@@ -240,6 +201,48 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 	})
 	if err != nil {
 		m.Logger().Panic(err)
+	}
+}
+
+func (m *MetricsCollectorAzureRmCosts) collectRunQuery(query *config.CollectorCostsQuery, callback chan<- func()) {
+	queryLogger := logger.With(zap.String("query", query.Name))
+	for _, timeframe := range query.TimeFrames {
+		timeframeLogger := queryLogger.With(zap.String("timeframe", timeframe))
+		if query.Scope != nil {
+			// using custom scope
+			m.collectCostManagementMetrics(
+				timeframeLogger,
+				m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
+				*query.Scope,
+				armcostmanagement.ExportTypeActualCost,
+				query,
+				timeframe,
+				nil,
+			)
+		} else {
+			// using subscription iterator
+			iterator := AzureSubscriptionsIterator
+			if query.Subscriptions != nil && len(*query.Subscriptions) > 0 {
+				iterator = armclient.NewSubscriptionIterator(AzureClient, *query.Subscriptions...)
+			}
+
+			err := iterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+				subscriptionLogger := timeframeLogger.With(zap.String("subscriptionID", *subscription.SubscriptionID))
+				m.collectCostManagementMetrics(
+					subscriptionLogger,
+					m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
+					*subscription.ID,
+					armcostmanagement.ExportTypeActualCost,
+					query,
+					timeframe,
+					subscription,
+				)
+
+			})
+			if err != nil {
+				m.Logger().Panic(err)
+			}
+		}
 	}
 }
 
@@ -310,7 +313,9 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredL
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, scope string, exportType armcostmanagement.ExportType, query config.CollectorCostsQuery, timeframe string, subscription *armsubscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, scope string, exportType armcostmanagement.ExportType, query *config.CollectorCostsQuery, timeframe string, subscription *armsubscriptions.Subscription) {
+	logger.Infof(`fetching cost report for query "%v"`, query.Name)
+
 	clientOpts := AzureClient.NewArmClientOptions()
 	// cost queries should not retry soo fast, we have a strict rate limit on azure side
 	clientOpts.Retry = policy.RetryOptions{
@@ -483,4 +488,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 
 		metricList.Add(labels, usage)
 	}
+
+	// avoid rate limit
+	time.Sleep(Config.Collectors.Costs.RequestDelay)
 }

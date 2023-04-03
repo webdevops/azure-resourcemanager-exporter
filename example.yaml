@@ -52,6 +52,8 @@ collectors:
         # '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope
         # '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners
 
+        #subscriptions: [...] # limit by subscriptions
+
         dimensions: [ResourceGroupName] # see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
         valueField: PreTaxCost # UsageQuantity, PreTaxCost, Cost, CostUSD, PreTaxCostUSD, see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
         timeFrames: [MonthToDate, YearToDate] # see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
