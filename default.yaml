@@ -1,0 +1,33 @@
+---
+azure:
+  #subscriptions: []
+  locations: []
+
+  resourceTags: []
+  resourceGroupTags: []
+
+collectors:
+  exporter: {}
+
+  general: {}
+
+  resource: {}
+
+  quota: {}
+
+  defender: {}
+
+  resourceHealth: {}
+
+  iam: {}
+
+  graph: {}
+
+  costs: {}
+
+  portscan:
+    scanner:
+      parallel: 2
+      threads: 1000
+      timeout: 5
+      ports: [22,80,443,3389]

@@ -7,21 +7,21 @@ import (
 )
 
 // parse --portscan-range
-func argparserParsePortrange() (errorMessage error) {
+func parseConfigPortScannerPortrange() (errorMessage error) {
 	var err error
 	var firstPort int64
 	var lastPort int64
 
-	if len(Opts.Portscan.PortRange) > 0 {
+	if len(Config.Collectors.Portscan.Scanner.Ports) > 0 {
 		portscanPortRange = []Portrange{}
 
-		for _, portrange := range Opts.Portscan.PortRange {
+		for _, portrange := range Config.Collectors.Portscan.Scanner.Ports {
 			// parse via regexp
 			portscanRangeSubMatch := portrangeRegexp.FindStringSubmatch(portrange)
 
 			if len(portscanRangeSubMatch) == 0 {
 				// portrange is invalid
-				errorMessage = fmt.Errorf("unable to parse \"--portscan-range\", has to be format \"nnn-mmm\"")
+				errorMessage = fmt.Errorf("unable to parse collectors.portscan.scanner.ports, has to be format \"nnn-mmm\"")
 				return
 			}
 
@@ -36,7 +36,7 @@ func argparserParsePortrange() (errorMessage error) {
 			// parse first port
 			firstPort, err = strconv.ParseInt(portscanRangeSubMatchResult["first"], 10, 32)
 			if err != nil {
-				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": %w", err)
+				errorMessage = fmt.Errorf("failed to parse collectors.portscan.scanner.ports: %w", err)
 				return
 			}
 
@@ -44,7 +44,7 @@ func argparserParsePortrange() (errorMessage error) {
 			if portscanRangeSubMatchResult["last"] != "" {
 				lastPort, err = strconv.ParseInt(portscanRangeSubMatchResult["last"], 10, 32)
 				if err != nil {
-					errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": %w", err)
+					errorMessage = fmt.Errorf("failed to parse collectors.portscan.scanner.ports: %w", err)
 					return
 				}
 			} else {
@@ -54,19 +54,19 @@ func argparserParsePortrange() (errorMessage error) {
 
 			// check min port
 			if firstPort < 1 {
-				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": first port cannot be smaller then 0 (%v -> %v)", firstPort, lastPort)
+				errorMessage = fmt.Errorf("failed to parse collectors.portscan.scanner.ports: first port cannot be smaller then 0 (%v -> %v)", firstPort, lastPort)
 				return
 			}
 
 			// check max port
 			if lastPort > 65535 {
-				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": last port cannot be bigger then 65535 (%v -> %v)", firstPort, lastPort)
+				errorMessage = fmt.Errorf("failed to parse collectors.portscan.scanner.ports: last port cannot be bigger then 65535 (%v -> %v)", firstPort, lastPort)
 				return
 			}
 
 			// check if range is ok
 			if firstPort > lastPort {
-				errorMessage = fmt.Errorf("failed to parse \"--portscan-range\": first port cannot be beyond last port (%v -> %v)", firstPort, lastPort)
+				errorMessage = fmt.Errorf("failed to parse collectors.portscan.scanner.ports: first port cannot be beyond last port (%v -> %v)", firstPort, lastPort)
 				return
 			}
 
@@ -77,7 +77,7 @@ func argparserParsePortrange() (errorMessage error) {
 			)
 		}
 	} else {
-		errorMessage = errors.New("no port range available, set via \"--portscan-range\"")
+		errorMessage = errors.New("no port range available, set via collectors.portscan.scanner.ports")
 		return
 	}
 

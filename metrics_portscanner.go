@@ -81,9 +81,9 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 		m.Logger().Infof(
 			"starting for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
 			len(c.Data.PublicIps),
-			Opts.Portscan.Parallel,
-			Opts.Portscan.Threads,
-			Opts.Portscan.Timeout,
+			Config.Collectors.Portscan.Scanner.Parallel,
+			Config.Collectors.Portscan.Scanner.Threads,
+			Config.Collectors.Portscan.Scanner.Timeout,
 			portscanPortRange,
 		)
 

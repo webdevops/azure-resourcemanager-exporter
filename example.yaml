@@ -9,10 +9,10 @@ azure:
 
 collectors:
   exporter:
-    scrapeTime: 5m
+    scrapeTime: null
 
   general:
-    scrapeTime: 5m
+    scrapeTime:
 
   resource:
     scrapeTime: 5m
@@ -37,7 +37,7 @@ collectors:
       servicePrincipal: ""
 
   costs:
-    scrapeTime: 12h
+    scrapeTime: 5m
 
     queries:
       - name: by_resourceGroup # azurerm_costs_${name}
@@ -61,3 +61,5 @@ collectors:
 
   portscan:
     scrapeTime: 12h
+    scanner:
+      parallel: 10

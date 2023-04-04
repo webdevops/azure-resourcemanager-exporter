@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	_ "embed"
 	"errors"
 	"fmt"
 	"net/http"
@@ -33,6 +35,9 @@ var (
 	argparser *flags.Parser
 	Opts      config.Opts
 	Config    config.Config
+
+	//go:embed default.yaml
+	defaultConfig []byte
 
 	AzureClient                *armclient.ArmClient
 	AzureSubscriptionsIterator *armclient.SubscriptionsIterator
@@ -88,17 +93,6 @@ func initArgparser() {
 		}
 	}
 
-	if Opts.Portscan.Enabled {
-		// parse --portscan-range
-		err := argparserParsePortrange()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v%v\n", "[ERROR] ", err.Error())
-			fmt.Println()
-			argparser.WriteHelp(os.Stdout)
-			os.Exit(1)
-		}
-	}
-
 	// check deprecated env vars
 	deprecatedEnvVars := map[string]string{
 		"SCRAPE_TIME_CONTAINERREGISTRY": "not supported anymore",
@@ -119,6 +113,14 @@ func initArgparser() {
 }
 
 func initConfig() {
+	var err error
+	decoder := yaml.NewDecoder(bytes.NewReader(defaultConfig))
+	decoder.KnownFields(true)
+	err = decoder.Decode(&Config)
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
+
 	logger.Infof(`reading config from "%v"`, Opts.Config)
 	/* #nosec */
 	file, err := os.Open(Opts.Config)
@@ -126,7 +128,7 @@ func initConfig() {
 		logger.Fatal(err.Error())
 	}
 
-	decoder := yaml.NewDecoder(bufio.NewReader(file))
+	decoder = yaml.NewDecoder(bufio.NewReader(file))
 	decoder.KnownFields(true)
 	err = decoder.Decode(&Config)
 	if err != nil {
@@ -287,6 +289,12 @@ func initMetricCollector() {
 
 	collectorName = "Portscan"
 	if Config.Collectors.Portscan.IsEnabled() {
+		// parse collectors.portscan.scanner.ports
+		err := parseConfigPortScannerPortrange()
+		if err != nil {
+			logger.Fatal(err)
+		}
+
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger)
 		c.SetScapeTime(*Config.Collectors.Portscan.ScrapeTime)
 		c.SetCache(Opts.GetCachePath("portscanner.json"))
