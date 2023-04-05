@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
+	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -188,14 +191,16 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmCosts) Reset() {}
 
 func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
+	// run cost queries
 	for _, row := range Config.Collectors.Costs.Queries {
 		query := row
-		m.collectRunQuery(&query, callback)
+		m.collectRunCostQuery(&query, callback)
 	}
 
+	// run budget collection
 	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 		logger.Info(`fetching cost budget report`)
-		m.collectBugdetMetrics(
+		m.collectBudgetMetrics(
 			logger.With(zap.String("consumption", "Budgets")),
 			subscription,
 		)
@@ -205,7 +210,7 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectRunQuery(query *config.CollectorCostsQuery, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.CollectorCostsQuery, callback chan<- func()) {
 	queryLogger := logger.With(zap.String("query", query.Name))
 	for _, timeframe := range query.TimeFrames {
 		timeframeLogger := queryLogger.With(zap.String("timeframe", timeframe))
@@ -249,7 +254,7 @@ func (m *MetricsCollectorAzureRmCosts) collectRunQuery(query *config.CollectorCo
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredLogger, subscription *armsubscriptions.Subscription) {
+func (m *MetricsCollectorAzureRmCosts) collectBudgetMetrics(logger *zap.SugaredLogger, subscription *armsubscriptions.Subscription) {
 	client, err := armconsumption.NewBudgetsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
@@ -376,7 +381,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		TimePeriod: nil,
 	}
 
-	result, err := m.sendCostQuery(m.Context(), scope, params, nil)
+	result, err := m.sendCostQuery(m.Context(), logger, scope, params, nil)
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -483,7 +488,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	time.Sleep(Config.Collectors.Costs.RequestDelay)
 }
 
-func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, scope string, parameters armcostmanagement.QueryDefinition, options *armcostmanagement.QueryClientUsageOptions) (armcostmanagement.QueryClientUsageResponse, error) {
+func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger *zap.SugaredLogger, scope string, parameters armcostmanagement.QueryDefinition, options *armcostmanagement.QueryClientUsageOptions) (armcostmanagement.QueryClientUsageResponse, error) {
 	clientOpts := AzureClient.NewArmClientOptions()
 
 	// cost queries should not retry soo fast, we have a strict rate limit on azure side
@@ -496,12 +501,60 @@ func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, scope 
 
 	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), clientOpts)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic(err.Error())
 	}
 
 	result, err := client.Usage(ctx, scope, parameters, nil)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic(err.Error())
+	}
+
+	// paging
+	pl, err := armruntime.NewPipeline("azurerm-costs", gitTag, AzureClient.GetCred(), runtime.PipelineOptions{}, AzureClient.NewArmClientOptions())
+	if err != nil {
+		logger.Panic(err.Error())
+	}
+
+	nextLink := result.Properties.NextLink
+	for {
+		if nextLink != nil && *nextLink != "" {
+			err := func() error {
+				req, err := runtime.NewRequest(ctx, http.MethodPost, *nextLink)
+				if err != nil {
+					return err
+				}
+				err = runtime.MarshalAsJSON(req, parameters)
+				if err != nil {
+					return err
+				}
+
+				resp, err := pl.Do(req)
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
+
+				if runtime.HasStatusCode(resp, http.StatusOK) {
+					pagerResult := armcostmanagement.QueryClientUsageResponse{}
+					if err := runtime.UnmarshalAsJSON(resp, &pagerResult); err == nil {
+						result.Properties.Rows = append(result.Properties.Rows, pagerResult.Properties.Rows...)
+						nextLink = pagerResult.Properties.NextLink
+					} else {
+						logger.Panic(err.Error())
+					}
+				} else {
+					return fmt.Errorf(`unexpected status code: %v`, resp.StatusCode)
+				}
+
+				return nil
+			}()
+			if err != nil {
+				return result, err
+			}
+
+		} else {
+			break
+		}
 	}
 
 	return result, err
