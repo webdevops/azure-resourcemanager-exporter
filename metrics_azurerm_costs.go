@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -318,19 +319,6 @@ func (m *MetricsCollectorAzureRmCosts) collectBugdetMetrics(logger *zap.SugaredL
 func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, scope string, exportType armcostmanagement.ExportType, query *config.CollectorCostsQuery, timeframe string, subscription *armsubscriptions.Subscription) {
 	logger.Infof(`fetching cost report for query "%v"`, query.Name)
 
-	clientOpts := AzureClient.NewArmClientOptions()
-	// cost queries should not retry soo fast, we have a strict rate limit on azure side
-	clientOpts.Retry = policy.RetryOptions{
-		MaxRetries:    3,
-		RetryDelay:    30 * time.Second,
-		MaxRetryDelay: 2 * time.Minute,
-	}
-	clientOpts.PerCallPolicies = append(clientOpts.PerCallPolicies, metrics.CostRateLimitPolicy{Logger: logger})
-	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), clientOpts)
-	if err != nil {
-		logger.Panic(err)
-	}
-
 	queryConfig := query.GetConfig()
 
 	dimensionList := make([]*CostQueryConfigDimension, len(query.Dimensions))
@@ -388,7 +376,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		TimePeriod: nil,
 	}
 
-	result, err := client.Usage(m.Context(), scope, params, nil)
+	result, err := m.sendCostQuery(m.Context(), scope, params, nil)
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -493,4 +481,28 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 
 	// avoid rate limit
 	time.Sleep(Config.Collectors.Costs.RequestDelay)
+}
+
+func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, scope string, parameters armcostmanagement.QueryDefinition, options *armcostmanagement.QueryClientUsageOptions) (armcostmanagement.QueryClientUsageResponse, error) {
+	clientOpts := AzureClient.NewArmClientOptions()
+
+	// cost queries should not retry soo fast, we have a strict rate limit on azure side
+	clientOpts.Retry = policy.RetryOptions{
+		MaxRetries:    3,
+		RetryDelay:    30 * time.Second,
+		MaxRetryDelay: 2 * time.Minute,
+	}
+	clientOpts.PerCallPolicies = append(clientOpts.PerCallPolicies, metrics.CostRateLimitPolicy{Logger: logger})
+
+	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), clientOpts)
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	result, err := client.Usage(ctx, scope, parameters, nil)
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	return result, err
 }
