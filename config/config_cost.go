@@ -17,6 +17,7 @@ type (
 
 	CollectorCostsQuery struct {
 		Name          string            `yaml:"name"`
+		Help          *string           `yaml:"help"`
 		Scopes        *[]string         `yaml:"scopes"`
 		Subscriptions *[]string         `yaml:"subscriptions"`
 		TimeFrames    []string          `yaml:"timeFrames"`
@@ -42,7 +43,11 @@ func (q *CollectorCostsQuery) GetMetricName() string {
 }
 
 func (q *CollectorCostsQuery) GetMetricHelp() string {
-	return fmt.Sprintf(`Azure ResourceManager costmanagement query with dimensions %v`, strings.Join(q.Dimensions, ", "))
+	if q.Help != nil {
+		return *q.Help
+	} else {
+		return fmt.Sprintf(`Azure ResourceManager costmanagement query with dimensions %v`, strings.Join(q.Dimensions, ", "))
+	}
 }
 
 func (q *CollectorCostsQuery) GetConfig() *configCollectorCostsQueryConfig {

@@ -41,6 +41,7 @@ collectors:
 
     queries:
       - name: by_resourceGroup # azurerm_costs_${name}
+        help: Costs by ResourceGroup # metric help, optional
         #scopes: [...] # optional, see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
         # '/subscriptions/{subscriptionId}/' for subscription scope
         # '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope
