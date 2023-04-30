@@ -39,8 +39,10 @@ var (
 	//go:embed default.yaml
 	defaultConfig []byte
 
-	AzureClient                *armclient.ArmClient
-	AzureSubscriptionsIterator *armclient.SubscriptionsIterator
+	AzureClient                  *armclient.ArmClient
+	AzureSubscriptionsIterator   *armclient.SubscriptionsIterator
+	AzureResourceTagManager      *armclient.ResourceTagManager
+	AzureResourceGroupTagManager *armclient.ResourceTagManager
 
 	MsGraphClient *msgraphclient.MsGraphClient
 
@@ -161,6 +163,16 @@ func initAzureConnection() {
 	}
 
 	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient)
+
+	AzureResourceTagManager, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceTags)
+	if err != nil {
+		logger.Fatal(`unable to parse resourceTag configuration "%s": %v"`, Config.Azure.ResourceTags, err.Error())
+	}
+
+	AzureResourceGroupTagManager, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceGroupTags)
+	if err != nil {
+		logger.Fatal(`unable to parse resourceGroupTag configuration "%s": %v"`, Config.Azure.ResourceGroupTags, err.Error())
+	}
 }
 
 func initMsGraphConnection() {

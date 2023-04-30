@@ -31,9 +31,6 @@ type (
 	MetricsCollectorAzureRmCosts struct {
 		collector.Processor
 
-		resourceTagConfig      armclient.ResourceTagConfig
-		resourceGroupTagConfig armclient.ResourceTagConfig
-
 		prometheus struct {
 			consumptionBudgetInfo    *prometheus.GaugeVec
 			consumptionBudgetLimit   *prometheus.GaugeVec
@@ -67,18 +64,7 @@ type (
 )
 
 func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
-	var err error
 	m.Processor.Setup(collector)
-
-	m.resourceTagConfig, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceTags)
-	if err != nil {
-		m.Logger().Panicf(`unable to parse resourceTag configuration "%s": %v"`, Config.Azure.ResourceTags, err.Error())
-	}
-
-	m.resourceGroupTagConfig, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceGroupTags)
-	if err != nil {
-		m.Logger().Panicf(`unable to parse resourceGroupTag configuration "%s": %v"`, Config.Azure.ResourceGroupTags, err.Error())
-	}
 
 	// ----------------------------------------------------
 	// Budget
@@ -159,10 +145,10 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			switch dimension.Label {
 			case "resourceGroup":
 				// add additional resourceGroup labels
-				costLabels = m.resourceGroupTagConfig.AddToPrometheusLabels(costLabels)
+				costLabels = AzureResourceGroupTagManager.AddToPrometheusLabels(costLabels)
 			case "resourceID":
 				// add additional resourceGroup labels
-				costLabels = m.resourceTagConfig.AddToPrometheusLabels(costLabels)
+				costLabels = AzureResourceTagManager.AddToPrometheusLabels(costLabels)
 			}
 
 			costLabels = append(costLabels, dimension.Label)
@@ -468,11 +454,11 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 							to.StringLower(subscription.SubscriptionID),
 							resourceGroup,
 						)
-						labels = AzureClient.TagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, resourceId, m.resourceGroupTagConfig)
+						labels = AzureResourceGroupTagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, resourceId)
 					}
 				case "resourceID":
 					// add resource labels using tag manager
-					labels = AzureClient.TagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, row[dimensionConfig.ResultColumnNumber].(string), m.resourceTagConfig)
+					labels = AzureResourceTagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, row[dimensionConfig.ResultColumnNumber].(string))
 				}
 			}
 		}
