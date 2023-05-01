@@ -9,7 +9,6 @@ type (
 	Config struct {
 		Azure      Azure `yaml:"azure"`
 		Collectors struct {
-			Exporter       CollectorBase           `yaml:"exporter"`
 			General        CollectorBase           `yaml:"general"`
 			Resource       CollectorBase           `yaml:"resource"`
 			Quota          CollectorBase           `yaml:"quota"`

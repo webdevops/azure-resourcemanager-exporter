@@ -7,8 +7,6 @@ azure:
   resourceGroupTags: []
 
 collectors:
-  exporter: {}
-
   general: {}
 
   resource: {}
