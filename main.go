@@ -229,7 +229,7 @@ func initMetricCollector() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger)
 		c.SetScapeTime(*Config.Collectors.Costs.ScrapeTime)
 		// higher backoff times because of strict cost rate limits
-		c.SetBackoffDurations(
+		c.SetPanicBackoffDurations(
 			2*time.Minute,
 			5*time.Minute,
 			10*time.Minute,
