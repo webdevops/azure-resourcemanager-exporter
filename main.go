@@ -190,21 +190,21 @@ func initMsGraphConnection() {
 func initMetricCollector() {
 	var collectorName string
 
-	collectorName = "General"
+	collectorName = "general"
 	if Config.Collectors.General.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, logger)
 		c.SetScapeTime(*Config.Collectors.General.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("general.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	}
 
-	collectorName = "Resource"
+	collectorName = "resource"
 	if Config.Collectors.Resource.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, logger)
 		c.SetScapeTime(*Config.Collectors.Resource.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("resource.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -212,11 +212,11 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "Quota"
+	collectorName = "quota"
 	if Config.Collectors.Quota.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, logger)
 		c.SetScapeTime(*Config.Collectors.Quota.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("quota.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -224,7 +224,7 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "Costs"
+	collectorName = "costs"
 	if Config.Collectors.Costs.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger)
 		c.SetScapeTime(*Config.Collectors.Costs.ScrapeTime)
@@ -234,7 +234,7 @@ func initMetricCollector() {
 			5*time.Minute,
 			10*time.Minute,
 		)
-		c.SetCache(Opts.GetCachePath("costs.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -242,11 +242,11 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "Defender"
+	collectorName = "defender"
 	if Config.Collectors.Defender.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger)
 		c.SetScapeTime(*Config.Collectors.Defender.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("defender.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -254,11 +254,11 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "ResourceHealth"
+	collectorName = "resourceHealth"
 	if Config.Collectors.ResourceHealth.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, logger)
 		c.SetScapeTime(*Config.Collectors.ResourceHealth.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("resourcehealth.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -266,12 +266,12 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "IAM"
+	collectorName = "iam"
 	if Config.Collectors.Iam.IsEnabled() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, logger)
 		c.SetScapeTime(*Config.Collectors.Iam.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("iam.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -279,12 +279,12 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "GraphApplications"
+	collectorName = "graphApplications"
 	if Config.Collectors.Graph.IsEnabled() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, logger)
 		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("graph-applications.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -292,12 +292,12 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "GraphServicePrincipals"
+	collectorName = "graphServicePrincipals"
 	if Config.Collectors.Graph.IsEnabled() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphServicePrincipals{}, logger)
 		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("graph-serviceprincipals.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Panic(err.Error())
 		}
@@ -305,7 +305,7 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "Portscan"
+	collectorName = "portscan"
 	if Config.Collectors.Portscan.IsEnabled() {
 		// parse collectors.portscan.scanner.ports
 		err := parseConfigPortScannerPortrange()
@@ -315,7 +315,7 @@ func initMetricCollector() {
 
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger)
 		c.SetScapeTime(*Config.Collectors.Portscan.ScrapeTime)
-		c.SetCache(Opts.GetCachePath("portscan.json"))
+		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
