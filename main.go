@@ -53,6 +53,9 @@ var (
 	// Git version information
 	gitCommit = "<unknown>"
 	gitTag    = "<unknown>"
+
+	// cache config
+	cacheTag = "v1"
 )
 
 type Portrange struct {
@@ -189,12 +192,13 @@ func initMsGraphConnection() {
 
 func initMetricCollector() {
 	var collectorName string
+	var collectorCacheTag = cacheTag
 
 	collectorName = "general"
 	if Config.Collectors.General.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, logger)
 		c.SetScapeTime(*Config.Collectors.General.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -204,7 +208,7 @@ func initMetricCollector() {
 	if Config.Collectors.Resource.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, logger)
 		c.SetScapeTime(*Config.Collectors.Resource.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -216,7 +220,7 @@ func initMetricCollector() {
 	if Config.Collectors.Quota.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, logger)
 		c.SetScapeTime(*Config.Collectors.Quota.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -234,7 +238,7 @@ func initMetricCollector() {
 			5*time.Minute,
 			10*time.Minute,
 		)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -246,7 +250,7 @@ func initMetricCollector() {
 	if Config.Collectors.Defender.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger)
 		c.SetScapeTime(*Config.Collectors.Defender.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -258,7 +262,7 @@ func initMetricCollector() {
 	if Config.Collectors.ResourceHealth.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, logger)
 		c.SetScapeTime(*Config.Collectors.ResourceHealth.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -271,7 +275,7 @@ func initMetricCollector() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, logger)
 		c.SetScapeTime(*Config.Collectors.Iam.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -284,7 +288,7 @@ func initMetricCollector() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, logger)
 		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -297,7 +301,7 @@ func initMetricCollector() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphServicePrincipals{}, logger)
 		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Panic(err.Error())
 		}
@@ -315,7 +319,7 @@ func initMetricCollector() {
 
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger)
 		c.SetScapeTime(*Config.Collectors.Portscan.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName + ".json"))
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
