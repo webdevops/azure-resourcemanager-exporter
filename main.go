@@ -165,13 +165,16 @@ func initAzureConnection() {
 		logger.Fatal(err.Error())
 	}
 
+	// init subscription iterator
 	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient, Config.Azure.Subscriptions...)
 
+	// init resource tag manager
 	AzureResourceTagManager, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceTags)
 	if err != nil {
 		logger.Fatal(`unable to parse resourceTag configuration "%s": %v"`, Config.Azure.ResourceTags, err.Error())
 	}
 
+	// init resourceGroup tag manager
 	AzureResourceGroupTagManager, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceGroupTags)
 	if err != nil {
 		logger.Fatal(`unable to parse resourceGroupTag configuration "%s": %v"`, Config.Azure.ResourceGroupTags, err.Error())
@@ -238,7 +241,7 @@ func initMetricCollector() {
 			5*time.Minute,
 			10*time.Minute,
 		)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -250,7 +253,7 @@ func initMetricCollector() {
 	if Config.Collectors.Defender.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger)
 		c.SetScapeTime(*Config.Collectors.Defender.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -262,7 +265,7 @@ func initMetricCollector() {
 	if Config.Collectors.ResourceHealth.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, logger)
 		c.SetScapeTime(*Config.Collectors.ResourceHealth.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -275,7 +278,7 @@ func initMetricCollector() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, logger)
 		c.SetScapeTime(*Config.Collectors.Iam.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -288,7 +291,7 @@ func initMetricCollector() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, logger)
 		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -301,7 +304,7 @@ func initMetricCollector() {
 		initMsGraphConnection()
 		c := collector.New(collectorName, &MetricsCollectorGraphServicePrincipals{}, logger)
 		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Panic(err.Error())
 		}
@@ -319,7 +322,7 @@ func initMetricCollector() {
 
 		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger)
 		c.SetScapeTime(*Config.Collectors.Portscan.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
