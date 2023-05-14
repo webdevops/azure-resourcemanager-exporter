@@ -165,7 +165,7 @@ func initAzureConnection() {
 		logger.Fatal(err.Error())
 	}
 
-	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient)
+	AzureSubscriptionsIterator = armclient.NewSubscriptionIterator(AzureClient, Config.Azure.Subscriptions...)
 
 	AzureResourceTagManager, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceTags)
 	if err != nil {
