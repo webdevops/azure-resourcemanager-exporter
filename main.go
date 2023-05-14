@@ -192,13 +192,13 @@ func initMsGraphConnection() {
 
 func initMetricCollector() {
 	var collectorName string
-	var collectorCacheTag = cacheTag
+	var collectorCacheTag = collector.BuildCacheTag(cacheTag, Config)
 
 	collectorName = "general"
 	if Config.Collectors.General.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, logger)
 		c.SetScapeTime(*Config.Collectors.General.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -208,7 +208,7 @@ func initMetricCollector() {
 	if Config.Collectors.Resource.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, logger)
 		c.SetScapeTime(*Config.Collectors.Resource.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -220,7 +220,7 @@ func initMetricCollector() {
 	if Config.Collectors.Quota.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, logger)
 		c.SetScapeTime(*Config.Collectors.Quota.ScrapeTime)
-		c.SetCache(Opts.GetCachePath(collectorName+".json"), &collectorCacheTag)
+		c.SetCache(Opts.GetCachePath(collectorName+".json"), collectorCacheTag)
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
