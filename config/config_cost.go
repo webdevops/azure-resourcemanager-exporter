@@ -16,16 +16,24 @@ type (
 	}
 
 	CollectorCostsQuery struct {
-		Name          string            `yaml:"name"`
-		Help          *string           `yaml:"help"`
-		Scopes        *[]string         `yaml:"scopes"`
-		Subscriptions *[]string         `yaml:"subscriptions"`
-		TimeFrames    []string          `yaml:"timeFrames"`
-		Dimensions    []string          `yaml:"dimensions"`
-		ValueField    string            `yaml:"valueField"`
-		Labels        map[string]string `yaml:"labels"`
+		Name          string                         `yaml:"name"`
+		Help          *string                        `yaml:"help"`
+		Scopes        *[]string                      `yaml:"scopes"`
+		Subscriptions *[]string                      `yaml:"subscriptions"`
+		TimeFrames    []string                       `yaml:"timeFrames"`
+		Dimensions    []string                       `yaml:"dimensions"`
+		Granularity   string                         `yaml:"granularity"`
+		ValueField    string                         `yaml:"valueField"`
+		Labels        map[string]string              `yaml:"labels"`
+		TimePeriod    *CollectorCostsQueryTimePeriod `yaml:"timePeriod"`
 
 		config *configCollectorCostsQueryConfig
+	}
+	CollectorCostsQueryTimePeriod struct {
+		From         *time.Time     `yaml:"from"`
+		FromDuration *time.Duration `yaml:"fromDuration"`
+		To           *time.Time     `yaml:"to"`
+		ToDuration   *time.Duration `yaml:"toDuration"`
 	}
 
 	configCollectorCostsQueryConfig struct {

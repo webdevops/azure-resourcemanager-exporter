@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -138,6 +139,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 			"subscriptionID",
 			"currency",
 			"timeframe",
+			"granularity",
 		}
 
 		// add dimension labels
@@ -157,6 +159,10 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 		// add additional query labels
 		for labelName := range query.Labels {
 			costLabels = append(costLabels, labelName)
+		}
+
+		if query.Granularity == "Daily" || query.Granularity == "Monthly" {
+			costLabels = append(costLabels, "date")
 		}
 
 		queryGaugeVec := prometheus.NewGaugeVec(
@@ -345,7 +351,32 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		}
 	}
 
-	granularity := armcostmanagement.GranularityType("none")
+	granularity := armcostmanagement.GranularityType(query.Granularity)
+	timePeriod := armcostmanagement.QueryTimePeriod{}
+
+	if query.TimePeriod != nil {
+		if query.TimePeriod.From != nil {
+			timePeriod.From = query.TimePeriod.From
+		} else if query.TimePeriod.FromDuration != nil {
+			now := time.Now()
+			fromPeriod := now.Add(*query.TimePeriod.FromDuration)
+			timePeriod.From = &fromPeriod
+		}
+
+		if query.TimePeriod.To != nil {
+			timePeriod.To = query.TimePeriod.To
+		} else if query.TimePeriod.ToDuration != nil {
+			now := time.Now()
+			toPeriod := now.Add(*query.TimePeriod.ToDuration)
+			timePeriod.To = &toPeriod
+		}
+	}
+
+	if timeframe == "Custom" && (timePeriod.From == nil || timePeriod.To == nil) {
+		logger.Panic("If custom, then a specific time period must be provided.")
+		return
+	}
+
 	timeframeType := armcostmanagement.TimeframeType(timeframe)
 
 	aggregationFunction := armcostmanagement.FunctionTypeSum
@@ -367,6 +398,10 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		TimePeriod: nil,
 	}
 
+	if timeframe == "Custom" {
+		params.TimePeriod = &timePeriod
+	}
+
 	result, err := m.sendCostQuery(m.Context(), logger, scope, params, nil)
 	if err != nil {
 		logger.Panic(err)
@@ -383,10 +418,19 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	// detect column numbers
 	columnNumberCost := -1
 	columnNumberCurrency := -1
+	columnNumberGranularityDate := -1
 	costValueFieldName := strings.ToLower(query.ValueField)
 
 	for num, col := range list.Columns {
 		if col.Name == nil {
+			continue
+		}
+
+		if query.Granularity == "Daily" && *col.Name == "UsageDate" {
+			columnNumberGranularityDate = num
+			continue
+		} else if query.Granularity == "Monthly" && *col.Name == "BillingMonth" {
+			columnNumberGranularityDate = num
 			continue
 		}
 
@@ -429,10 +473,30 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 			"subscriptionID": "",
 			"currency":       stringToStringLower(row[columnNumberCurrency].(string)),
 			"timeframe":      timeframe,
+			"granularity":    stringToStringLower(query.Granularity),
 		}
 
 		if subscription != nil {
 			labels["subscriptionID"] = *subscription.SubscriptionID
+		}
+
+		if columnNumberGranularityDate != -1 {
+			date := int64(0)
+			switch v := row[columnNumberGranularityDate].(type) {
+			case float64:
+				datetime, err := time.Parse("20060102", strconv.FormatFloat(v, 'g', 8, 64))
+				if err != nil {
+					logger.Errorf("Can't parse date %d", v)
+				}
+				date = datetime.Unix()
+			case string:
+				datetime, err := time.Parse("2006-01-02T00:00:00", v)
+				if err != nil {
+					logger.Errorf("Can't parse date %s", v)
+				}
+				date = datetime.Unix()
+			}
+			labels["date"] = strconv.FormatInt(date, 10)
 		}
 
 		for _, dimensionConfig := range dimensionList {
