@@ -207,8 +207,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.3 h1:RP3t2pwF7cMEbC1dqtB6poj3niw/9gnV4Cjg5oW5gtY=
 github.com/stretchr/testify v1.8.3/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/webdevops/go-common v0.0.0-20230524233947-147e2e534cbb h1:xb6TsfNzOFB6XYaH8Vp8sGMLQ13SWn1G0PUIBuLoc18=
-github.com/webdevops/go-common v0.0.0-20230524233947-147e2e534cbb/go.mod h1:wNGdk1gzJ34q6no/M80Fr3qrLUO5cFWmP/QBrJRedwU=
+github.com/webdevops/go-common v0.0.0-20230529221324-3af117a55c51 h1:SzjFKHAyJZobMWz+jng0Lknzpn4jlPgM0BXzp++WtmQ=
+github.com/webdevops/go-common v0.0.0-20230529221324-3af117a55c51/go.mod h1:wNGdk1gzJ34q6no/M80Fr3qrLUO5cFWmP/QBrJRedwU=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415/go.mod h1:GwrjFmJcFw6At/Gs6z4yjiIwzuJ1/+UwLxMQDVQXShQ=
 github.com/xeipuuv/gojsonschema v1.2.0/go.mod h1:anYRn/JVcOK2ZgGU+IjEV4nwlhoK5sQluxsYJ78Id3Y=

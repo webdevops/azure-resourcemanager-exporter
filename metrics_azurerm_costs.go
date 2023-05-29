@@ -446,16 +446,17 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 						labels[dimensionConfig.LabelName] = to.String(subscription.DisplayName)
 					}
 				case "resourceGroup":
+					resourceId := ""
 					resourceGroup := row[dimensionConfig.ResultColumnNumber].(string)
 					if subscription != nil && resourceGroup != "" {
 						// add resourceGroups labels using tag manager
-						resourceId := fmt.Sprintf(
+						resourceId = fmt.Sprintf(
 							"/subscriptions/%s/resourceGroups/%s",
 							to.StringLower(subscription.SubscriptionID),
 							resourceGroup,
 						)
-						labels = AzureResourceGroupTagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, resourceId)
 					}
+					labels = AzureResourceGroupTagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, resourceId)
 				case "resourceID":
 					// add resource labels using tag manager
 					labels = AzureResourceTagManager.AddResourceTagsToPrometheusLabels(m.Context(), labels, row[dimensionConfig.ResultColumnNumber].(string))
