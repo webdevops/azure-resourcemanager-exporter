@@ -86,6 +86,14 @@ collectors:
         # see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
         dimensions: [ResourceGroupName]
 
+        # None, Daily, Monthly, Accumulated
+        granularity: None
+
+        # timePeriod:
+        #   fromDuration: -720h
+        #   toDuration: 0s
+
+
         # UsageQuantity, PreTaxCost, Cost, CostUSD, PreTaxCostUSD, see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
         valueField: PreTaxCost
 
