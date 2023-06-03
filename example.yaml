@@ -84,6 +84,8 @@ collectors:
         #subscriptions: [...]
 
         # see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
+        # for tags use format: tag:{tagname}
+        #                  eg: tag:owner
         dimensions: [ResourceGroupName]
 
         # None, Daily, Monthly, Accumulated
@@ -92,7 +94,6 @@ collectors:
         # timePeriod:
         #   fromDuration: -720h
         #   toDuration: 0s
-
 
         # UsageQuantity, PreTaxCost, Cost, CostUSD, PreTaxCostUSD, see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
         valueField: PreTaxCost
