@@ -97,24 +97,6 @@ func initArgparser() {
 			os.Exit(1)
 		}
 	}
-
-	// check deprecated env vars
-	deprecatedEnvVars := map[string]string{
-		"SCRAPE_TIME_CONTAINERREGISTRY": "not supported anymore",
-		"SCRAPE_TIME_CONTAINERINSTANCE": "not supported anymore",
-		"SCRAPE_TIME_EVENTHUB":          "not supported anymore",
-		"SCRAPE_TIME_STORAGE":           "not supported anymore",
-		"SCRAPE_TIME_COMPUTE":           "not supported anymore",
-		"SCRAPE_TIME_NETWORK":           "not supported anymore",
-		"SCRAPE_TIME_DATABASE":          "not supported anymore",
-		"SCRAPE_TIME_COMPUTING":         "deprecated, please use SCRAPE_TIME_COMPUTE",
-		"SCRAPE_TIME_SECURITY":          "deprecated, please use SCRAPE_TIME_DEFENDER",
-	}
-	for envVar, reason := range deprecatedEnvVars {
-		if os.Getenv(envVar) != "" {
-			logger.Fatalf("env var %v is %v", envVar, reason)
-		}
-	}
 }
 
 func initConfig() {
