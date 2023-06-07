@@ -34,7 +34,7 @@ func (m *MetricsCollectorAzureRmDefender) Setup(collector *collector.Collector) 
 	m.prometheus.defenderSecureScorePercentage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_defender_secure_score_percentage",
-			Help: "Azure Audit Defender secure score in percent",
+			Help: "Azure Defender secure score in percent",
 		},
 		[]string{
 			"subscriptionID",
@@ -46,7 +46,7 @@ func (m *MetricsCollectorAzureRmDefender) Setup(collector *collector.Collector) 
 	m.prometheus.defenderSecureScoreMax = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_defender_secure_score_max",
-			Help: "Azure Audit Defender secure score max",
+			Help: "Azure Defender maximum secure score which can be achieved",
 		},
 		[]string{
 			"subscriptionID",
@@ -58,7 +58,7 @@ func (m *MetricsCollectorAzureRmDefender) Setup(collector *collector.Collector) 
 	m.prometheus.defenderSecureScoreCurrent = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_defender_secure_score_current",
-			Help: "Azure Audit Defender secure score current",
+			Help: "Azure Defender current secure score",
 		},
 		[]string{
 			"subscriptionID",
@@ -70,7 +70,7 @@ func (m *MetricsCollectorAzureRmDefender) Setup(collector *collector.Collector) 
 	m.prometheus.defenderComplianceScore = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_defender_compliance_score",
-			Help: "Azure Audit Defender compliance score",
+			Help: "Azure Defender compliance score",
 		},
 		[]string{
 			"subscriptionID",
@@ -82,7 +82,7 @@ func (m *MetricsCollectorAzureRmDefender) Setup(collector *collector.Collector) 
 	m.prometheus.defenderComplianceResourceCount = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_defender_compliance_resources",
-			Help: "Azure Audit Defender compliance score",
+			Help: "Azure Defender count of compliance resource in assessment",
 		},
 		[]string{
 			"subscriptionID",
@@ -93,7 +93,7 @@ func (m *MetricsCollectorAzureRmDefender) Setup(collector *collector.Collector) 
 	m.prometheus.defenderAdvisorRecommendations = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_defender_advisor_recommendation",
-			Help: "Azure Audit Advisor recommendation",
+			Help: "Azure Advisor recommendation",
 		},
 		[]string{
 			"subscriptionID",
