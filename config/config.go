@@ -36,7 +36,7 @@ type (
 )
 
 func (c *CollectorBase) IsEnabled() bool {
-	return c.ScrapeTime != nil && c.ScrapeTime.Seconds() >= 0
+	return c.ScrapeTime != nil && c.ScrapeTime.Seconds() > 0
 }
 
 func (c *Config) GetJson() []byte {
