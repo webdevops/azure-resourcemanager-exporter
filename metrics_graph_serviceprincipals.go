@@ -16,18 +16,19 @@ type MetricsCollectorGraphServicePrincipals struct {
 	collector.Processor
 
 	prometheus struct {
-		serviceprincipals            *prometheus.GaugeVec
-		serviceprincipalsCredentials *prometheus.GaugeVec
+		serviceprincipal           *prometheus.GaugeVec
+		serviceprincipalTag        *prometheus.GaugeVec
+		serviceprincipalCredential *prometheus.GaugeVec
 	}
 }
 
 func (m *MetricsCollectorGraphServicePrincipals) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
 
-	m.prometheus.serviceprincipals = prometheus.NewGaugeVec(
+	m.prometheus.serviceprincipal = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_graph_serviceprincipal_info",
-			Help: "Azure GraphQL serviceprincipals information",
+			Help: "Azure GraphQL serviceprincipal information",
 		},
 		[]string{
 			"appAppID",
@@ -35,9 +36,22 @@ func (m *MetricsCollectorGraphServicePrincipals) Setup(collector *collector.Coll
 			"appDisplayName",
 		},
 	)
-	m.Collector.RegisterMetricList("serviceprincipals", m.prometheus.serviceprincipals, true)
+	m.Collector.RegisterMetricList("serviceprincipal", m.prometheus.serviceprincipal, true)
 
-	m.prometheus.serviceprincipalsCredentials = prometheus.NewGaugeVec(
+	m.prometheus.serviceprincipalTag = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_graph_serviceprincipal_tag",
+			Help: "Azure GraphQL serviceprincipal tag",
+		},
+		[]string{
+			"appAppID",
+			"appObjectID",
+			"appTag",
+		},
+	)
+	m.Collector.RegisterMetricList("serviceprincipalTag", m.prometheus.serviceprincipalTag, true)
+
+	m.prometheus.serviceprincipalCredential = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_graph_serviceprincipal_credential",
 			Help: "Azure GraphQL serviceprincipal credentials status",
@@ -50,7 +64,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Setup(collector *collector.Coll
 			"type",
 		},
 	)
-	m.Collector.RegisterMetricList("serviceprincipalsCredentials", m.prometheus.serviceprincipalsCredentials, true)
+	m.Collector.RegisterMetricList("serviceprincipalCredential", m.prometheus.serviceprincipalCredential, true)
 }
 
 func (m *MetricsCollectorGraphServicePrincipals) Reset() {}
@@ -73,8 +87,9 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 		m.Logger().Panic(err)
 	}
 
-	serviceprincipalsMetrics := m.Collector.GetMetricList("serviceprincipals")
-	serviceprincipalsCredentialMetrics := m.Collector.GetMetricList("serviceprincipalsCredentials")
+	serviceprincipalMetrics := m.Collector.GetMetricList("serviceprincipal")
+	serviceprincipalTagMetrics := m.Collector.GetMetricList("serviceprincipalTag")
+	serviceprincipalCredentialMetrics := m.Collector.GetMetricList("serviceprincipalCredential")
 
 	i, err := msgraphcore.NewPageIterator[models.ServicePrincipalable](result, MsGraphClient.RequestAdapter(), models.CreateServicePrincipalCollectionResponseFromDiscriminatorValue)
 	if err != nil {
@@ -85,16 +100,24 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 		appId := to.StringLower(serviceprincipal.GetAppId())
 		objId := to.StringLower(serviceprincipal.GetId())
 
-		serviceprincipalsMetrics.AddInfo(prometheus.Labels{
+		serviceprincipalMetrics.AddInfo(prometheus.Labels{
 			"appAppID":       appId,
 			"appObjectID":    objId,
 			"appDisplayName": to.String(serviceprincipal.GetDisplayName()),
 		})
 
+		for _, tagValue := range serviceprincipal.GetTags() {
+			serviceprincipalTagMetrics.AddInfo(prometheus.Labels{
+				"appAppID":    appId,
+				"appObjectID": objId,
+				"appTag":      tagValue,
+			})
+		}
+
 		for _, credential := range serviceprincipal.GetPasswordCredentials() {
 			credential.GetDisplayName()
 			if credential.GetStartDateTime() != nil {
-				serviceprincipalsCredentialMetrics.AddTime(prometheus.Labels{
+				serviceprincipalCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
@@ -104,7 +127,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 			}
 
 			if credential.GetEndDateTime() != nil {
-				serviceprincipalsCredentialMetrics.AddTime(prometheus.Labels{
+				serviceprincipalCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
@@ -117,7 +140,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 		for _, credential := range serviceprincipal.GetKeyCredentials() {
 			credential.GetDisplayName()
 			if credential.GetStartDateTime() != nil {
-				serviceprincipalsCredentialMetrics.AddTime(prometheus.Labels{
+				serviceprincipalCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
@@ -127,7 +150,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 			}
 
 			if credential.GetEndDateTime() != nil {
-				serviceprincipalsCredentialMetrics.AddTime(prometheus.Labels{
+				serviceprincipalCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),

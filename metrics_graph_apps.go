@@ -16,15 +16,16 @@ type MetricsCollectorGraphApps struct {
 	collector.Processor
 
 	prometheus struct {
-		apps            *prometheus.GaugeVec
-		appsCredentials *prometheus.GaugeVec
+		app           *prometheus.GaugeVec
+		appTags       *prometheus.GaugeVec
+		appCredential *prometheus.GaugeVec
 	}
 }
 
 func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
 
-	m.prometheus.apps = prometheus.NewGaugeVec(
+	m.prometheus.app = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_graph_app_info",
 			Help: "Azure GraphQL applications information",
@@ -35,9 +36,22 @@ func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
 			"appDisplayName",
 		},
 	)
-	m.Collector.RegisterMetricList("apps", m.prometheus.apps, true)
+	m.Collector.RegisterMetricList("app", m.prometheus.app, true)
 
-	m.prometheus.appsCredentials = prometheus.NewGaugeVec(
+	m.prometheus.appTags = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_graph_app_tag",
+			Help: "Azure GraphQL applications tag",
+		},
+		[]string{
+			"appAppID",
+			"appObjectID",
+			"appTag",
+		},
+	)
+	m.Collector.RegisterMetricList("appTag", m.prometheus.appTags, true)
+
+	m.prometheus.appCredential = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_graph_app_credential",
 			Help: "Azure GraphQL application credentials status",
@@ -50,7 +64,7 @@ func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
 			"type",
 		},
 	)
-	m.Collector.RegisterMetricList("appsCredentials", m.prometheus.appsCredentials, true)
+	m.Collector.RegisterMetricList("appCredential", m.prometheus.appCredential, true)
 }
 
 func (m *MetricsCollectorGraphApps) Reset() {}
@@ -73,8 +87,9 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 		m.Logger().Panic(err)
 	}
 
-	appsMetrics := m.Collector.GetMetricList("apps")
-	appsCredentialMetrics := m.Collector.GetMetricList("appsCredentials")
+	appMetrics := m.Collector.GetMetricList("app")
+	appTagMetrics := m.Collector.GetMetricList("appTag")
+	appCredentialMetrics := m.Collector.GetMetricList("appCredential")
 
 	i, err := msgraphcore.NewPageIterator[models.Applicationable](result, MsGraphClient.RequestAdapter(), models.CreateApplicationCollectionResponseFromDiscriminatorValue)
 	if err != nil {
@@ -85,16 +100,24 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 		appId := to.StringLower(application.GetAppId())
 		objId := to.StringLower(application.GetId())
 
-		appsMetrics.AddInfo(prometheus.Labels{
+		appMetrics.AddInfo(prometheus.Labels{
 			"appAppID":       appId,
 			"appObjectID":    objId,
 			"appDisplayName": to.String(application.GetDisplayName()),
 		})
 
+		for _, tagValue := range application.GetTags() {
+			appTagMetrics.AddInfo(prometheus.Labels{
+				"appAppID":    appId,
+				"appObjectID": objId,
+				"appTag":      tagValue,
+			})
+		}
+
 		for _, credential := range application.GetPasswordCredentials() {
 			credential.GetDisplayName()
 			if credential.GetStartDateTime() != nil {
-				appsCredentialMetrics.AddTime(prometheus.Labels{
+				appCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
@@ -104,7 +127,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 			}
 
 			if credential.GetEndDateTime() != nil {
-				appsCredentialMetrics.AddTime(prometheus.Labels{
+				appCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
@@ -117,7 +140,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 		for _, credential := range application.GetKeyCredentials() {
 			credential.GetDisplayName()
 			if credential.GetStartDateTime() != nil {
-				appsCredentialMetrics.AddTime(prometheus.Labels{
+				appCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),
@@ -127,7 +150,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 			}
 
 			if credential.GetEndDateTime() != nil {
-				appsCredentialMetrics.AddTime(prometheus.Labels{
+				appCredentialMetrics.AddTime(prometheus.Labels{
 					"appAppID":       appId,
 					"credentialName": to.String(credential.GetDisplayName()),
 					"credentialID":   strings.ToLower(credential.GetKeyId().String()),

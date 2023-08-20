@@ -94,8 +94,10 @@ This exporter needs `Reader` permissions on subscription level.
 | `azurerm_defender_compliance_resources`     | Defender   | Azure Defender count of compliance resource in assessment                                    |
 | `azurerm_defender_advisor_recommendation`   | Defender   | Azure Defender recommendations (eg. security findings)                                       |
 | `azurerm_graph_app_info`                    | Graph      | AzureAD graph application information                                                        |
+| `azurerm_graph_app_tag`                     | Graph      | AzureAD graph application tag                                                                |
 | `azurerm_graph_app_credential`              | Graph      | AzureAD graph application credentials (create,expiry) information                            |
 | `azurerm_graph_serviceprincipal_info`       | Graph      | AzureAD graph servicePrincipal information                                                   |
+| `azurerm_graph_serviceprincipal_tag`        | Graph      | AzureAD graph servicePrincipal tag                                                           |
 | `azurerm_graph_serviceprincipal_credential` | Graph      | AzureAD graph servicePrincipal credentials (create,expiry) information                       |
 | `azurerm_publicip_info`                     | Portscan   | Azure PublicIP information                                                                   |
 | `azurerm_publicip_portscan_status`          | Portscan   | Status of scanned ports (finished scan, elapsed time, updated timestamp)                     |
