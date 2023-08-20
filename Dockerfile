@@ -28,9 +28,9 @@ COPY --from=build /go/src/github.com/webdevops/azure-resourcemanager-exporter/az
 RUN ["./azure-resourcemanager-exporter", "--help"]
 
 #############################################
-# Final
+# final-static
 #############################################
-FROM gcr.io/distroless/static
+FROM gcr.io/distroless/static as final-static
 ENV LOG_JSON=1
 WORKDIR /
 COPY --from=test /app .
