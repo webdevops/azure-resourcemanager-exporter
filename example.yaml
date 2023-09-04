@@ -107,7 +107,7 @@ collectors:
   # Portscan of Azure Public IPs
   portscan:
     scrapeTime: 12h
-    scanner:
+    scanner: {}
       # How many Azure Public IPs are scanned in parallel
       # parallel: 2
 

@@ -12,7 +12,7 @@ import (
 	"runtime"
 	"time"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
 
@@ -101,8 +101,9 @@ func initArgparser() {
 
 func initConfig() {
 	var err error
+
 	decoder := yaml.NewDecoder(bytes.NewReader(defaultConfig))
-	decoder.KnownFields(true)
+	decoder.SetStrict(true)
 	err = decoder.Decode(&Config)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -116,7 +117,7 @@ func initConfig() {
 	}
 
 	decoder = yaml.NewDecoder(bufio.NewReader(file))
-	decoder.KnownFields(true)
+	decoder.SetStrict(true)
 	err = decoder.Decode(&Config)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -140,7 +141,7 @@ func initAzureConnection() {
 
 	// limit subscriptions (if filter is set)
 	if len(Config.Azure.Subscriptions) >= 1 {
-		AzureClient.SetSubscriptionFilter(Config.Azure.Subscriptions...)
+		AzureClient.AddSubscriptionID(Config.Azure.Subscriptions...)
 	}
 
 	if err := AzureClient.Connect(); err != nil {

@@ -344,7 +344,8 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	}
 
 	queryGrouping := make([]*armcostmanagement.QueryGrouping, len(dimensionList))
-	for i, dimensionConfig := range dimensionList {
+	for i, row := range dimensionList {
+		dimensionConfig := row
 		queryGrouping[i] = &armcostmanagement.QueryGrouping{
 			Name: &dimensionConfig.Name,
 			Type: &dimensionConfig.Type,
