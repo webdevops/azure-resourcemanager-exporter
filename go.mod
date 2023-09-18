@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.8.0-beta.2
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.8.0-beta.3
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.3.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/advisor/armadvisor v1.1.0
