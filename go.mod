@@ -49,13 +49,13 @@ require (
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/uuid v1.3.1 // indirect
+	github.com/google/uuid v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/microsoft/kiota-abstractions-go v1.2.0
+	github.com/microsoft/kiota-abstractions-go v1.4.0
 	github.com/microsoft/kiota-authentication-azure-go v1.0.0 // indirect
 	github.com/microsoft/kiota-http-go v1.1.0 // indirect
 	github.com/microsoft/kiota-serialization-form-go v1.0.0 // indirect
@@ -73,10 +73,9 @@ require (
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/webdevops/go-common v0.0.0-20230904210511-501ff6faf39b
-	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
-	go.opentelemetry.io/otel v1.17.0 // indirect
-	go.opentelemetry.io/otel/metric v1.17.0 // indirect
-	go.opentelemetry.io/otel/trace v1.17.0 // indirect
+	go.opentelemetry.io/otel v1.19.0 // indirect
+	go.opentelemetry.io/otel/metric v1.19.0 // indirect
+	go.opentelemetry.io/otel/trace v1.19.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0
 	golang.org/x/net v0.14.0 // indirect
@@ -99,4 +98,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require github.com/microsoft/kiota-serialization-multipart-go v1.0.0 // indirect
+require (
+	github.com/microsoft/kiota-serialization-multipart-go v1.0.0 // indirect
+	github.com/std-uritemplate/std-uritemplate/go v0.0.46 // indirect
+)
