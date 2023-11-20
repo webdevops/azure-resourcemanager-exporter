@@ -21,42 +21,6 @@ azure:
   resourceGroupTags: []
 
 collectors:
-  # Subscription metrics
-  general:
-    # Defines how often it should scrape (not defined or 0 = disabled)
-    scrapeTime: 5m
-
-  # Resource and ResourceGroup metrics
-  resource:
-    scrapeTime: 5m
-
-  # Subscription quotas (needs locations)
-  quota:
-    scrapeTime: 5m
-
-  # Defender (security) metrics
-  # score, recommendations, ...
-  defender:
-    scrapeTime: 5m
-
-  # Health status of resources
-  resourceHealth:
-    scrapeTime: 5m
-    summaryMaxLength: 0
-
-  # RoleDefinitions & RoleAssignments
-  iam:
-    scrapeTime: 5m
-
-  # MsMgraph metrics (applications, serviceprincipals incl. credential/secrets expiry time)
-  graph:
-    scrapeTime: 5m
-    filter:
-      application:      ""
-      servicePrincipal: ""
-
-  # Azure cost metrics (cost queries, budgets)
-  # needs queries below
   costs:
     scrapeTime: 5m
 
@@ -89,11 +53,11 @@ collectors:
         dimensions: [ResourceGroupName]
 
         # None, Daily, Monthly, Accumulated
-        granularity: None
+        granularity: Monthly
 
-        # timePeriod:
-        #   fromDuration: -720h
-        #   toDuration: 0s
+        timePeriod:
+          fromDuration: -7200h
+          toDuration: 0s
 
         # UsageQuantity, PreTaxCost, Cost, CostUSD, PreTaxCostUSD, see https://learn.microsoft.com/en-us/rest/api/cost-management/query/usage?tabs=HTTP
         valueField: PreTaxCost
@@ -103,19 +67,3 @@ collectors:
 
         # optional, additional static labels
         labels: {}
-
-  # Portscan of Azure Public IPs
-  portscan:
-    scrapeTime: 12h
-    scanner: {}
-      # How many Azure Public IPs are scanned in parallel
-      # parallel: 2
-
-      # How many ports are scanned in parallel
-      # threads: 1000
-
-      # Timeout in seconds
-      # timeout: 5
-
-      # Ports to scan
-      # ports: [22,80,443,3389]

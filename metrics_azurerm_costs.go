@@ -162,7 +162,7 @@ func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 		}
 
 		if query.Granularity == "Daily" || query.Granularity == "Monthly" {
-			costLabels = append(costLabels, "date")
+			costLabels = append(costLabels, "date", "dateISO")
 		}
 
 		queryGaugeVec := prometheus.NewGaugeVec(
@@ -483,6 +483,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 
 		if columnNumberGranularityDate != -1 {
 			date := int64(0)
+			dateISO := ""
 			switch v := row[columnNumberGranularityDate].(type) {
 			case float64:
 				datetime, err := time.Parse("20060102", strconv.FormatFloat(v, 'g', 8, 64))
@@ -490,14 +491,17 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 					logger.Errorf("Can't parse date %d", v)
 				}
 				date = datetime.Unix()
+				dateISO = datetime.Format(time.RFC3339)
 			case string:
 				datetime, err := time.Parse("2006-01-02T00:00:00", v)
 				if err != nil {
 					logger.Errorf("Can't parse date %s", v)
 				}
 				date = datetime.Unix()
+				dateISO = datetime.Format(time.RFC3339)
 			}
 			labels["date"] = strconv.FormatInt(date, 10)
+			labels["dateISO"] = dateISO
 		}
 
 		for _, dimensionConfig := range dimensionList {
