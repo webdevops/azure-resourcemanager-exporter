@@ -6,7 +6,7 @@ require (
 	github.com/anvie/port-scanner v0.0.0-20180225151059-8159197d3770
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/prometheus/client_golang v1.17.0
+	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
