@@ -22,6 +22,7 @@ type (
 		Subscriptions *[]string                      `yaml:"subscriptions"`
 		TimeFrames    []string                       `yaml:"timeFrames"`
 		Dimensions    []string                       `yaml:"dimensions"`
+		ExportType    string 						 `yaml:"exportType"`
 		Granularity   string                         `yaml:"granularity"`
 		ValueField    string                         `yaml:"valueField"`
 		Labels        map[string]string              `yaml:"labels"`
@@ -81,6 +82,8 @@ func (q *CollectorCostsQuery) GetConfig() *configCollectorCostsQueryConfig {
 					Label:     labelName,
 				},
 			)
+
+			q.config.ExportType = q.ExportType
 		}
 	}
 
