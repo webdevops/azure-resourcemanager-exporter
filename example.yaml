@@ -52,6 +52,9 @@ collectors:
         #                  eg: tag:owner
         dimensions: [ResourceGroupName]
 
+        # ActualCost, AmortizedCost
+        exportType: ActualCost
+        
         # None, Daily, Monthly, Accumulated
         granularity: Monthly
 
