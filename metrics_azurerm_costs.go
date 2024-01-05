@@ -186,7 +186,7 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 	// run cost queries
 	for _, row := range Config.Collectors.Costs.Queries {
 		query := row
-		m.collectRunCostQuery(&query, callback)
+		m.collectRunCostQuery(&query, armcostmanagement.ExportTypeActualCost, callback)
 	}
 
 	// run budget collection

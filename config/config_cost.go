@@ -22,7 +22,7 @@ type (
 		Subscriptions *[]string                      `yaml:"subscriptions"`
 		TimeFrames    []string                       `yaml:"timeFrames"`
 		Dimensions    []string                       `yaml:"dimensions"`
-		ExportType    string 						 `yaml:"exportType"`
+		ExportType    string                         `yaml:"exportType"`
 		Granularity   string                         `yaml:"granularity"`
 		ValueField    string                         `yaml:"valueField"`
 		Labels        map[string]string              `yaml:"labels"`
@@ -39,6 +39,7 @@ type (
 
 	configCollectorCostsQueryConfig struct {
 		Dimensions []configCollectorCostsQueryConfigDimension
+		ExportType string // Ajout du champ ExportType
 	}
 
 	configCollectorCostsQueryConfigDimension struct {
