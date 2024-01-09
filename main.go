@@ -28,7 +28,7 @@ import (
 
 const (
 	Author    = "webdevops.io"
-	UserAgent = "azure-resourcemanager-exporter/"
+	UserAgent = "az-rm-exporter/"
 )
 
 var (
