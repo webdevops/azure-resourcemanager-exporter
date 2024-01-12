@@ -243,6 +243,27 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
+	collectorName = "reservation"
+	if Config.Collectors.Costs.IsEnabled() {
+		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger)
+		c.SetScapeTime(*Config.Collectors.Reservation.ScrapeTime)
+		// higher backoff times because of strict cost rate limits
+		c.SetPanicBackoff(
+			2*time.Minute,
+			5*time.Minute,
+			10*time.Minute,
+		)
+		c.SetCache(
+			Opts.GetCachePath(collectorName+".json"),
+			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Reservation),
+		)
+		if err := c.Start(); err != nil {
+			logger.Fatal(err.Error())
+		}
+	} else {
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+	}
+
 	collectorName = "defender"
 	if Config.Collectors.Defender.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger)
