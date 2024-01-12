@@ -1,3 +1,4 @@
 /vendor/
 /azure-resourcemanager-exporter*
 /release-assets
+/.vscode

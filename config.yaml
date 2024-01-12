@@ -1,8 +1,0 @@
----
-
-azure:
-  locations: [global]
-
-collectors:
-  reservation:
-    scrapeTime: 5m

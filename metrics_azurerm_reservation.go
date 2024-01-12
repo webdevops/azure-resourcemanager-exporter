@@ -56,6 +56,8 @@ func (m *MetricsCollectorAzureRmReservation) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+	logger.Infof("lancement de la fonction MetricsCollectorAzureRmReservation")
+
 	reservationUsage := m.Collector.GetMetricList("reservationUsage")
 
 	ctx := context.Background()
@@ -80,6 +82,8 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscriptio
 		ReservationOrderID: nil,
 	})
 
+	logger.Infof("debug pager")
+	logger.Infoln(*pager)
 	// Collectez et exportez les métriques
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
@@ -87,11 +91,11 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscriptio
 			logger.Panic(err)
 		}
 		for _, reservationInfo := range page.Value {
-			fmt.Printf("SKUName: %s\n", *reservationInfo.Properties.SKUName)
+			logger.Infof("SKUName: %s\n", *reservationInfo.Properties.SKUName)
 			skuName := reservationInfo.Properties.SKUName
-			fmt.Printf("reservationUsage: %f\n", *reservationInfo.Properties.AvgUtilizationPercentage)
+			logger.Infof("reservationUsage: %f\n", *reservationInfo.Properties.AvgUtilizationPercentage)
 			reservationAvgUtilizationPercentage := reservationInfo.Properties.AvgUtilizationPercentage
-			fmt.Printf("UsageDate: %s\n", reservationInfo.Properties.UsageDate.String())
+			logger.Infof("UsageDate: %s\n", reservationInfo.Properties.UsageDate.String())
 			usageDate := reservationInfo.Properties.UsageDate.String()
 
 			infoLabels := prometheus.Labels{
