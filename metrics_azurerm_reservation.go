@@ -141,13 +141,3 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscriptio
 		}
 	}
 }
-
-// func initAzureConnection() (*azidentity.DefaultAzureCredential, error) { // ANCIEN SCRIPT
-// 	// Obtenez les credentials Azure CLI
-// 	credential, err := azidentity.NewDefaultAzureCredential(nil)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("échec de l'obtention des credentials Azure CLI: %v", err)
-// 	}
-
-// 	return credential, nil
-// }

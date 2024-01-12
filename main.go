@@ -244,8 +244,8 @@ func initMetricCollector() {
 	}
 
 	collectorName = "reservation"
-	if Config.Collectors.Costs.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger)
+	if Config.Collectors.Reservation.IsEnabled() {
+		c := collector.New(collectorName, &MetricsCollectorAzureRmReservation{}, logger)
 		c.SetScapeTime(*Config.Collectors.Reservation.ScrapeTime)
 		// higher backoff times because of strict cost rate limits
 		c.SetPanicBackoff(
