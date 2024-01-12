@@ -42,7 +42,6 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 	)
 
 	m.Collector.RegisterMetricList("reservationUsage", m.prometheus.reservationUsage, true)
-	// prometheus.MustRegister(m.prometheus.reservationUsage) // ANCIEN SCRIPT
 }
 
 func (m *MetricsCollectorAzureRmReservation) Reset() {}
@@ -57,28 +56,11 @@ func (m *MetricsCollectorAzureRmReservation) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
-	// options := AzureClient.NewArmClientOptions()
-	// ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
-	// if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
-	// 	ep = c.Endpoint
-	// }
-
-	// pl, err := armruntime.NewPipeline("azurerm-quota", gitTag, AzureClient.GetCred(), runtime.PipelineOptions{}, options)
-	// if err != nil {
-	// 	logger.Panic(err)
-	// }
-
 	reservationUsage := m.Collector.GetMetricList("reservationUsage")
 
 	ctx := context.Background()
 	now := time.Now()
 	formattedDate := now.Format("2006-01-02")
-
-	// credential, err := initAzureConnection() // ANCIEN SCRIPT
-	// if err != nil {
-	// 	fmt.Printf("Échec de l'initialisation de la connexion Azure: %v\n", err)
-	// 	return
-	// }
 
 	billingAccountID := "providers/Microsoft.Billing/billingAccounts/4c612ae7-0d01-512a-391a-e16024131950:59a12fd2-744c-45b6-b82f-fc0963569b8e_2019-05-31/billingProfiles/7QDV-V6E3-BG7-PGB"
 	startDate := formattedDate
@@ -98,15 +80,6 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscriptio
 		ReservationOrderID: nil,
 	})
 
-	// Enregistrez les métriques Prometheus // ANCIEN SCRIPT
-	// prometheus.MustRegister(reservationUsage)
-
-	// Ajoutez un point de terminaison HTTP pour Prometheus // ANCIEN SCRIPT
-	// http.Handle("/metrics", promhttp.Handler())
-	// go func() {
-	// 	log.Fatal(http.ListenAndServe(":8080", nil))
-	// }()
-
 	// Collectez et exportez les métriques
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
@@ -121,7 +94,6 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscriptio
 			fmt.Printf("UsageDate: %s\n", reservationInfo.Properties.UsageDate.String())
 			usageDate := reservationInfo.Properties.UsageDate.String()
 
-			// reservationUsage.WithLabelValues(*reservationInfo.Properties.SKUName, *v.Properties.ReservationID, v.Properties.UsageDate.String()).Set(*v.Properties.AvgUtilizationPercentage)
 			infoLabels := prometheus.Labels{
 				"subscriptionID":                      strings.ToLower(*subscription.SubscriptionID),
 				"scope":                               "reservation",
