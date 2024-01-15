@@ -114,7 +114,10 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 				"TotalReservedQuantity":    fmt.Sprintf("%f", *TotalReservedQuantity),
 			}
 
-			reservationUsage.Add(infoLabels, 1)
+			reservationUsage.Add(infoLabels, *AvgUtilizationPercentage)
+			reservationUsage.Add(infoLabels, *MinUtilizationPercentage)
+			reservationUsage.Add(infoLabels, *MaxUtilizationPercentage)
+			reservationUsage.Add(infoLabels, *TotalReservedQuantity)
 		}
 	}
 }
