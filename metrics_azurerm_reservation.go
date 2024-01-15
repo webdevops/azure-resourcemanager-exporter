@@ -27,14 +27,21 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 
 	m.prometheus.reservationUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_reservation_avg_utilisation",
-			Help: "Azure ResourceManager Reservation Average Utilization Percentage",
+			Name: "azurerm_reservation_utilisation",
+			Help: "Azure ResourceManager Reservation Utilization",
 		},
 		[]string{
-			"scope",
-			"skuName",
-			"reservationAvgUtilizationPercentage",
-			"usageDate",
+			"ReservationOrderID",
+			"ReservationID",
+			"SkuName",
+			"Kind",
+			"ReservedHours",
+			"UsedHours",
+			"UsageDate",
+			"MinUtilizationPercentage",
+			"AvgUtilizationPercentage",
+			"MaxUtilizationPercentage",
+			"TotalReservedQuantity",
 		},
 	)
 
@@ -44,24 +51,20 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 func (m *MetricsCollectorAzureRmReservation) Reset() {}
 
 func (m *MetricsCollectorAzureRmReservation) Collect(callback chan<- func()) {
-	// err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
 	m.collectReservationUsage(logger, callback)
-	// })
-	// if err != nil {
-	// 	m.Logger().Panic(err)
-	// }
 }
 
 func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap.SugaredLogger, callback chan<- func()) {
-	// logger.Infof("lancement de la fonction MetricsCollectorAzureRmReservation")
-
 	reservationUsage := m.Collector.GetMetricList("reservationUsage")
 
 	ctx := context.Background()
 	now := time.Now()
-	formattedDate := now.Format("2006-01-02")
+	formattedDate := now.AddDate(-3, 0, 0).Format("2006-01-02")
+	resourceScope := Config.Collectors.Reservation.ResourceScope
 
-	billingAccountID := "providers/Microsoft.Billing/billingAccounts/4c612ae7-0d01-512a-391a-e16024131950:59a12fd2-744c-45b6-b82f-fc0963569b8e_2019-05-31/billingProfiles/7QDV-V6E3-BG7-PGB"
+	granularity := Config.Collectors.Reservation.Granularity
+	// resourceScope := "providers/Microsoft.Billing/billingAccounts/4c612ae7-0d01-512a-391a-e16024131950:59a12fd2-744c-45b6-b82f-fc0963569b8e_2019-05-31/billingProfiles/7QDV-V6E3-BG7-PGB"
+
 	startDate := formattedDate
 	endDate := formattedDate
 
@@ -71,7 +74,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 	}
 
 	// Créez un pager pour récupérer les résumés de réservations quotidiens
-	pager := clientFactory.NewReservationsSummariesClient().NewListPager(billingAccountID, armconsumption.DatagrainDailyGrain, &armconsumption.ReservationsSummariesClientListOptions{
+	pager := clientFactory.NewReservationsSummariesClient().NewListPager(resourceScope, armconsumption.Datagrain(granularity), &armconsumption.ReservationsSummariesClientListOptions{
 		StartDate:          to.Ptr(startDate),
 		EndDate:            to.Ptr(endDate),
 		Filter:             nil,
@@ -79,8 +82,6 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 		ReservationOrderID: nil,
 	})
 
-	// logger.Infof("debug pager")
-	// logger.Infoln(*pager)
 	// Collectez et exportez les métriques
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
@@ -88,26 +89,31 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 			logger.Panic(err)
 		}
 		for _, reservationInfo := range page.Value {
-			logger.Infof("SKUName: %s\n", *reservationInfo.Properties.SKUName)
-			skuName := reservationInfo.Properties.SKUName
-			// logger.Infof("reservationUsage: %f\n", *reservationInfo.Properties.AvgUtilizationPercentage)
-			reservationAvgUtilizationPercentage := reservationInfo.Properties.AvgUtilizationPercentage
-			// logger.Infof("UsageDate: %s\n", reservationInfo.Properties.UsageDate.String())
-			usageDate := reservationInfo.Properties.UsageDate.String()
+			ReservationOrderID := reservationInfo.Properties.ReservationOrderID
+			ReservationID := reservationInfo.Properties.ReservationID
+			SkuName := reservationInfo.Properties.SKUName
+			Kind := reservationInfo.Properties.Kind
+			ReservedHours := reservationInfo.Properties.ReservedHours
+			UsageDate := reservationInfo.Properties.UsageDate.String()
+			UsedHours := reservationInfo.Properties.UsedHours
+			MinUtilizationPercentage := reservationInfo.Properties.MinUtilizationPercentage
+			AvgUtilizationPercentage := reservationInfo.Properties.AvgUtilizationPercentage
+			MaxUtilizationPercentage := reservationInfo.Properties.MaxUtilizationPercentage
+			TotalReservedQuantity := reservationInfo.Properties.TotalReservedQuantity
 
 			infoLabels := prometheus.Labels{
-				"scope":                               "reservation",
-				"skuName":                             *skuName,
-				"reservationAvgUtilizationPercentage": fmt.Sprintf("%f", *reservationAvgUtilizationPercentage),
-				"usageDate":                           usageDate,
+				"ReservationOrderID":       *ReservationOrderID,
+				"ReservationID":            *ReservationID,
+				"SkuName":                  *SkuName,
+				"Kind":                     *Kind,
+				"ReservedHours":            fmt.Sprintf("%f", *ReservedHours),
+				"UsedHours":                fmt.Sprintf("%f", *UsedHours),
+				"UsageDate":                UsageDate,
+				"MinUtilizationPercentage": fmt.Sprintf("%f", *MinUtilizationPercentage),
+				"AvgUtilizationPercentage": fmt.Sprintf("%f", *AvgUtilizationPercentage),
+				"MaxUtilizationPercentage": fmt.Sprintf("%f", *MaxUtilizationPercentage),
+				"TotalReservedQuantity":    fmt.Sprintf("%f", *TotalReservedQuantity),
 			}
-
-			// labels := prometheus.Labels{
-			// 	"subscriptionID": to.StringLower(subscription.SubscriptionID),
-			// 	"location":       strings.ToLower(location),
-			// 	"scope":          "reservation",
-			// 	"skuName":        skuName,
-			// }
 
 			reservationUsage.Add(infoLabels, 1)
 		}

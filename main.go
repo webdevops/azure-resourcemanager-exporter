@@ -243,7 +243,7 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
-	collectorName = "reservation"
+	collectorName = "Reservation"
 	if Config.Collectors.Reservation.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmReservation{}, logger)
 		c.SetScapeTime(*Config.Collectors.Reservation.ScrapeTime)
