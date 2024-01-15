@@ -60,10 +60,9 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 	ctx := context.Background()
 	now := time.Now()
 	formattedDate := now.AddDate(-3, 0, 0).Format("2006-01-02")
-	resourceScope := Config.Collectors.Reservation.ResourceScope
 
+	resourceScope := Config.Collectors.Reservation.ResourceScope
 	granularity := Config.Collectors.Reservation.Granularity
-	// resourceScope := "providers/Microsoft.Billing/billingAccounts/4c612ae7-0d01-512a-391a-e16024131950:59a12fd2-744c-45b6-b82f-fc0963569b8e_2019-05-31/billingProfiles/7QDV-V6E3-BG7-PGB"
 
 	startDate := formattedDate
 	endDate := formattedDate
