@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"go.uber.org/zap"
@@ -33,7 +31,6 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			Help: "Azure ResourceManager Reservation Average Utilization Percentage",
 		},
 		[]string{
-			"subscriptionID",
 			"scope",
 			"skuName",
 			"reservationAvgUtilizationPercentage",
@@ -47,16 +44,16 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 func (m *MetricsCollectorAzureRmReservation) Reset() {}
 
 func (m *MetricsCollectorAzureRmReservation) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
-		m.collectReservationUsage(subscription, logger, callback)
-	})
-	if err != nil {
-		m.Logger().Panic(err)
-	}
+	// err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+	m.collectReservationUsage(logger, callback)
+	// })
+	// if err != nil {
+	// 	m.Logger().Panic(err)
+	// }
 }
 
-func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
-	logger.Infof("lancement de la fonction MetricsCollectorAzureRmReservation")
+func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap.SugaredLogger, callback chan<- func()) {
+	// logger.Infof("lancement de la fonction MetricsCollectorAzureRmReservation")
 
 	reservationUsage := m.Collector.GetMetricList("reservationUsage")
 
@@ -68,7 +65,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscriptio
 	startDate := formattedDate
 	endDate := formattedDate
 
-	clientFactory, err := armconsumption.NewClientFactory(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
+	clientFactory, err := armconsumption.NewClientFactory("<subscription-id>", AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -82,8 +79,8 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscriptio
 		ReservationOrderID: nil,
 	})
 
-	logger.Infof("debug pager")
-	logger.Infoln(*pager)
+	// logger.Infof("debug pager")
+	// logger.Infoln(*pager)
 	// Collectez et exportez les métriques
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
@@ -93,13 +90,12 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(subscriptio
 		for _, reservationInfo := range page.Value {
 			logger.Infof("SKUName: %s\n", *reservationInfo.Properties.SKUName)
 			skuName := reservationInfo.Properties.SKUName
-			logger.Infof("reservationUsage: %f\n", *reservationInfo.Properties.AvgUtilizationPercentage)
+			// logger.Infof("reservationUsage: %f\n", *reservationInfo.Properties.AvgUtilizationPercentage)
 			reservationAvgUtilizationPercentage := reservationInfo.Properties.AvgUtilizationPercentage
-			logger.Infof("UsageDate: %s\n", reservationInfo.Properties.UsageDate.String())
+			// logger.Infof("UsageDate: %s\n", reservationInfo.Properties.UsageDate.String())
 			usageDate := reservationInfo.Properties.UsageDate.String()
 
 			infoLabels := prometheus.Labels{
-				"subscriptionID":                      strings.ToLower(*subscription.SubscriptionID),
 				"scope":                               "reservation",
 				"skuName":                             *skuName,
 				"reservationAvgUtilizationPercentage": fmt.Sprintf("%f", *reservationAvgUtilizationPercentage),
