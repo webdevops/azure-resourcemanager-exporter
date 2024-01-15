@@ -27,7 +27,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 
 	m.prometheus.reservationUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_reservation_utilisation",
+			Name: "azurerm_reservation_utilization",
 			Help: "Azure ResourceManager Reservation Utilization",
 		},
 		[]string{
