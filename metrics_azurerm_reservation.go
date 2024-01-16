@@ -242,13 +242,13 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 				"ReservationID":            *ReservationID,
 				"SkuName":                  *SkuName,
 				"Kind":                     *Kind,
-				"ReservedHours":            fmt.Sprintf("%.3f", *ReservedHours),
-				"UsedHours":                fmt.Sprintf("%.3f", *UsedHours),
+				"ReservedHours":            fmt.Sprintf("%.2f", *ReservedHours),
+				"UsedHours":                fmt.Sprintf("%.2f", *UsedHours),
 				"UsageDate":                UsageDate,
-				"MinUtilizationPercentage": fmt.Sprintf("%.3f", *MinUtilizationPercentage),
-				"AvgUtilizationPercentage": fmt.Sprintf("%.3f", *AvgUtilizationPercentage),
-				"MaxUtilizationPercentage": fmt.Sprintf("%.3f", *MaxUtilizationPercentage),
-				"TotalReservedQuantity":    fmt.Sprintf("%.3f", *TotalReservedQuantity),
+				"MinUtilizationPercentage": fmt.Sprintf("%.2f", *MinUtilizationPercentage),
+				"AvgUtilizationPercentage": fmt.Sprintf("%.2f", *AvgUtilizationPercentage),
+				"MaxUtilizationPercentage": fmt.Sprintf("%.2f", *MaxUtilizationPercentage),
+				"TotalReservedQuantity":    fmt.Sprintf("%.2f", *TotalReservedQuantity),
 			}
 
 			reservationInfo.Add(Labels, 1)
