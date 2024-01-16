@@ -65,6 +65,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"UsedHours",
 			"UsageDate",
 			"MinUtilizationPercentage",
+			"AvgUtilizationPercentage",
 			"MaxUtilizationPercentage",
 			"TotalReservedQuantity",
 		},
@@ -83,6 +84,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"ReservedHours",
 			"UsedHours",
 			"UsageDate",
+			"MinUtilizationPercentage",
 			"AvgUtilizationPercentage",
 			"MaxUtilizationPercentage",
 			"TotalReservedQuantity",
@@ -104,6 +106,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"UsageDate",
 			"MinUtilizationPercentage",
 			"AvgUtilizationPercentage",
+			"MaxUtilizationPercentage",
 			"TotalReservedQuantity",
 		},
 	)
@@ -119,6 +122,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"SkuName",
 			"Kind",
 			"ReservedHours",
+			"UsedHours",
 			"UsageDate",
 			"MinUtilizationPercentage",
 			"AvgUtilizationPercentage",
@@ -137,6 +141,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"ReservationID",
 			"SkuName",
 			"Kind",
+			"ReservedHours",
 			"UsedHours",
 			"UsageDate",
 			"MinUtilizationPercentage",
@@ -162,6 +167,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"MinUtilizationPercentage",
 			"AvgUtilizationPercentage",
 			"MaxUtilizationPercentage",
+			"TotalReservedQuantity",
 		},
 	)
 
