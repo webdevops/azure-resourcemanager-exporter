@@ -17,7 +17,13 @@ type MetricsCollectorAzureRmReservation struct {
 	collector.Processor
 
 	prometheus struct {
-		reservationUsage *prometheus.GaugeVec
+		reservationInfo                  *prometheus.GaugeVec
+		reservationUsage                 *prometheus.GaugeVec
+		reservationMinUsage              *prometheus.GaugeVec
+		reservationMaxUsage              *prometheus.GaugeVec
+		reservationUsedHours             *prometheus.GaugeVec
+		reservationReservedHours         *prometheus.GaugeVec
+		reservationTotalReservedQuantity *prometheus.GaugeVec
 	}
 }
 
@@ -25,10 +31,10 @@ type MetricsCollectorAzureRmReservation struct {
 func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
 
-	m.prometheus.reservationUsage = prometheus.NewGaugeVec(
+	m.prometheus.reservationInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_reservation_utilization",
-			Help: "Azure ResourceManager Reservation Utilization",
+			Name: "azurerm_reservation_information",
+			Help: "Azure ResourceManager Reservation Information",
 		},
 		[]string{
 			"ReservationOrderID",
@@ -45,7 +51,127 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 		},
 	)
 
+	m.prometheus.reservationUsage = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_reservation_utilization",
+			Help: "Azure ResourceManager Reservation Utilization",
+		},
+		[]string{
+			"ReservationOrderID",
+			"ReservationID",
+			"SkuName",
+			"Kind",
+			"ReservedHours",
+			"UsedHours",
+			"UsageDate",
+			"MinUtilizationPercentage",
+			"MaxUtilizationPercentage",
+			"TotalReservedQuantity",
+		},
+	)
+
+	m.prometheus.reservationMinUsage = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_reservation_minUtilization",
+			Help: "Azure ResourceManager Reservation Min Utilization",
+		},
+		[]string{
+			"ReservationOrderID",
+			"ReservationID",
+			"SkuName",
+			"Kind",
+			"ReservedHours",
+			"UsedHours",
+			"UsageDate",
+			"AvgUtilizationPercentage",
+			"MaxUtilizationPercentage",
+			"TotalReservedQuantity",
+		},
+	)
+
+	m.prometheus.reservationMaxUsage = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_reservation_maxUtilization",
+			Help: "Azure ResourceManager Reservation Max Utilization",
+		},
+		[]string{
+			"ReservationOrderID",
+			"ReservationID",
+			"SkuName",
+			"Kind",
+			"ReservedHours",
+			"UsedHours",
+			"UsageDate",
+			"MinUtilizationPercentage",
+			"AvgUtilizationPercentage",
+			"TotalReservedQuantity",
+		},
+	)
+
+	m.prometheus.reservationUsedHours = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_reservation_usedHours",
+			Help: "Azure ResourceManager Reservation Used Hours",
+		},
+		[]string{
+			"ReservationOrderID",
+			"ReservationID",
+			"SkuName",
+			"Kind",
+			"ReservedHours",
+			"UsageDate",
+			"MinUtilizationPercentage",
+			"AvgUtilizationPercentage",
+			"MaxUtilizationPercentage",
+			"TotalReservedQuantity",
+		},
+	)
+
+	m.prometheus.reservationReservedHours = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_reservation_reservedHours",
+			Help: "Azure ResourceManager Reservation Reserved Hours",
+		},
+		[]string{
+			"ReservationOrderID",
+			"ReservationID",
+			"SkuName",
+			"Kind",
+			"UsedHours",
+			"UsageDate",
+			"MinUtilizationPercentage",
+			"AvgUtilizationPercentage",
+			"MaxUtilizationPercentage",
+			"TotalReservedQuantity",
+		},
+	)
+
+	m.prometheus.reservationTotalReservedQuantity = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_reservation_totalReservedQuantity",
+			Help: "Azure ResourceManager Reservation Total Reserved Quantity",
+		},
+		[]string{
+			"ReservationOrderID",
+			"ReservationID",
+			"SkuName",
+			"Kind",
+			"ReservedHours",
+			"UsedHours",
+			"UsageDate",
+			"MinUtilizationPercentage",
+			"AvgUtilizationPercentage",
+			"MaxUtilizationPercentage",
+		},
+	)
+
+	m.Collector.RegisterMetricList("reservationInfo", m.prometheus.reservationInfo, true)
 	m.Collector.RegisterMetricList("reservationUsage", m.prometheus.reservationUsage, true)
+	m.Collector.RegisterMetricList("reservationMinUsage", m.prometheus.reservationMinUsage, true)
+	m.Collector.RegisterMetricList("reservationMaxUsage", m.prometheus.reservationMaxUsage, true)
+	m.Collector.RegisterMetricList("reservationUsedHours", m.prometheus.reservationUsedHours, true)
+	m.Collector.RegisterMetricList("reservationReservedHours", m.prometheus.reservationReservedHours, true)
+	m.Collector.RegisterMetricList("reservationTotalReservedQuantity", m.prometheus.reservationTotalReservedQuantity, true)
 }
 
 func (m *MetricsCollectorAzureRmReservation) Reset() {}
@@ -55,7 +181,13 @@ func (m *MetricsCollectorAzureRmReservation) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap.SugaredLogger, callback chan<- func()) {
+	reservationInfo := m.Collector.GetMetricList("reservationInfo")
 	reservationUsage := m.Collector.GetMetricList("reservationUsage")
+	reservationMinUsage := m.Collector.GetMetricList("reservationMinUsage")
+	reservationMaxUsage := m.Collector.GetMetricList("reservationMaxUsage")
+	reservationUsedHours := m.Collector.GetMetricList("reservationUsedHours")
+	reservationReservedHours := m.Collector.GetMetricList("reservationReservedHours")
+	reservationTotalReservedQuantity := m.Collector.GetMetricList("reservationTotalReservedQuantity")
 
 	ctx := context.Background()
 	now := time.Now()
@@ -86,34 +218,40 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 		if err != nil {
 			logger.Panic(err)
 		}
-		for _, reservationInfo := range page.Value {
-			ReservationOrderID := reservationInfo.Properties.ReservationOrderID
-			ReservationID := reservationInfo.Properties.ReservationID
-			SkuName := reservationInfo.Properties.SKUName
-			Kind := reservationInfo.Properties.Kind
-			ReservedHours := reservationInfo.Properties.ReservedHours
-			UsageDate := reservationInfo.Properties.UsageDate.String()
-			UsedHours := reservationInfo.Properties.UsedHours
-			MinUtilizationPercentage := reservationInfo.Properties.MinUtilizationPercentage
-			AvgUtilizationPercentage := reservationInfo.Properties.AvgUtilizationPercentage
-			MaxUtilizationPercentage := reservationInfo.Properties.MaxUtilizationPercentage
-			TotalReservedQuantity := reservationInfo.Properties.TotalReservedQuantity
+		for _, reservationProperties := range page.Value {
+			ReservationOrderID := reservationProperties.Properties.ReservationOrderID
+			ReservationID := reservationProperties.Properties.ReservationID
+			SkuName := reservationProperties.Properties.SKUName
+			Kind := reservationProperties.Properties.Kind
+			ReservedHours := reservationProperties.Properties.ReservedHours
+			UsageDate := reservationProperties.Properties.UsageDate.String()
+			UsedHours := reservationProperties.Properties.UsedHours
+			MinUtilizationPercentage := reservationProperties.Properties.MinUtilizationPercentage
+			AvgUtilizationPercentage := reservationProperties.Properties.AvgUtilizationPercentage
+			MaxUtilizationPercentage := reservationProperties.Properties.MaxUtilizationPercentage
+			TotalReservedQuantity := reservationProperties.Properties.TotalReservedQuantity
 
-			infoLabels := prometheus.Labels{
+			Labels := prometheus.Labels{
 				"ReservationOrderID":       *ReservationOrderID,
 				"ReservationID":            *ReservationID,
 				"SkuName":                  *SkuName,
 				"Kind":                     *Kind,
-				"ReservedHours":            fmt.Sprintf("%f", *ReservedHours),
-				"UsedHours":                fmt.Sprintf("%f", *UsedHours),
+				"ReservedHours":            fmt.Sprintf("%.3f", *ReservedHours),
+				"UsedHours":                fmt.Sprintf("%.3f", *UsedHours),
 				"UsageDate":                UsageDate,
-				"MinUtilizationPercentage": fmt.Sprintf("%f", *MinUtilizationPercentage),
-				"AvgUtilizationPercentage": fmt.Sprintf("%f", *AvgUtilizationPercentage),
-				"MaxUtilizationPercentage": fmt.Sprintf("%f", *MaxUtilizationPercentage),
-				"TotalReservedQuantity":    fmt.Sprintf("%f", *TotalReservedQuantity),
+				"MinUtilizationPercentage": fmt.Sprintf("%.3f", *MinUtilizationPercentage),
+				"AvgUtilizationPercentage": fmt.Sprintf("%.3f", *AvgUtilizationPercentage),
+				"MaxUtilizationPercentage": fmt.Sprintf("%.3f", *MaxUtilizationPercentage),
+				"TotalReservedQuantity":    fmt.Sprintf("%.3f", *TotalReservedQuantity),
 			}
 
-			reservationUsage.Add(infoLabels, *AvgUtilizationPercentage)
+			reservationInfo.Add(Labels, 1)
+			reservationUsage.Add(Labels, *AvgUtilizationPercentage)
+			reservationMinUsage.Add(Labels, *MinUtilizationPercentage)
+			reservationMaxUsage.Add(Labels, *MaxUtilizationPercentage)
+			reservationUsedHours.Add(Labels, *UsedHours)
+			reservationReservedHours.Add(Labels, *ReservedHours)
+			reservationTotalReservedQuantity.Add(Labels, *TotalReservedQuantity)
 		}
 	}
 }
