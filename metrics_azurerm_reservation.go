@@ -196,11 +196,12 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 	reservationTotalReservedQuantity := m.Collector.GetMetricList("reservationTotalReservedQuantity")
 
 	ctx := context.Background()
-	now := time.Now()
-	formattedDate := now.AddDate(-1, 0, 0).Format("2006-01-02")
+	days := Config.Collectors.Reservation.FromDays
 	resourceScope := Config.Collectors.Reservation.ResourceScope
 	granularity := Config.Collectors.Reservation.Granularity
 
+	now := time.Now()
+	formattedDate := now.AddDate(0, 0, -days).Format("2006-01-02")
 	startDate := formattedDate
 	endDate := formattedDate
 

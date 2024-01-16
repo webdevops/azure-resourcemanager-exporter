@@ -6,5 +6,6 @@ type (
 
 		ResourceScope string `yaml:"resourceScope"`
 		Granularity   string `yaml:"granularity"`
+		FromDays      int    `yaml:"FromDays"`
 	}
 )
