@@ -203,7 +203,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 	now := time.Now()
 	formattedDate := now.AddDate(0, 0, -days).Format("2006-01-02")
 	startDate := formattedDate
-	endDate := formattedDate
+	endDate := time.Now().Format("2006-01-02")
 
 	clientFactory, err := armconsumption.NewClientFactory("<subscription-id>", AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
