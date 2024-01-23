@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -131,8 +129,8 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 
 			disk, err := diskClient.Get(context.Background(), resourceGroupName, diskName)
 			if err != nil {
-				fmt.Println("Erreur lors de la récupération du disque:", err)
-				os.Exit(1)
+				log.Fatalf("Failed to get disk: %v", err)
+				return
 			}
 
 			if disk.DiskProperties.Tier != nil {
@@ -143,7 +141,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 					"resourceGroup":     azureResource.ResourceGroup,
 					"provider":          azureResource.ResourceProviderName,
 					"resourceType":      azureResource.ResourceType,
-					"skuName":           fmt.Sprintf("%s", *&disk.Sku.Name),
+					"skuName":           string(disk.Sku.Name),
 					"tier":              *disk.DiskProperties.Tier,
 					"location":          to.StringLower(resource.Location),
 					"provisioningState": to.StringLower(resource.ProvisioningState),
@@ -158,7 +156,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 					"resourceGroup":     azureResource.ResourceGroup,
 					"provider":          azureResource.ResourceProviderName,
 					"resourceType":      azureResource.ResourceType,
-					"skuName":           fmt.Sprintf("%s", *&disk.Sku.Name),
+					"skuName":           string(disk.Sku.Name),
 					"tier":              "null",
 					"location":          to.StringLower(resource.Location),
 					"provisioningState": to.StringLower(resource.ProvisioningState),
