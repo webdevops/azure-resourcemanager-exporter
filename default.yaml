@@ -23,6 +23,8 @@ collectors:
 
   costs: {}
 
+  reservation: {}
+
   portscan:
     scanner:
       parallel: 2

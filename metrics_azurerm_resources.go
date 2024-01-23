@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
+	"log"
+
+	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
+	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
@@ -33,6 +38,8 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 				"subscriptionID",
 				"resourceGroup",
 				"resourceType",
+				"skuName",
+				"tier",
 				"provider",
 				"location",
 				"provisioningState",
@@ -102,24 +109,76 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 	if err != nil {
 		logger.Panic(err)
 	}
-
+	authorizer, err := auth.NewAuthorizerFromEnvironment()
+	if err != nil {
+		log.Fatalf("Failed to create Azure authorizer: %v", err)
+		return
+	}
 	resourceMetric := m.Collector.GetMetricList("resource")
+
+	// Get azure disk detail
+	diskClient := compute.NewDisksClient(*subscription.SubscriptionID)
+	diskClient.Authorizer = authorizer
 
 	for _, resource := range list {
 		resourceId := to.String(resource.ID)
 		azureResource, _ := armclient.ParseResourceId(resourceId)
+		if azureResource.ResourceType == "microsoft.compute/disks" {
+			resourceGroupName := azureResource.ResourceGroup
+			diskName := azureResource.ResourceName
 
-		infoLabels := prometheus.Labels{
-			"subscriptionID":    azureResource.Subscription,
-			"resourceID":        stringToStringLower(resourceId),
-			"resourceName":      azureResource.ResourceName,
-			"resourceGroup":     azureResource.ResourceGroup,
-			"provider":          azureResource.ResourceProviderName,
-			"resourceType":      azureResource.ResourceType,
-			"location":          to.StringLower(resource.Location),
-			"provisioningState": to.StringLower(resource.ProvisioningState),
+			disk, err := diskClient.Get(context.Background(), resourceGroupName, diskName)
+			if err != nil {
+				log.Fatalf("Failed to get disk: %v", err)
+				return
+			}
+
+			if disk.DiskProperties.Tier != nil {
+				Labels := prometheus.Labels{
+					"subscriptionID":    azureResource.Subscription,
+					"resourceID":        stringToStringLower(resourceId),
+					"resourceName":      azureResource.ResourceName,
+					"resourceGroup":     azureResource.ResourceGroup,
+					"provider":          azureResource.ResourceProviderName,
+					"resourceType":      azureResource.ResourceType,
+					"skuName":           string(disk.Sku.Name),
+					"tier":              *disk.DiskProperties.Tier,
+					"location":          to.StringLower(resource.Location),
+					"provisioningState": to.StringLower(resource.ProvisioningState),
+				}
+				Labels = AzureResourceTagManager.AddResourceTagsToPrometheusLabels(m.Context(), Labels, resourceId)
+				resourceMetric.AddInfo(Labels)
+			} else {
+				Labels := prometheus.Labels{
+					"subscriptionID":    azureResource.Subscription,
+					"resourceID":        stringToStringLower(resourceId),
+					"resourceName":      azureResource.ResourceName,
+					"resourceGroup":     azureResource.ResourceGroup,
+					"provider":          azureResource.ResourceProviderName,
+					"resourceType":      azureResource.ResourceType,
+					"skuName":           string(disk.Sku.Name),
+					"tier":              "null",
+					"location":          to.StringLower(resource.Location),
+					"provisioningState": to.StringLower(resource.ProvisioningState),
+				}
+				Labels = AzureResourceTagManager.AddResourceTagsToPrometheusLabels(m.Context(), Labels, resourceId)
+				resourceMetric.AddInfo(Labels)
+			}
+		} else {
+			Labels := prometheus.Labels{
+				"subscriptionID":    azureResource.Subscription,
+				"resourceID":        stringToStringLower(resourceId),
+				"resourceName":      azureResource.ResourceName,
+				"resourceGroup":     azureResource.ResourceGroup,
+				"provider":          azureResource.ResourceProviderName,
+				"resourceType":      azureResource.ResourceType,
+				"skuName":           "null",
+				"tier":              "null",
+				"location":          to.StringLower(resource.Location),
+				"provisioningState": to.StringLower(resource.ProvisioningState),
+			}
+			Labels = AzureResourceTagManager.AddResourceTagsToPrometheusLabels(m.Context(), Labels, resourceId)
+			resourceMetric.AddInfo(Labels)
 		}
-		infoLabels = AzureResourceTagManager.AddResourceTagsToPrometheusLabels(m.Context(), infoLabels, resourceId)
-		resourceMetric.AddInfo(infoLabels)
 	}
 }
