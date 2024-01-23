@@ -210,7 +210,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 		logger.Panic(err)
 	}
 
-	// Créez un pager pour récupérer les résumés de réservations quotidiens
+	// "Create a pager to retrieve daily booking summaries
 	pager := clientFactory.NewReservationsSummariesClient().NewListPager(resourceScope, armconsumption.Datagrain(granularity), &armconsumption.ReservationsSummariesClientListOptions{
 		StartDate:          to.Ptr(startDate),
 		EndDate:            to.Ptr(endDate),
@@ -219,7 +219,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 		ReservationOrderID: nil,
 	})
 
-	// Collectez et exportez les métriques
+	// Collect and export metrics
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {

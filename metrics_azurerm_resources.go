@@ -116,7 +116,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 	}
 	resourceMetric := m.Collector.GetMetricList("resource")
 
-	// Obtenez le disque Azure
+	// Get azure disk detail
 	diskClient := compute.NewDisksClient(*subscription.SubscriptionID)
 	diskClient.Authorizer = authorizer
 
