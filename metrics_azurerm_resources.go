@@ -30,7 +30,7 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 
 	m.prometheus.resource = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "azurerm_resource_info_test",
+			Name: "azurerm_resource_info",
 			Help: "Azure Resource information",
 		},
 		AzureResourceTagManager.AddToPrometheusLabels(
@@ -111,7 +111,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 	if err != nil {
 		logger.Panic(err)
 	}
-	authorizer, err := auth.NewAuthorizerFromCLI()
+	authorizer, err := auth.NewAuthorizerFromEnvironment()
 	if err != nil {
 		log.Fatalf("Failed to create Azure authorizer: %v", err)
 		return
