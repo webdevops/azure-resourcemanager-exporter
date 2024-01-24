@@ -44,6 +44,11 @@ jobs:
         with:
           swap-size-gb: 12
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
       - name: Docker meta
         id: docker_meta
         uses: docker/metadata-action@v5
