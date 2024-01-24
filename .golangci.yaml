@@ -11,6 +11,7 @@ linters:
     - gofmt
     - goimports
     - gosec
+    - gomodguard
 
 linters-settings:
   gosec:
@@ -19,6 +20,12 @@ linters-settings:
     config:
       global:
         audit: true
+
+  gomodguard:
+    blocked:
+      modules:
+        - "github.com/Azure/go-autorest/autorest/azure/auth":
+            reason: "deprecated"
 
 issues: {}
 
