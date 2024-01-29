@@ -4,9 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/compute/mgmt/compute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
@@ -109,16 +108,14 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 	if err != nil {
 		logger.Panic(err)
 	}
-	authorizer, err := auth.NewAuthorizerFromEnvironment()
-	if err != nil {
-		log.Fatalf("Failed to create Azure authorizer: %v", err)
-		return
-	}
+
 	resourceMetric := m.Collector.GetMetricList("resource")
 
 	// Get azure disk detail
-	diskClient := compute.NewDisksClient(*subscription.SubscriptionID)
-	diskClient.Authorizer = authorizer
+	diskClient, err := armcompute.NewDisksClient(*subscription.SubscriptionID, AzureClient.GetCred(), nil)
+	if err != nil {
+		logger.Panic(err)
+	}
 
 	for _, resource := range list {
 		resourceId := to.String(resource.ID)
@@ -126,14 +123,12 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 		if azureResource.ResourceType == "microsoft.compute/disks" {
 			resourceGroupName := azureResource.ResourceGroup
 			diskName := azureResource.ResourceName
-
-			disk, err := diskClient.Get(context.Background(), resourceGroupName, diskName)
+			disk, err := diskClient.Get(context.Background(), resourceGroupName, diskName, nil)
 			if err != nil {
 				log.Fatalf("Failed to get disk: %v", err)
 				return
 			}
-
-			if disk.DiskProperties.Tier != nil {
+			if disk.Properties.Tier != nil {
 				Labels := prometheus.Labels{
 					"subscriptionID":    azureResource.Subscription,
 					"resourceID":        stringToStringLower(resourceId),
@@ -141,8 +136,8 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 					"resourceGroup":     azureResource.ResourceGroup,
 					"provider":          azureResource.ResourceProviderName,
 					"resourceType":      azureResource.ResourceType,
-					"skuName":           string(disk.Sku.Name),
-					"tier":              *disk.DiskProperties.Tier,
+					"skuName":           string(*disk.SKU.Name),
+					"tier":              *disk.Properties.Tier,
 					"location":          to.StringLower(resource.Location),
 					"provisioningState": to.StringLower(resource.ProvisioningState),
 				}
@@ -156,7 +151,7 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *a
 					"resourceGroup":     azureResource.ResourceGroup,
 					"provider":          azureResource.ResourceProviderName,
 					"resourceType":      azureResource.ResourceType,
-					"skuName":           string(disk.Sku.Name),
+					"skuName":           string(*disk.SKU.Name),
 					"tier":              "null",
 					"location":          to.StringLower(resource.Location),
 					"provisioningState": to.StringLower(resource.ProvisioningState),
