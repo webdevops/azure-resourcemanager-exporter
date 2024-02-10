@@ -247,12 +247,6 @@ func initMetricCollector() {
 	if Config.Collectors.Reservation.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmReservation{}, logger)
 		c.SetScapeTime(*Config.Collectors.Reservation.ScrapeTime)
-		// higher backoff times because of strict cost rate limits
-		c.SetPanicBackoff(
-			2*time.Minute,
-			5*time.Minute,
-			10*time.Minute,
-		)
 		c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Reservation),
