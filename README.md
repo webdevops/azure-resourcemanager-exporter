@@ -53,7 +53,7 @@ for Azure API authentication (using ENV vars) see https://docs.microsoft.com/en-
 
 ## Config file
 
-see [`example.yaml`](`example.yaml`)
+see [`example.yaml`](example.yaml)
 
 ## Deprecations/old resource metrics
 
