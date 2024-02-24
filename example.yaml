@@ -58,7 +58,7 @@ collectors:
   # Azure cost metrics (cost queries, budgets)
   # needs queries below
   costs:
-    scrapeTime: 5m
+    scrapeTime: 60m
 
     queries:
       - # name of metric (azurerm_costs_${name})
@@ -103,6 +103,22 @@ collectors:
 
         # optional, additional static labels
         labels: {}
+
+  reservation:
+    scrapeTime: 1h
+
+    # resourceScopes:
+    #
+    # The scope associated with reservations summaries operations.
+    # This includes '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for BillingAccount scope (legacy),
+    # and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}'
+    # for BillingProfile scope (modern).
+    #
+    # see https://learn.microsoft.com/en-us/rest/api/consumption/reservations-summaries/list?view=rest-consumption-2023-05-01&tabs=HTTP
+    scopes: []
+
+    granularity: daily # or monthly
+    fromDays: 30
 
   # Portscan of Azure Public IPs
   portscan:

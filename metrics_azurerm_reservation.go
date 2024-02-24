@@ -29,18 +29,20 @@ type MetricsCollectorAzureRmReservation struct {
 func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
 
+	commonLabels := []string{
+		"reservationOrderID",
+		"reservationID",
+		"skuName",
+		"kind",
+		"usageDate",
+	}
+
 	m.prometheus.reservationInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "azurerm_reservation_info",
 			Help: "Azure ResourceManager Reservation Information",
 		},
-		[]string{
-			"reservationOrderID",
-			"reservationID",
-			"skuName",
-			"kind",
-			"usageDate",
-		},
+		commonLabels,
 	)
 	m.Collector.RegisterMetricList("reservationInfo", m.prometheus.reservationInfo, true)
 
@@ -49,13 +51,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			Name: "azurerm_reservation_utilization",
 			Help: "Azure ResourceManager Reservation Utilization",
 		},
-		[]string{
-			"reservationOrderID",
-			"reservationID",
-			"skuName",
-			"kind",
-			"usageDate",
-		},
+		commonLabels,
 	)
 	m.Collector.RegisterMetricList("reservationUsage", m.prometheus.reservationUsage, true)
 
@@ -64,13 +60,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			Name: "azurerm_reservation_utilization_min",
 			Help: "Azure ResourceManager Reservation Min Utilization",
 		},
-		[]string{
-			"reservationOrderID",
-			"reservationID",
-			"skuName",
-			"kind",
-			"usageDate",
-		},
+		commonLabels,
 	)
 	m.Collector.RegisterMetricList("reservationMinUsage", m.prometheus.reservationMinUsage, true)
 
@@ -79,13 +69,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			Name: "azurerm_reservation_utilization_max",
 			Help: "Azure ResourceManager Reservation Max Utilization",
 		},
-		[]string{
-			"reservationOrderID",
-			"reservationID",
-			"skuName",
-			"kind",
-			"usageDate",
-		},
+		commonLabels,
 	)
 	m.Collector.RegisterMetricList("reservationMaxUsage", m.prometheus.reservationMaxUsage, true)
 
@@ -94,13 +78,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			Name: "azurerm_reservation_used_hours",
 			Help: "Azure ResourceManager Reservation Used Hours",
 		},
-		[]string{
-			"reservationOrderID",
-			"reservationID",
-			"skuName",
-			"kind",
-			"usageDate",
-		},
+		commonLabels,
 	)
 	m.Collector.RegisterMetricList("reservationUsedHours", m.prometheus.reservationUsedHours, true)
 
@@ -109,13 +87,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			Name: "azurerm_reservation_reserved_hours",
 			Help: "Azure ResourceManager Reservation Reserved Hours",
 		},
-		[]string{
-			"reservationOrderID",
-			"reservationID",
-			"skuName",
-			"kind",
-			"usageDate",
-		},
+		commonLabels,
 	)
 	m.Collector.RegisterMetricList("reservationReservedHours", m.prometheus.reservationReservedHours, true)
 
@@ -124,13 +96,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			Name: "azurerm_reservation_total_reserved_quantity",
 			Help: "Azure ResourceManager Reservation Total Reserved Quantity",
 		},
-		[]string{
-			"reservationOrderID",
-			"reservationID",
-			"skuName",
-			"kind",
-			"usageDate",
-		},
+		commonLabels,
 	)
 	m.Collector.RegisterMetricList("reservationTotalReservedQuantity", m.prometheus.reservationTotalReservedQuantity, true)
 }
@@ -138,10 +104,12 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 func (m *MetricsCollectorAzureRmReservation) Reset() {}
 
 func (m *MetricsCollectorAzureRmReservation) Collect(callback chan<- func()) {
-	m.collectReservationUsage(logger, callback)
+	for _, scope := range Config.Collectors.Reservation.Scopes {
+		m.collectReservationUsage(logger, scope, callback)
+	}
 }
 
-func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap.SugaredLogger, scope string, callback chan<- func()) {
 	reservationInfo := m.Collector.GetMetricList("reservationInfo")
 	reservationUsage := m.Collector.GetMetricList("reservationUsage")
 	reservationMinUsage := m.Collector.GetMetricList("reservationMinUsage")
@@ -151,21 +119,19 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 	reservationTotalReservedQuantity := m.Collector.GetMetricList("reservationTotalReservedQuantity")
 
 	days := Config.Collectors.Reservation.FromDays
-	resourceScope := Config.Collectors.Reservation.ResourceScope
 	granularity := Config.Collectors.Reservation.Granularity
 
 	now := time.Now()
-	formattedDate := now.AddDate(0, 0, -days).Format("2006-01-02")
-	startDate := formattedDate
-	endDate := time.Now().Format("2006-01-02")
+	startDate := now.AddDate(0, 0, -days).Format("2006-01-02")
+	endDate := now.Format("2006-01-02")
 
 	clientFactory, err := armconsumption.NewClientFactory("<subscription-id>", AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err)
 	}
 
-	// "Create a pager to retrieve daily booking summaries
-	pager := clientFactory.NewReservationsSummariesClient().NewListPager(resourceScope, armconsumption.Datagrain(granularity), &armconsumption.ReservationsSummariesClientListOptions{
+	// Create a pager to retrieve daily booking summaries
+	pager := clientFactory.NewReservationsSummariesClient().NewListPager(scope, armconsumption.Datagrain(granularity), &armconsumption.ReservationsSummariesClientListOptions{
 		StartDate:          to.Ptr(startDate),
 		EndDate:            to.Ptr(endDate),
 		Filter:             nil,
@@ -182,6 +148,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 
 		for _, reservationProperties := range page.Value {
 			labels := prometheus.Labels{
+				"scope":              scope,
 				"reservationOrderID": to.String(reservationProperties.Properties.ReservationOrderID),
 				"reservationID":      to.String(reservationProperties.Properties.ReservationID),
 				"skuName":            to.String(reservationProperties.Properties.SKUName),
