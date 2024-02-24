@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
@@ -43,6 +42,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"usageDate",
 		},
 	)
+	m.Collector.RegisterMetricList("reservationInfo", m.prometheus.reservationInfo, true)
 
 	m.prometheus.reservationUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -57,6 +57,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"usageDate",
 		},
 	)
+	m.Collector.RegisterMetricList("reservationUsage", m.prometheus.reservationUsage, true)
 
 	m.prometheus.reservationMinUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -71,6 +72,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"usageDate",
 		},
 	)
+	m.Collector.RegisterMetricList("reservationMinUsage", m.prometheus.reservationMinUsage, true)
 
 	m.prometheus.reservationMaxUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -85,6 +87,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"usageDate",
 		},
 	)
+	m.Collector.RegisterMetricList("reservationMaxUsage", m.prometheus.reservationMaxUsage, true)
 
 	m.prometheus.reservationUsedHours = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -99,6 +102,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"usageDate",
 		},
 	)
+	m.Collector.RegisterMetricList("reservationUsedHours", m.prometheus.reservationUsedHours, true)
 
 	m.prometheus.reservationReservedHours = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -113,6 +117,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"usageDate",
 		},
 	)
+	m.Collector.RegisterMetricList("reservationReservedHours", m.prometheus.reservationReservedHours, true)
 
 	m.prometheus.reservationTotalReservedQuantity = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -127,13 +132,6 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 			"usageDate",
 		},
 	)
-
-	m.Collector.RegisterMetricList("reservationInfo", m.prometheus.reservationInfo, true)
-	m.Collector.RegisterMetricList("reservationUsage", m.prometheus.reservationUsage, true)
-	m.Collector.RegisterMetricList("reservationMinUsage", m.prometheus.reservationMinUsage, true)
-	m.Collector.RegisterMetricList("reservationMaxUsage", m.prometheus.reservationMaxUsage, true)
-	m.Collector.RegisterMetricList("reservationUsedHours", m.prometheus.reservationUsedHours, true)
-	m.Collector.RegisterMetricList("reservationReservedHours", m.prometheus.reservationReservedHours, true)
 	m.Collector.RegisterMetricList("reservationTotalReservedQuantity", m.prometheus.reservationTotalReservedQuantity, true)
 }
 
@@ -152,7 +150,6 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 	reservationReservedHours := m.Collector.GetMetricList("reservationReservedHours")
 	reservationTotalReservedQuantity := m.Collector.GetMetricList("reservationTotalReservedQuantity")
 
-	ctx := context.Background()
 	days := Config.Collectors.Reservation.FromDays
 	resourceScope := Config.Collectors.Reservation.ResourceScope
 	granularity := Config.Collectors.Reservation.Granularity
@@ -178,39 +175,27 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 
 	// Collect and export metrics
 	for pager.More() {
-		page, err := pager.NextPage(ctx)
+		page, err := pager.NextPage(m.Context())
 		if err != nil {
 			logger.Panic(err)
 		}
 
 		for _, reservationProperties := range page.Value {
-			reservationOrderID := reservationProperties.Properties.ReservationOrderID
-			reservationID := reservationProperties.Properties.ReservationID
-			skuName := reservationProperties.Properties.SKUName
-			kind := reservationProperties.Properties.Kind
-			reservedHours := reservationProperties.Properties.ReservedHours
-			usageDate := reservationProperties.Properties.UsageDate.String()
-			usedHours := reservationProperties.Properties.UsedHours
-			minUtilizationPercentage := reservationProperties.Properties.MinUtilizationPercentage
-			avgUtilizationPercentage := reservationProperties.Properties.AvgUtilizationPercentage
-			maxUtilizationPercentage := reservationProperties.Properties.MaxUtilizationPercentage
-			totalReservedQuantity := reservationProperties.Properties.TotalReservedQuantity
-
 			labels := prometheus.Labels{
-				"reservationOrderID": to.String(reservationOrderID),
-				"reservationID":      to.String(reservationID),
-				"skuName":            to.String(skuName),
-				"kind":               to.String(kind),
-				"usageDate":          usageDate,
+				"reservationOrderID": to.String(reservationProperties.Properties.ReservationOrderID),
+				"reservationID":      to.String(reservationProperties.Properties.ReservationID),
+				"skuName":            to.String(reservationProperties.Properties.SKUName),
+				"kind":               to.String(reservationProperties.Properties.Kind),
+				"usageDate":          reservationProperties.Properties.UsageDate.String(),
 			}
 
 			reservationInfo.AddInfo(labels)
-			reservationUsage.AddIfNotNil(labels, avgUtilizationPercentage)
-			reservationMinUsage.AddIfNotNil(labels, minUtilizationPercentage)
-			reservationMaxUsage.AddIfNotNil(labels, maxUtilizationPercentage)
-			reservationUsedHours.AddIfNotNil(labels, usedHours)
-			reservationReservedHours.AddIfNotNil(labels, reservedHours)
-			reservationTotalReservedQuantity.AddIfNotNil(labels, totalReservedQuantity)
+			reservationUsage.AddIfNotNil(labels, reservationProperties.Properties.AvgUtilizationPercentage)
+			reservationMinUsage.AddIfNotNil(labels, reservationProperties.Properties.MinUtilizationPercentage)
+			reservationMaxUsage.AddIfNotNil(labels, reservationProperties.Properties.MaxUtilizationPercentage)
+			reservationUsedHours.AddIfNotNil(labels, reservationProperties.Properties.UsedHours)
+			reservationReservedHours.AddIfNotNil(labels, reservationProperties.Properties.ReservedHours)
+			reservationTotalReservedQuantity.AddIfNotNil(labels, reservationProperties.Properties.TotalReservedQuantity)
 		}
 	}
 }

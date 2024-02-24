@@ -74,7 +74,7 @@ require (
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/std-uritemplate/std-uritemplate/go v0.0.53 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
-	github.com/webdevops/go-common v0.0.0-20240224160459-39041cd1f800
+	github.com/webdevops/go-common v0.0.0-20240224162410-e2481e4d7353
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
