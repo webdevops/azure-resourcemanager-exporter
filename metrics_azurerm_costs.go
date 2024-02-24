@@ -186,7 +186,13 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 	// run cost queries
 	for _, row := range Config.Collectors.Costs.Queries {
 		query := row
-		m.collectRunCostQuery(&query, callback)
+
+		exportType := armcostmanagement.ExportTypeActualCost
+		if strings.EqualFold(query.ExportType, "AmortizedCost") {
+			exportType = armcostmanagement.ExportTypeAmortizedCost
+		}
+
+		m.collectRunCostQuery(&query, exportType, callback)
 	}
 
 	// run budget collection
@@ -202,7 +208,7 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.CollectorCostsQuery, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.CollectorCostsQuery, exportType armcostmanagement.ExportType, callback chan<- func()) {
 	queryLogger := logger.With(zap.String("query", query.Name))
 	for _, timeframe := range query.TimeFrames {
 		timeframeLogger := queryLogger.With(zap.String("timeframe", timeframe))
@@ -213,7 +219,7 @@ func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.Collect
 					timeframeLogger,
 					m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
 					scope,
-					armcostmanagement.ExportTypeActualCost,
+					exportType,
 					query,
 					timeframe,
 					nil,
@@ -232,7 +238,7 @@ func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.Collect
 					subscriptionLogger,
 					m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
 					*subscription.ID,
-					armcostmanagement.ExportTypeActualCost,
+					exportType,
 					query,
 					timeframe,
 					subscription,

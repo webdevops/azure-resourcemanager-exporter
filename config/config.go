@@ -17,6 +17,7 @@ type (
 			Iam            CollectorBase           `yaml:"iam"`
 			Graph          CollectorGraph          `yaml:"graph"`
 			Costs          CollectorCosts          `yaml:"costs"`
+			Reservation    CollectorReservation    `yaml:"reservation"`
 			Portscan       CollectorPortscan       `yaml:"portscan"`
 		} `yaml:"collectors"`
 	}
