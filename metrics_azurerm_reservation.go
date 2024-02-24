@@ -182,7 +182,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 		if err != nil {
 			logger.Panic(err)
 		}
-		
+
 		for _, reservationProperties := range page.Value {
 			reservationOrderID := reservationProperties.Properties.ReservationOrderID
 			reservationID := reservationProperties.Properties.ReservationID
