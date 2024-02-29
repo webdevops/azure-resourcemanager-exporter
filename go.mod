@@ -8,11 +8,11 @@ require (
 	github.com/anvie/port-scanner v0.0.0-20180225151059-8159197d3770
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/prometheus/client_golang v1.18.0
-	github.com/prometheus/common v0.48.0 // indirect
+	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/common v0.49.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
-	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 )
@@ -34,7 +34,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/security/armsecurity v0.12.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.5.0
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.3.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.3.1 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -57,13 +57,13 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microsoft/kiota-abstractions-go v1.5.6
 	github.com/microsoft/kiota-authentication-azure-go v1.0.2 // indirect
-	github.com/microsoft/kiota-http-go v1.3.1 // indirect
+	github.com/microsoft/kiota-http-go v1.3.2 // indirect
 	github.com/microsoft/kiota-serialization-form-go v1.0.0 // indirect
 	github.com/microsoft/kiota-serialization-json-go v1.0.6 // indirect
 	github.com/microsoft/kiota-serialization-multipart-go v1.0.0 // indirect
 	github.com/microsoft/kiota-serialization-text-go v1.0.0 // indirect
-	github.com/microsoftgraph/msgraph-sdk-go v1.34.0
-	github.com/microsoftgraph/msgraph-sdk-go-core v1.0.2
+	github.com/microsoftgraph/msgraph-sdk-go v1.35.0
+	github.com/microsoftgraph/msgraph-sdk-go-core v1.1.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
@@ -72,9 +72,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.6.0 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
-	github.com/std-uritemplate/std-uritemplate/go v0.0.53 // indirect
+	github.com/std-uritemplate/std-uritemplate/go v0.0.54 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
-	github.com/webdevops/go-common v0.0.0-20240224162410-e2481e4d7353
+	github.com/webdevops/go-common v0.0.0-20240229220036-40910d2ba23e
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
@@ -92,7 +92,7 @@ require (
 	k8s.io/apimachinery v0.29.2 // indirect
 	k8s.io/client-go v0.29.2 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20240224005224-582cce78233b // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
