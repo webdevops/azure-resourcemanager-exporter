@@ -148,7 +148,6 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 
 		for _, reservationProperties := range page.Value {
 			labels := prometheus.Labels{
-				"scope":              scope,
 				"reservationOrderID": to.String(reservationProperties.Properties.ReservationOrderID),
 				"reservationID":      to.String(reservationProperties.Properties.ReservationID),
 				"skuName":            to.String(reservationProperties.Properties.SKUName),
