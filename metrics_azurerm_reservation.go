@@ -30,6 +30,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 	m.Processor.Setup(collector)
 
 	commonLabels := []string{
+		"scope",
 		"reservationOrderID",
 		"reservationID",
 		"skuName",
@@ -148,6 +149,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 
 		for _, reservationProperties := range page.Value {
 			labels := prometheus.Labels{
+				"scope":              scope,
 				"reservationOrderID": to.String(reservationProperties.Properties.ReservationOrderID),
 				"reservationID":      to.String(reservationProperties.Properties.ReservationID),
 				"skuName":            to.String(reservationProperties.Properties.SKUName),
