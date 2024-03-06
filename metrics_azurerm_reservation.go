@@ -30,6 +30,7 @@ func (m *MetricsCollectorAzureRmReservation) Setup(collector *collector.Collecto
 	m.Processor.Setup(collector)
 
 	commonLabels := []string{
+		"scope",
 		"reservationOrderID",
 		"reservationID",
 		"skuName",
