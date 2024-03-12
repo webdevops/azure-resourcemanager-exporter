@@ -28,15 +28,6 @@ const (
 )
 
 type (
-	MetricsCollectorAzureRmCosts struct {
-		collector.Processor
-
-		prometheus struct {
-			costmanagementOverallUsage      *prometheus.GaugeVec
-			costmanagementOverallActualCost *prometheus.GaugeVec
-		}
-	}
-
 	MetricsCollectorAzureRmCostsQuery struct {
 		Name       string
 		Dimensions []MetricsCollectorAzureRmCostsQueryDimension
