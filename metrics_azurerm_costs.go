@@ -28,6 +28,10 @@ const (
 )
 
 type (
+	MetricsCollectorAzureRmCosts struct {
+		collector.Processor
+	}
+
 	MetricsCollectorAzureRmCostsQuery struct {
 		Name       string
 		Dimensions []MetricsCollectorAzureRmCostsQueryDimension
