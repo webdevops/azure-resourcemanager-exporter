@@ -23,6 +23,8 @@ collectors:
 
   costs: {}
 
+  budgets: {}
+
   reservation: {}
 
   portscan:

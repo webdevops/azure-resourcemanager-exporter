@@ -258,6 +258,21 @@ func initMetricCollector() {
 		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
 	}
 
+	collectorName = "budgets"
+	if Config.Collectors.Budgets.IsEnabled() {
+		c := collector.New(collectorName, &MetricsCollectorAzureRmBudgets{}, logger)
+		c.SetScapeTime(*Config.Collectors.Budgets.ScrapeTime)
+		c.SetCache(
+			Opts.GetCachePath(collectorName+".json"),
+			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Budgets),
+		)
+		if err := c.Start(); err != nil {
+			logger.Fatal(err.Error())
+		}
+	} else {
+		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+	}
+
 	collectorName = "defender"
 	if Config.Collectors.Defender.IsEnabled() {
 		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger)
