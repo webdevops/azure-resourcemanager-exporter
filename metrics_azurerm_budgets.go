@@ -20,9 +20,6 @@ type MetricsCollectorAzureRmBudgets struct {
 		consumptionBudgetCurrent  *prometheus.GaugeVec
 		consumptionBudgetForecast *prometheus.GaugeVec
 		consumptionBudgetUsage    *prometheus.GaugeVec
-
-		costmanagementOverallUsage      *prometheus.GaugeVec
-		costmanagementOverallActualCost *prometheus.GaugeVec
 	}
 }
 
