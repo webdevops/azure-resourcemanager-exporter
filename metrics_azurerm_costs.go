@@ -11,7 +11,6 @@ import (
 	armruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/arm/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,16 +30,6 @@ const (
 type (
 	MetricsCollectorAzureRmCosts struct {
 		collector.Processor
-
-		prometheus struct {
-			consumptionBudgetInfo    *prometheus.GaugeVec
-			consumptionBudgetLimit   *prometheus.GaugeVec
-			consumptionBudgetCurrent *prometheus.GaugeVec
-			consumptionBudgetUsage   *prometheus.GaugeVec
-
-			costmanagementOverallUsage      *prometheus.GaugeVec
-			costmanagementOverallActualCost *prometheus.GaugeVec
-		}
 	}
 
 	MetricsCollectorAzureRmCostsQuery struct {
@@ -66,67 +55,6 @@ type (
 
 func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
-
-	// ----------------------------------------------------
-	// Budget
-	m.prometheus.consumptionBudgetInfo = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_costs_budget_info",
-			Help: "Azure ResourceManager consumption budget info",
-		},
-		[]string{
-			"resourceID",
-			"subscriptionID",
-			"budgetName",
-			"resourceGroup",
-			"category",
-			"timeGrain",
-		},
-	)
-	m.Collector.RegisterMetricList("consumptionBudgetInfo", m.prometheus.consumptionBudgetInfo, true)
-
-	m.prometheus.consumptionBudgetLimit = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_costs_budget_limit",
-			Help: "Azure ResourceManager consumption budget limit",
-		},
-		[]string{
-			"resourceID",
-			"subscriptionID",
-			"resourceGroup",
-			"budgetName",
-		},
-	)
-	m.Collector.RegisterMetricList("consumptionBudgetLimit", m.prometheus.consumptionBudgetLimit, true)
-
-	m.prometheus.consumptionBudgetUsage = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_costs_budget_usage",
-			Help: "Azure ResourceManager consumption budget usage percentage",
-		},
-		[]string{
-			"resourceID",
-			"subscriptionID",
-			"resourceGroup",
-			"budgetName",
-		},
-	)
-	m.Collector.RegisterMetricList("consumptionBudgetUsage", m.prometheus.consumptionBudgetUsage, true)
-
-	m.prometheus.consumptionBudgetCurrent = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "azurerm_costs_budget_current",
-			Help: "Azure ResourceManager consumption budget current",
-		},
-		[]string{
-			"resourceID",
-			"subscriptionID",
-			"resourceGroup",
-			"budgetName",
-			"unit",
-		},
-	)
-	m.Collector.RegisterMetricList("consumptionBudgetCurrent", m.prometheus.consumptionBudgetCurrent, true)
 
 	// ----------------------------------------------------
 	// Costs (by Query)
@@ -194,18 +122,6 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 
 		m.collectRunCostQuery(&query, exportType, callback)
 	}
-
-	// run budget collection
-	err := AzureSubscriptionsIterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
-		logger.Info(`fetching cost budget report`)
-		m.collectBudgetMetrics(
-			logger.With(zap.String("consumption", "Budgets")),
-			subscription,
-		)
-	})
-	if err != nil {
-		m.Logger().Panic(err)
-	}
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.CollectorCostsQuery, exportType armcostmanagement.ExportType, callback chan<- func()) {
@@ -247,73 +163,6 @@ func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.Collect
 			})
 			if err != nil {
 				m.Logger().Panic(err)
-			}
-		}
-	}
-}
-
-func (m *MetricsCollectorAzureRmCosts) collectBudgetMetrics(logger *zap.SugaredLogger, subscription *armsubscriptions.Subscription) {
-	client, err := armconsumption.NewBudgetsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
-	if err != nil {
-		logger.Panic(err)
-	}
-
-	infoMetric := m.Collector.GetMetricList("consumptionBudgetInfo")
-	usageMetric := m.Collector.GetMetricList("consumptionBudgetUsage")
-	limitMetric := m.Collector.GetMetricList("consumptionBudgetLimit")
-	currentMetric := m.Collector.GetMetricList("consumptionBudgetCurrent")
-
-	pager := client.NewListPager(*subscription.ID, nil)
-
-	for pager.More() {
-		result, err := pager.NextPage(m.Context())
-		if err != nil {
-			logger.Panic(err)
-		}
-
-		if result.Value == nil {
-			continue
-		}
-
-		for _, budget := range result.Value {
-			resourceId := to.String(budget.ID)
-			azureResource, _ := armclient.ParseResourceId(resourceId)
-
-			infoMetric.AddInfo(prometheus.Labels{
-				"resourceID":     stringToStringLower(resourceId),
-				"subscriptionID": azureResource.Subscription,
-				"resourceGroup":  azureResource.ResourceGroup,
-				"budgetName":     to.String(budget.Name),
-				"category":       stringToStringLower(string(*budget.Properties.Category)),
-				"timeGrain":      string(*budget.Properties.TimeGrain),
-			})
-
-			if budget.Properties.Amount != nil {
-				limitMetric.Add(prometheus.Labels{
-					"resourceID":     stringToStringLower(resourceId),
-					"subscriptionID": azureResource.Subscription,
-					"resourceGroup":  azureResource.ResourceGroup,
-					"budgetName":     to.String(budget.Name),
-				}, *budget.Properties.Amount)
-			}
-
-			if budget.Properties.CurrentSpend != nil {
-				currentMetric.Add(prometheus.Labels{
-					"resourceID":     stringToStringLower(resourceId),
-					"subscriptionID": azureResource.Subscription,
-					"resourceGroup":  azureResource.ResourceGroup,
-					"budgetName":     to.String(budget.Name),
-					"unit":           to.StringLower(budget.Properties.CurrentSpend.Unit),
-				}, *budget.Properties.CurrentSpend.Amount)
-			}
-
-			if budget.Properties.Amount != nil && budget.Properties.CurrentSpend != nil {
-				usageMetric.Add(prometheus.Labels{
-					"resourceID":     stringToStringLower(resourceId),
-					"subscriptionID": azureResource.Subscription,
-					"resourceGroup":  azureResource.ResourceGroup,
-					"budgetName":     to.String(budget.Name),
-				}, *budget.Properties.CurrentSpend.Amount / *budget.Properties.Amount)
 			}
 		}
 	}
@@ -409,7 +258,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 		params.TimePeriod = &timePeriod
 	}
 
-	result, err := m.sendCostQuery(m.Context(), logger, scope, params, nil)
+	result, err := m.sendCostQuery(m.Context(), logger, scope, params)
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -550,10 +399,10 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	time.Sleep(Config.Collectors.Costs.RequestDelay)
 }
 
-func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger *zap.SugaredLogger, scope string, parameters armcostmanagement.QueryDefinition, options *armcostmanagement.QueryClientUsageOptions) (armcostmanagement.QueryClientUsageResponse, error) {
+func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger *zap.SugaredLogger, scope string, parameters armcostmanagement.QueryDefinition) (armcostmanagement.QueryClientUsageResponse, error) {
 	clientOpts := AzureClient.NewArmClientOptions()
 
-	// cost queries should not retry soo fast, we have a strict rate limit on azure side
+	// Initialize the client with appropriate retry options.
 	clientOpts.Retry = policy.RetryOptions{
 		MaxRetries:    3,
 		RetryDelay:    30 * time.Second,
@@ -571,7 +420,7 @@ func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger
 		logger.Panic(err.Error())
 	}
 
-	// paging
+	// Set up the pipeline for paging.
 	pl, err := armruntime.NewPipeline("azurerm-costs", gitTag, AzureClient.GetCred(), runtime.PipelineOptions{}, AzureClient.NewArmClientOptions())
 	if err != nil {
 		logger.Panic(err.Error())
@@ -596,6 +445,18 @@ func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger
 				}
 				defer resp.Body.Close()
 
+				if resp.StatusCode == http.StatusTooManyRequests {
+					retryAfterHeader := resp.Header.Get("X-Ms-Ratelimit-Microsoft.costmanagement-Entity-Retry-After")
+					retryAfter, err := strconv.Atoi(retryAfterHeader)
+					if err != nil {
+						logger.Errorf("Unable to parse retry-after header: %v", retryAfterHeader)
+						return fmt.Errorf("unable to parse retry-after header: %v", retryAfterHeader)
+					}
+					logger.Errorf("Received 429 Too Many Requests. Retrying after %d seconds. Headers: %v", retryAfter, resp.Header)
+					time.Sleep(time.Duration(retryAfter) * time.Second)
+					return fmt.Errorf("received 429 Too Many Requests, retrying after %d seconds", retryAfter)
+				}
+
 				if runtime.HasStatusCode(resp, http.StatusOK) {
 					pagerResult := armcostmanagement.QueryClientUsageResponse{}
 					if err := runtime.UnmarshalAsJSON(resp, &pagerResult); err == nil {
@@ -605,12 +466,16 @@ func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger
 						logger.Panic(err.Error())
 					}
 				} else {
-					return fmt.Errorf(`unexpected status code: %v`, resp.StatusCode)
+					return fmt.Errorf("unexpected status code: %v", resp.StatusCode)
 				}
 
 				return nil
 			}()
 			if err != nil {
+				// If we encounter a rate limit error, retry after the specified delay.
+				if strings.Contains(err.Error(), "received 429 Too Many Requests") {
+					continue
+				}
 				return result, err
 			}
 
