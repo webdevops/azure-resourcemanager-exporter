@@ -96,11 +96,24 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-require gopkg.in/yaml.v2 v2.4.0
+require (
+	github.com/KimMachineGun/automemlimit v0.6.1
+	github.com/dustin/go-humanize v1.0.1
+	go.uber.org/zap/exp v0.2.0
+	gopkg.in/yaml.v2 v2.4.0
+)
 
 require (
+	github.com/cilium/ebpf v0.9.1 // indirect
+	github.com/containerd/cgroups/v3 v3.0.1 // indirect
+	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+	github.com/godbus/dbus/v5 v5.0.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/opencontainers/runtime-spec v1.0.2 // indirect
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 )

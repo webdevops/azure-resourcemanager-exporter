@@ -71,6 +71,7 @@ func main() {
 	logger.Infof("starting azure-resourcemanager-exporter v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
 	logger.Info(string(Opts.GetJson()))
 	logger.Info(string(Config.GetJson()))
+	initSystem()
 
 	logger.Infof("init Azure connection")
 	initAzureConnection()
