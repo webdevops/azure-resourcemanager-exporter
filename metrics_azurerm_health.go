@@ -157,7 +157,7 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 						).Info("unhealthy resource detected")
 
 						if Config.Collectors.ResourceHealth.SummaryMaxLength > 0 {
-							summary = truncateStrings(to.String(resourceHealth.Properties.Summary), int(Config.Collectors.ResourceHealth.SummaryMaxLength), "...")
+							summary = truncateStrings(to.String(resourceHealth.Properties.Summary), Config.Collectors.ResourceHealth.SummaryMaxLength, "...")
 						}
 					}
 

@@ -4,6 +4,6 @@ type (
 	CollectorResourceHealth struct {
 		CollectorBase `yaml:",inline"`
 
-		SummaryMaxLength uint `yaml:"summaryMaxLength"`
+		SummaryMaxLength int `yaml:"summaryMaxLength"`
 	}
 )
