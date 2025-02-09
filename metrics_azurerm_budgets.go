@@ -112,7 +112,7 @@ func (m *MetricsCollectorAzureRmBudgets) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmBudgets) Reset() {}
 
 func (m *MetricsCollectorAzureRmBudgets) Collect(callback chan<- func()) {
-	if Config.Collectors.Budgets.Scopes != nil && len(Config.Collectors.Budgets.Scopes) > 0 {
+	if len(Config.Collectors.Budgets.Scopes) > 0 {
 		for _, scope := range Config.Collectors.Budgets.Scopes {
 			// Run the budget query for the current scope
 			m.collectBudgetMetrics(logger, scope, callback)
