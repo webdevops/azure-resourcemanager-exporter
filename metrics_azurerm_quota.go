@@ -60,6 +60,7 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *collector.Collector) {
 			"provider",
 			"scope",
 			"quota",
+			"quotaName",
 		},
 	)
 
@@ -74,6 +75,7 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *collector.Collector) {
 			"provider",
 			"scope",
 			"quota",
+			"quotaName",
 		},
 	)
 
@@ -88,6 +90,7 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *collector.Collector) {
 			"provider",
 			"scope",
 			"quota",
+			"quotaName",
 		},
 	)
 
@@ -190,29 +193,19 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 		}{}
 
 		if err := runtime.UnmarshalAsJSON(resp, &result); err == nil {
-			quotaName := "RoleAssignments"
-			quotaNameLocalized := "Role Assignments"
 			currentValue := result.RoleAssignmentsCurrentCount
 			limitValue := result.RoleAssignmentsLimit
-
-			infoLabels := prometheus.Labels{
-				"subscriptionID": to.StringLower(subscription.SubscriptionID),
-				"location":       "",
-				"provider":       "microsoft.authorization",
-				"scope":          "authorization",
-				"quota":          quotaName,
-				"quotaName":      quotaNameLocalized,
-			}
 
 			labels := prometheus.Labels{
 				"subscriptionID": to.StringLower(subscription.SubscriptionID),
 				"location":       "",
 				"provider":       "microsoft.authorization",
 				"scope":          "authorization",
-				"quota":          quotaName,
+				"quota":          "RoleAssignments",
+				"quotaName":      "Role Assignments",
 			}
 
-			quotaMetric.Add(infoLabels, 1)
+			quotaMetric.Add(labels, 1)
 			quotaCurrentMetric.Add(labels, currentValue)
 			quotaLimitMetric.Add(labels, limitValue)
 			if limitValue != 0 {
@@ -252,27 +245,18 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 // 			}
 //
 // 			for _, resourceUsage := range result.Value {
-// 				quotaName := to.String(resourceUsage.Properties.Name.Value)
-// 				quotaNameLocalized := to.String(resourceUsage.Properties.Name.LocalizedValue)
 // 				currentValue := float64(to.Number(resourceUsage.Properties.Usages.Value))
 // 				limitValue := float64(to.Number(resourceUsage.Properties.Usages.Limit))
-//
-// 				infoLabels := prometheus.Labels{
-// 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
-// 					"location":       strings.ToLower(location),
-// 					"scope":          provider,
-// 					"quota":          quotaName,
-// 					"quotaName":      quotaNameLocalized,
-// 				}
 //
 // 				labels := prometheus.Labels{
 // 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 // 					"location":       strings.ToLower(location),
 // 					"scope":          provider,
-// 					"quota":          quotaName,
+// 					"quota":          to.String(resourceUsage.Properties.Name.Value),
+// 					"quotaName":      to.String(resourceUsage.Properties.Name.LocalizedValue),
 // 				}
 //
-// 				quotaMetric.Add(infoLabels, 1)
+// 				quotaMetric.Add(labels, 1)
 // 				quotaCurrentMetric.Add(labels, currentValue)
 // 				quotaLimitMetric.Add(labels, limitValue)
 // 				if limitValue != 0 {
@@ -309,29 +293,19 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 			}
 
 			for _, resourceUsage := range result.Value {
-				quotaName := to.String(resourceUsage.Name.Value)
-				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
 				currentValue := float64(to.Number(resourceUsage.CurrentValue))
 				limitValue := float64(to.Number(resourceUsage.Limit))
-
-				infoLabels := prometheus.Labels{
-					"subscriptionID": to.StringLower(subscription.SubscriptionID),
-					"location":       strings.ToLower(location),
-					"provider":       "microsoft.compute",
-					"scope":          "compute",
-					"quota":          quotaName,
-					"quotaName":      quotaNameLocalized,
-				}
 
 				labels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"provider":       "microsoft.compute",
 					"scope":          "compute",
-					"quota":          quotaName,
+					"quota":          to.String(resourceUsage.Name.Value),
+					"quotaName":      to.String(resourceUsage.Name.LocalizedValue),
 				}
 
-				quotaMetric.Add(infoLabels, 1)
+				quotaMetric.Add(labels, 1)
 				quotaCurrentMetric.Add(labels, currentValue)
 				quotaLimitMetric.Add(labels, limitValue)
 				if limitValue != 0 {
@@ -368,29 +342,19 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 			}
 
 			for _, resourceUsage := range result.Value {
-				quotaName := to.String(resourceUsage.Name.Value)
-				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
 				currentValue := float64(to.Number(resourceUsage.CurrentValue))
 				limitValue := float64(to.Number(resourceUsage.Limit))
-
-				infoLabels := prometheus.Labels{
-					"subscriptionID": to.StringLower(subscription.SubscriptionID),
-					"location":       strings.ToLower(location),
-					"provider":       "microsoft.network",
-					"scope":          "network",
-					"quota":          quotaName,
-					"quotaName":      quotaNameLocalized,
-				}
 
 				labels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"provider":       "microsoft.network",
 					"scope":          "network",
-					"quota":          quotaName,
+					"quota":          to.String(resourceUsage.Name.Value),
+					"quotaName":      to.String(resourceUsage.Name.LocalizedValue),
 				}
 
-				quotaMetric.Add(infoLabels, 1)
+				quotaMetric.Add(labels, 1)
 				quotaCurrentMetric.Add(labels, currentValue)
 				quotaLimitMetric.Add(labels, limitValue)
 				if limitValue != 0 {
@@ -427,29 +391,19 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 			}
 
 			for _, resourceUsage := range result.Value {
-				quotaName := to.String(resourceUsage.Name.Value)
-				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
 				currentValue := float64(to.Number(resourceUsage.CurrentValue))
 				limitValue := float64(to.Number(resourceUsage.Limit))
-
-				infoLabels := prometheus.Labels{
-					"subscriptionID": to.StringLower(subscription.SubscriptionID),
-					"location":       strings.ToLower(location),
-					"provider":       "microsoft.storage",
-					"scope":          "storage",
-					"quota":          quotaName,
-					"quotaName":      quotaNameLocalized,
-				}
 
 				labels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"provider":       "microsoft.storage",
 					"scope":          "storage",
-					"quota":          quotaName,
+					"quota":          to.String(resourceUsage.Name.Value),
+					"quotaName":      to.String(resourceUsage.Name.LocalizedValue),
 				}
 
-				quotaMetric.Add(infoLabels, 1)
+				quotaMetric.Add(labels, 1)
 				quotaCurrentMetric.Add(labels, currentValue)
 				quotaLimitMetric.Add(labels, limitValue)
 				if limitValue != 0 {
@@ -486,29 +440,19 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscrip
 			}
 
 			for _, resourceUsage := range result.Value {
-				quotaName := to.String(resourceUsage.Name.Value)
-				quotaNameLocalized := to.String(resourceUsage.Name.LocalizedValue)
 				currentValue := float64(to.Number(resourceUsage.CurrentValue))
 				limitValue := float64(to.Number(resourceUsage.Limit))
-
-				infoLabels := prometheus.Labels{
-					"subscriptionID": to.StringLower(subscription.SubscriptionID),
-					"location":       strings.ToLower(location),
-					"provider":       "microsoft.machinelearningservices",
-					"scope":          "machinelearningservices",
-					"quota":          quotaName,
-					"quotaName":      quotaNameLocalized,
-				}
 
 				labels := prometheus.Labels{
 					"subscriptionID": to.StringLower(subscription.SubscriptionID),
 					"location":       strings.ToLower(location),
 					"provider":       "microsoft.machinelearningservices",
 					"scope":          "machinelearningservices",
-					"quota":          quotaName,
+					"quota":          to.String(resourceUsage.Name.Value),
+					"quotaName":      to.String(resourceUsage.Name.LocalizedValue),
 				}
 
-				quotaMetric.Add(infoLabels, 1)
+				quotaMetric.Add(labels, 1)
 				quotaCurrentMetric.Add(labels, currentValue)
 				quotaLimitMetric.Add(labels, limitValue)
 				if limitValue != 0 {
