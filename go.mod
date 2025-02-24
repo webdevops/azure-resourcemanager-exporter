@@ -8,7 +8,7 @@ require (
 	github.com/anvie/port-scanner v0.0.0-20180225151059-8159197d3770
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/jessevdk/go-flags v1.6.1
-	github.com/prometheus/client_golang v1.20.5
+	github.com/prometheus/client_golang v1.21.0
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/remeh/sizedwaitgroup v1.0.0
@@ -62,7 +62,7 @@ require (
 	github.com/microsoft/kiota-serialization-json-go v1.0.9 // indirect
 	github.com/microsoft/kiota-serialization-multipart-go v1.0.0 // indirect
 	github.com/microsoft/kiota-serialization-text-go v1.0.0 // indirect
-	github.com/microsoftgraph/msgraph-sdk-go v1.60.0
+	github.com/microsoftgraph/msgraph-sdk-go v1.61.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v1.2.1
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -98,7 +98,7 @@ require (
 )
 
 require (
-	github.com/KimMachineGun/automemlimit v0.7.0
+	github.com/KimMachineGun/automemlimit v0.7.1
 	github.com/dustin/go-humanize v1.0.1
 	go.uber.org/zap/exp v0.3.0
 	gopkg.in/yaml.v2 v2.4.0
