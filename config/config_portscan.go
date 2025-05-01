@@ -2,14 +2,14 @@ package config
 
 type (
 	CollectorPortscan struct {
-		CollectorBase `yaml:",inline"`
+		*CollectorBase
 
 		Scanner struct {
-			Parallel int `yaml:"parallel"`
-			Threads  int `yaml:"threads"`
-			Timeout  int `yaml:"timeout"`
+			Parallel int `json:"parallel"`
+			Threads  int `json:"threads"`
+			Timeout  int `json:"timeout"`
 
-			Ports []string `yaml:"ports"`
-		} `yaml:"scanner"`
+			Ports []string `json:"ports"`
+		} `json:"scanner"`
 	}
 )

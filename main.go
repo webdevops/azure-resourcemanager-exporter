@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -12,7 +10,7 @@ import (
 	"runtime"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
 
@@ -103,23 +101,19 @@ func initArgparser() {
 func initConfig() {
 	var err error
 
-	decoder := yaml.NewDecoder(bytes.NewReader(defaultConfig))
-	decoder.SetStrict(true)
-	err = decoder.Decode(&Config)
+	err = yaml.UnmarshalStrict(defaultConfig, &Config)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
 
 	logger.Infof(`reading config from "%v"`, Opts.Config)
 	/* #nosec */
-	file, err := os.Open(Opts.Config)
+	content, err := os.ReadFile(Opts.Config)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
 
-	decoder = yaml.NewDecoder(bufio.NewReader(file))
-	decoder.SetStrict(true)
-	err = decoder.Decode(&Config)
+	err = yaml.UnmarshalStrict(content, &Config)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}

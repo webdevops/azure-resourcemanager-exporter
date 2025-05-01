@@ -2,11 +2,11 @@ package config
 
 type (
 	CollectorGraph struct {
-		CollectorBase `yaml:",inline"`
+		*CollectorBase
 
 		Filter struct {
-			Application      *string `yaml:"application"`
-			ServicePrincipal *string `yaml:"servicePrincipal"`
-		} `yaml:"filter"`
+			Application      *string `json:"application"`
+			ServicePrincipal *string `json:"servicePrincipal"`
+		} `json:"filter"`
 	}
 )

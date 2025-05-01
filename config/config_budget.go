@@ -2,8 +2,8 @@ package config
 
 type (
 	CollectorBudgets struct {
-		CollectorBase `yaml:",inline"`
+		*CollectorBase
 
-		Scopes []string `yaml:"scopes"`
+		Scopes []string `json:"scopes"`
 	}
 )

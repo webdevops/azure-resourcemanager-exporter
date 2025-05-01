@@ -8,33 +8,33 @@ import (
 
 type (
 	CollectorCosts struct {
-		CollectorBase `yaml:",inline"`
+		*CollectorBase
 
-		RequestDelay time.Duration `yaml:"requestDelay"`
+		RequestDelay time.Duration `json:"requestDelay"`
 
-		Queries []CollectorCostsQuery `yaml:"queries"`
+		Queries []CollectorCostsQuery `json:"queries"`
 	}
 
 	CollectorCostsQuery struct {
-		Name          string                         `yaml:"name"`
-		Help          *string                        `yaml:"help"`
-		Scopes        *[]string                      `yaml:"scopes"`
-		Subscriptions *[]string                      `yaml:"subscriptions"`
-		TimeFrames    []string                       `yaml:"timeFrames"`
-		Dimensions    []string                       `yaml:"dimensions"`
-		ExportType    string                         `yaml:"exportType"`
-		Granularity   string                         `yaml:"granularity"`
-		ValueField    string                         `yaml:"valueField"`
-		Labels        map[string]string              `yaml:"labels"`
-		TimePeriod    *CollectorCostsQueryTimePeriod `yaml:"timePeriod"`
+		Name          string                         `json:"name"`
+		Help          *string                        `json:"help"`
+		Scopes        *[]string                      `json:"scopes"`
+		Subscriptions *[]string                      `json:"subscriptions"`
+		TimeFrames    []string                       `json:"timeFrames"`
+		Dimensions    []string                       `json:"dimensions"`
+		ExportType    string                         `json:"exportType"`
+		Granularity   string                         `json:"granularity"`
+		ValueField    string                         `json:"valueField"`
+		Labels        map[string]string              `json:"labels"`
+		TimePeriod    *CollectorCostsQueryTimePeriod `json:"timePeriod"`
 
 		config *configCollectorCostsQueryConfig
 	}
 	CollectorCostsQueryTimePeriod struct {
-		From         *time.Time     `yaml:"from"`
-		FromDuration *time.Duration `yaml:"fromDuration"`
-		To           *time.Time     `yaml:"to"`
-		ToDuration   *time.Duration `yaml:"toDuration"`
+		From         *time.Time     `json:"from"`
+		FromDuration *time.Duration `json:"fromDuration"`
+		To           *time.Time     `json:"to"`
+		ToDuration   *time.Duration `json:"toDuration"`
 	}
 
 	configCollectorCostsQueryConfig struct {
