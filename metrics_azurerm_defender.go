@@ -139,7 +139,7 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureSecureScore(subscription *
 			logger.Panic(err)
 		}
 
-		for _, secureScore := range result.SecureScoresList.Value {
+		for _, secureScore := range result.Value {
 			infoLabels := prometheus.Labels{
 				"subscriptionID":  to.StringLower(subscription.SubscriptionID),
 				"secureScoreName": to.StringLower(secureScore.Name),
