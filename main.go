@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"time"
 
-	"sigs.k8s.io/yaml"
+	yaml "github.com/goccy/go-yaml"
 
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
 
@@ -101,7 +101,7 @@ func initArgparser() {
 func initConfig() {
 	var err error
 
-	err = yaml.UnmarshalStrict(defaultConfig, &Config)
+	err = yaml.UnmarshalWithOptions(defaultConfig, &Config, yaml.Strict())
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -113,7 +113,7 @@ func initConfig() {
 		logger.Fatal(err.Error())
 	}
 
-	err = yaml.UnmarshalStrict(content, &Config)
+	err = yaml.UnmarshalWithOptions(content, &Config, yaml.Strict())
 	if err != nil {
 		logger.Fatal(err.Error())
 	}

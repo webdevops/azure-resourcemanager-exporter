@@ -2,7 +2,7 @@ package config
 
 type (
 	CollectorResourceHealth struct {
-		*CollectorBase
+		*CollectorBase `yaml:",inline"`
 
 		SummaryMaxLength int `json:"summaryMaxLength"`
 	}

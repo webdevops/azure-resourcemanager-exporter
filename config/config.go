@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
@@ -52,23 +51,4 @@ func (c *Config) GetJson() []byte {
 		panic(err)
 	}
 	return jsonBytes
-}
-
-func (c *CollectorBase) UnmarshalJSON(b []byte) error {
-	aux := &struct {
-		ScrapeTime *string `json:"scrapeTime"`
-	}{}
-	if err := json.Unmarshal(b, &aux); err != nil {
-		return err
-	}
-
-	if aux.ScrapeTime != nil {
-		scrapeTime, err := time.ParseDuration(*aux.ScrapeTime)
-		if err != nil {
-			return fmt.Errorf(`unable to parse "%s" as time.Duration: %w`, *aux.ScrapeTime, err)
-		}
-		c.ScrapeTime = &scrapeTime
-	}
-
-	return nil
 }

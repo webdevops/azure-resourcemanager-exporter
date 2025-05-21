@@ -2,7 +2,7 @@ package config
 
 type (
 	CollectorGraph struct {
-		*CollectorBase
+		*CollectorBase `yaml:",inline"`
 
 		Filter struct {
 			Application      *string `json:"application"`

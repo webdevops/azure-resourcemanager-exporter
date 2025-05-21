@@ -2,7 +2,7 @@ package config
 
 type (
 	CollectorPortscan struct {
-		*CollectorBase
+		*CollectorBase `yaml:",inline"`
 
 		Scanner struct {
 			Parallel int `json:"parallel"`

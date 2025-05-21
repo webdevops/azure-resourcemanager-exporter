@@ -2,7 +2,7 @@ package config
 
 type (
 	CollectorReservation struct {
-		*CollectorBase
+		*CollectorBase `yaml:",inline"`
 
 		Scopes      []string `json:"scopes"`
 		Granularity string   `json:"granularity"`

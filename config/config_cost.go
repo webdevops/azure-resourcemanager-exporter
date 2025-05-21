@@ -8,7 +8,7 @@ import (
 
 type (
 	CollectorCosts struct {
-		*CollectorBase
+		*CollectorBase `yaml:",inline"`
 
 		RequestDelay time.Duration `json:"requestDelay"`
 
