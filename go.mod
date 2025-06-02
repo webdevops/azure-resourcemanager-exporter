@@ -94,7 +94,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-require github.com/goccy/go-yaml v1.17.1
+require github.com/goccy/go-yaml v1.18.0
 
 require (
 	github.com/KimMachineGun/automemlimit v0.7.2 // indirect
