@@ -59,7 +59,7 @@ require (
 	github.com/microsoft/kiota-serialization-json-go v1.1.2 // indirect
 	github.com/microsoft/kiota-serialization-multipart-go v1.1.2 // indirect
 	github.com/microsoft/kiota-serialization-text-go v1.1.2 // indirect
-	github.com/microsoftgraph/msgraph-sdk-go v1.72.0
+	github.com/microsoftgraph/msgraph-sdk-go v1.73.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v1.3.2
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -94,7 +94,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-require github.com/goccy/go-yaml v1.17.1
+require github.com/goccy/go-yaml v1.18.0
 
 require (
 	github.com/KimMachineGun/automemlimit v0.7.2 // indirect
