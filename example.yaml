@@ -34,6 +34,13 @@ collectors:
   quota:
     scrapeTime: 5m
 
+  # Azure Advisor recommendations
+  advisor:
+    scrapeTime: 5m
+    # Optional: truncate problem/solution text to avoid excessively long labels
+    problemMaxLength: 0    # 0 = no truncation
+    solutionMaxLength: 0   # 0 = no truncation
+
   # Defender (security) metrics
   # score, recommendations, ...
   defender:

@@ -13,6 +13,8 @@ collectors:
 
   quota: {}
 
+  advisor: {}
+
   defender: {}
 
   resourceHealth: {}

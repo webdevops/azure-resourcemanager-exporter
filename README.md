@@ -68,40 +68,41 @@ This exporter needs `Reader` permissions on subscription level.
 
 ## Metrics
 
-| Metric                                      | Collector  | Description                                                                                  |
-|---------------------------------------------|------------|----------------------------------------------------------------------------------------------|
-| `azurerm_stats`                             | Exporter   | General exporter stats                                                                       |
-| `azurerm_costs_budget_info`                 | Costs      | Azure CostManagement bugdet information                                                      |
-| `azurerm_costs_budget_current`              | Costs      | Current value of CostManagemnet budget usage                                                 |
-| `azurerm_costs_budget_limit`                | Costs      | Limit of CostManagemnet budget                                                               |
-| `azurerm_costs_budget_usage`                | Costs      | Percentage of usage of CostManagemnet budget                                                 |
-| `azurerm_costs_{queryName}`                 | Costs      | Costs query result (see `example.yaml`)                                                      |
-| `azurerm_subscription_info`                 | General    | Azure Subscription details (ID, name, ...)                                                   |
-| `azurerm_resource_health`                   | Health     | Azure Resource health information                                                            |
-| `azurerm_iam_roleassignment_info`           | IAM        | Azure IAM RoleAssignment information                                                         |
-| `azurerm_iam_roledefinition_info`           | IAM        | Azure IAM RoleDefinition information                                                         |
-| `azurerm_iam_principal_info`                | IAM        | Azure IAM Principal information                                                              |
-| `azurerm_quota_info`                        | Quota      | Azure RM quota details (readable name, scope, ...)                                           |
-| `azurerm_quota_current`                     | Quota      | Azure RM quota current (current value)                                                       |
-| `azurerm_quota_limit`                       | Quota      | Azure RM quota limit (maximum limited value)                                                 |
-| `azurerm_quota_usage`                       | Quota      | Azure RM quota usage in percent                                                              |
-| `azurerm_resourcegroup_info`                | Resource   | Azure ResourceGroup details (subscriptionID, name, various tags ...)                         |
-| `azurerm_resource_info`                     | Resource   | Azure Resource information                                                                   |
-| `azurerm_defender_secure_score_percentage`  | Defender   | Azure Defender secure score percerntage per Subscription                                     |
+| Metric                                      | Collector  | Description                                                                                 |
+|---------------------------------------------|------------|---------------------------------------------------------------------------------------------|
+| `azurerm_stats`                             | Exporter   | General exporter stats                                                                      |
+| `azurerm_costs_budget_info`                 | Costs      | Azure CostManagement bugdet information                                                     |
+| `azurerm_costs_budget_current`              | Costs      | Current value of CostManagemnet budget usage                                                |
+| `azurerm_costs_budget_limit`                | Costs      | Limit of CostManagemnet budget                                                              |
+| `azurerm_costs_budget_usage`                | Costs      | Percentage of usage of CostManagemnet budget                                                |
+| `azurerm_costs_{queryName}`                 | Costs      | Costs query result (see `example.yaml`)                                                     |
+| `azurerm_subscription_info`                 | General    | Azure Subscription details (ID, name, ...)                                                  |
+| `azurerm_resource_health`                   | Health     | Azure Resource health information                                                           |
+| `azurerm_iam_roleassignment_info`           | IAM        | Azure IAM RoleAssignment information                                                        |
+| `azurerm_iam_roledefinition_info`           | IAM        | Azure IAM RoleDefinition information                                                        |
+| `azurerm_iam_principal_info`                | IAM        | Azure IAM Principal information                                                             |
+| `azurerm_quota_info`                        | Quota      | Azure RM quota details (readable name, scope, ...)                                          |
+| `azurerm_quota_current`                     | Quota      | Azure RM quota current (current value)                                                      |
+| `azurerm_quota_limit`                       | Quota      | Azure RM quota limit (maximum limited value)                                                |
+| `azurerm_quota_usage`                       | Quota      | Azure RM quota usage in percent                                                             |
+| `azurerm_resourcegroup_info`                | Resource   | Azure ResourceGroup details (subscriptionID, name, various tags ...)                        |
+| `azurerm_resource_info`                     | Resource   | Azure Resource information                                                                  |
+| `azurerm_advisor_recommendation`            | Advisor    | Azure Advisor recommendation    |
+| `azurerm_defender_secure_score_percentage`  | Defender   | Azure Defender secure score percerntage per Subscription                                    |
 | `azurerm_defender_secure_score_max`         | Defender   | The maximum number of points you can gain by completing all recommendations within a control |
-| `azurerm_defender_secure_score_current`     | Defender   | The current Azure Defender secure score                                                      |
-| `azurerm_defender_compliance_score`         | Defender   | Azure Defender compliance score (based on applied Policies)                                  |
-| `azurerm_defender_compliance_resources`     | Defender   | Azure Defender count of compliance resource in assessment                                    |
-| `azurerm_defender_advisor_recommendation`   | Defender   | Azure Defender recommendations (eg. security findings)                                       |
-| `azurerm_graph_app_info`                    | Graph      | AzureAD graph application information                                                        |
-| `azurerm_graph_app_tag`                     | Graph      | AzureAD graph application tag                                                                |
-| `azurerm_graph_app_credential`              | Graph      | AzureAD graph application credentials (create,expiry) information                            |
-| `azurerm_graph_serviceprincipal_info`       | Graph      | AzureAD graph servicePrincipal information                                                   |
-| `azurerm_graph_serviceprincipal_tag`        | Graph      | AzureAD graph servicePrincipal tag                                                           |
-| `azurerm_graph_serviceprincipal_credential` | Graph      | AzureAD graph servicePrincipal credentials (create,expiry) information                       |
-| `azurerm_publicip_info`                     | Portscan   | Azure PublicIP information                                                                   |
-| `azurerm_publicip_portscan_status`          | Portscan   | Status of scanned ports (finished scan, elapsed time, updated timestamp)                     |
-| `azurerm_publicip_portscan_port`            | Portscan   | List of opened ports per IP                                                                  |
+| `azurerm_defender_secure_score_current`     | Defender   | The current Azure Defender secure score                                                     |
+| `azurerm_defender_compliance_score`         | Defender   | Azure Defender compliance score (based on applied Policies)                                 |
+| `azurerm_defender_compliance_resources`     | Defender   | Azure Defender count of compliance resource in assessment                                   |
+| `azurerm_defender_advisor_recommendation`   | Defender   | Azure Defender recommendations (eg. security findings)                                      |
+| `azurerm_graph_app_info`                    | Graph      | AzureAD graph application information                                                       |
+| `azurerm_graph_app_tag`                     | Graph      | AzureAD graph application tag                                                               |
+| `azurerm_graph_app_credential`              | Graph      | AzureAD graph application credentials (create,expiry) information                           |
+| `azurerm_graph_serviceprincipal_info`       | Graph      | AzureAD graph servicePrincipal information                                                  |
+| `azurerm_graph_serviceprincipal_tag`        | Graph      | AzureAD graph servicePrincipal tag                                                          |
+| `azurerm_graph_serviceprincipal_credential` | Graph      | AzureAD graph servicePrincipal credentials (create,expiry) information                      |
+| `azurerm_publicip_info`                     | Portscan   | Azure PublicIP information                                                                  |
+| `azurerm_publicip_portscan_status`          | Portscan   | Status of scanned ports (finished scan, elapsed time, updated timestamp)                    |
+| `azurerm_publicip_portscan_port`            | Portscan   | List of opened ports per IP                                                                 |
 
 ### ResourceTags handling
 
