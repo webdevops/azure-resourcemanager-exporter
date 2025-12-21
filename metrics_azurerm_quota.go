@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,7 +18,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmQuota struct {
@@ -103,7 +103,7 @@ func (m *MetricsCollectorAzureRmQuota) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmQuota) Reset() {}
 
 func (m *MetricsCollectorAzureRmQuota) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 		m.collectAuthorizationUsage(subscription, logger, callback)
 
 		// if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, "Microsoft.Capacity"); registered {
@@ -143,12 +143,12 @@ func (m *MetricsCollectorAzureRmQuota) Collect(callback chan<- func()) {
 		}
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }
 
 // collectAzureComputeUsage collects compute usages
-func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	options := AzureClient.NewArmClientOptions()
 	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
 	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
@@ -157,7 +157,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 
 	pl, err := armruntime.NewPipeline("azurerm-quota", gitTag, AzureClient.GetCred(), runtime.PipelineOptions{}, options)
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	quotaMetric := m.Collector.GetMetricList("quota")
@@ -172,7 +172,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 
 	req, err := runtime.NewRequest(ctx, http.MethodGet, runtime.JoinPaths(ep, urlPath))
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 	reqQP := req.Raw().URL.Query()
 	reqQP.Set("api-version", "2019-08-01-preview")
@@ -181,7 +181,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 
 	resp, err := pl.Do(req)
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 	defer resp.Body.Close()
 
@@ -216,10 +216,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 }
 
 // collectQuotaUsage collect generic quota usages
-// func (m *MetricsCollectorAzureRmQuota) collectQuotaUsage(subscription *armsubscriptions.Subscription, provider string, logger *zap.SugaredLogger, callback chan<- func()) {
+// func (m *MetricsCollectorAzureRmQuota) collectQuotaUsage(subscription *armsubscriptions.Subscription, provider string, logger *slog.Logger, callback chan<- func()) {
 // 	client, err := armquota.NewUsagesClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 // 	if err != nil {
-// 		logger.Panic(err)
+// 		panic(err)
 // 	}
 //
 // 	quotaMetric := m.Collector.GetMetricList("quota")
@@ -237,7 +237,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 // 		for pager.More() {
 // 			result, err := pager.NextPage(m.Context())
 // 			if err != nil {
-// 				logger.Panic(err)
+// 				panic(err)
 // 			}
 //
 // 			if result.Value == nil {
@@ -268,10 +268,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAuthorizationUsage(subscription *a
 // }
 
 // collectAzureComputeUsage collects compute usages
-func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armcompute.NewUsageClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	quotaMetric := m.Collector.GetMetricList("quota")
@@ -285,7 +285,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 		for pager.More() {
 			result, err := pager.NextPage(m.Context())
 			if err != nil {
-				logger.Panic(err)
+				panic(err)
 			}
 
 			if result.Value == nil {
@@ -317,10 +317,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureComputeUsage(subscription *ar
 }
 
 // collectAzureComputeUsage collects network usages
-func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armnetwork.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	quotaMetric := m.Collector.GetMetricList("quota")
@@ -334,7 +334,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 		for pager.More() {
 			result, err := pager.NextPage(m.Context())
 			if err != nil {
-				logger.Panic(err)
+				panic(err)
 			}
 
 			if result.Value == nil {
@@ -366,10 +366,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureNetworkUsage(subscription *ar
 }
 
 // collectAzureComputeUsage collects storage usages
-func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armstorage.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	quotaMetric := m.Collector.GetMetricList("quota")
@@ -383,7 +383,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 		for pager.More() {
 			result, err := pager.NextPage(m.Context())
 			if err != nil {
-				logger.Panic(err)
+				panic(err)
 			}
 
 			if result.Value == nil {
@@ -415,10 +415,10 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureStorageUsage(subscription *ar
 }
 
 // collectAzureComputeUsage collects machinelearning usages
-func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armmachinelearning.NewUsagesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	quotaMetric := m.Collector.GetMetricList("quota")
@@ -432,7 +432,7 @@ func (m *MetricsCollectorAzureRmQuota) collectAzureMachineLearningUsage(subscrip
 		for pager.More() {
 			result, err := pager.NextPage(m.Context())
 			if err != nil {
-				logger.Panic(err)
+				panic(err)
 			}
 
 			if result.Value == nil {

@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"regexp"
@@ -21,7 +22,6 @@ import (
 	"github.com/webdevops/go-common/azuresdk/prometheus/tracing"
 	"github.com/webdevops/go-common/msgraphsdk/msgraphclient"
 	"github.com/webdevops/go-common/prometheus/collector"
-	"go.uber.org/zap"
 )
 
 const (
@@ -51,6 +51,7 @@ var (
 	// Git version information
 	gitCommit = "<unknown>"
 	gitTag    = "<unknown>"
+	buildDate = "<unknown>"
 
 	// cache config
 	cacheTag = "v1"
@@ -63,10 +64,10 @@ type Portrange struct {
 
 func main() {
 	initArgparser()
-	defer initLogger().Sync() // nolint:errcheck
+	initLogger()
 	initConfig()
 
-	logger.Infof("starting azure-resourcemanager-exporter v%s (%s; %s; by %v)", gitTag, gitCommit, runtime.Version(), Author)
+	logger.Infof("starting azure-resourcemanager-exporter v%s (%s; %s; by %v at %v)", gitTag, gitCommit, runtime.Version(), Author, buildDate)
 	logger.Info(string(Opts.GetJson()))
 	logger.Info(string(Config.GetJson()))
 	initSystem()
@@ -77,7 +78,7 @@ func main() {
 	logger.Infof("starting metrics collection")
 	initMetricCollector()
 
-	logger.Infof("starting http server on %s", Opts.Server.Bind)
+	logger.Info("starting http server", slog.String("bind", Opts.Server.Bind))
 	startHttpServer()
 }
 
@@ -124,11 +125,11 @@ func initAzureConnection() {
 
 	if Opts.Azure.Environment != nil {
 		if err := os.Setenv(azidentity.EnvAzureEnvironment, *Opts.Azure.Environment); err != nil {
-			logger.Warnf(`unable to set envvar "%s": %v`, azidentity.EnvAzureEnvironment, err.Error())
+			logger.Warn(`unable to set environment variable`, slog.String("env", azidentity.EnvAzureEnvironment), slog.Any("error", err))
 		}
 	}
 
-	AzureClient, err = armclient.NewArmClientFromEnvironment(logger)
+	AzureClient, err = armclient.NewArmClientFromEnvironment(logger.Slog())
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -149,20 +150,20 @@ func initAzureConnection() {
 	// init resource tag manager
 	AzureResourceTagManager, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceTags)
 	if err != nil {
-		logger.Fatal(`unable to parse resourceTag configuration "%s": %v"`, Config.Azure.ResourceTags, err.Error())
+		logger.Fatal(`unable to parse resourceTag configuration`, slog.Any("config", Config.Azure.ResourceTags), slog.Any("error", err.Error()))
 	}
 
 	// init resourceGroup tag manager
 	AzureResourceGroupTagManager, err = AzureClient.TagManager.ParseTagConfig(Config.Azure.ResourceGroupTags)
 	if err != nil {
-		logger.Fatal(`unable to parse resourceGroupTag configuration "%s": %v"`, Config.Azure.ResourceGroupTags, err.Error())
+		logger.Fatal(`unable to parse resourceGroupTag configuration`, slog.Any("config", Config.Azure.ResourceGroupTags), slog.Any("error", err.Error()))
 	}
 }
 
 func initMsGraphConnection() {
 	var err error
 	if MsGraphClient == nil {
-		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*Opts.Azure.Environment, *Opts.Azure.Tenant, logger)
+		MsGraphClient, err = msgraphclient.NewMsGraphClientWithCloudName(*Opts.Azure.Environment, *Opts.Azure.Tenant, logger.Slog())
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -176,12 +177,14 @@ func initMetricCollector() {
 
 	collectorName = "general"
 	if Config.Collectors.General.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmGeneral{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.General.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.General),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -189,37 +192,41 @@ func initMetricCollector() {
 
 	collectorName = "resource"
 	if Config.Collectors.Resource.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmResources{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Resource.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Resource),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "quota"
 	if Config.Collectors.Quota.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmQuota{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Quota.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Quota),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "costs"
 	if Config.Collectors.Costs.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmCosts{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Costs.ScrapeTime)
 		// higher backoff times because of strict cost rate limits
 		c.SetPanicBackoff(
@@ -227,123 +234,139 @@ func initMetricCollector() {
 			5*time.Minute,
 			10*time.Minute,
 		)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Costs),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "reservation"
 	if Config.Collectors.Reservation.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmReservation{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmReservation{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Reservation.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Reservation),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "budgets"
 	if Config.Collectors.Budgets.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmBudgets{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmBudgets{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Budgets.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Budgets),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "defender"
 	if Config.Collectors.Defender.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmDefender{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Defender.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Defender),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "resourceHealth"
 	if Config.Collectors.ResourceHealth.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmHealth{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.ResourceHealth.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.ResourceHealth),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "iam"
 	if Config.Collectors.Iam.IsEnabled() {
 		initMsGraphConnection()
-		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmIam{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Iam.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Iam, Opts.Azure.Tenant),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "graphApplications"
 	if Config.Collectors.Graph.IsEnabled() {
 		initMsGraphConnection()
-		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorGraphApps{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Graph, Opts.Azure.Tenant),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "graphServicePrincipals"
 	if Config.Collectors.Graph.IsEnabled() {
 		initMsGraphConnection()
-		c := collector.New(collectorName, &MetricsCollectorGraphServicePrincipals{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorGraphServicePrincipals{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Graph.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Graph, Opts.Azure.Tenant),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Panic(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "portscan"
@@ -351,20 +374,22 @@ func initMetricCollector() {
 		// parse collectors.portscan.scanner.ports
 		err := parseConfigPortScannerPortrange()
 		if err != nil {
-			logger.Fatal(err)
+			logger.Fatal(err.Error())
 		}
 
-		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorPortscanner{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Portscan.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Portscan),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 }
 
@@ -375,14 +400,14 @@ func startHttpServer() {
 	// healthz
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
-			logger.Error(err)
+			logger.Error(err.Error())
 		}
 	})
 
 	// readyz
 	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := fmt.Fprint(w, "Ok"); err != nil {
-			logger.Error(err)
+			logger.Error(err.Error())
 		}
 	})
 
@@ -396,5 +421,7 @@ func startHttpServer() {
 		ReadTimeout:  Opts.Server.ReadTimeout,
 		WriteTimeout: Opts.Server.WriteTimeout,
 	}
-	logger.Fatal(srv.ListenAndServe())
+	if err := srv.ListenAndServe(); err != nil {
+		logger.Fatal(err.Error())
+	}
 }

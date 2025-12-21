@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log/slog"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 // Define MetricsCollectorAzureRmBudgets struct
@@ -115,13 +116,13 @@ func (m *MetricsCollectorAzureRmBudgets) Collect(callback chan<- func()) {
 	if len(Config.Collectors.Budgets.Scopes) > 0 {
 		for _, scope := range Config.Collectors.Budgets.Scopes {
 			// Run the budget query for the current scope
-			m.collectBudgetMetrics(logger, scope, callback)
+			m.collectBudgetMetrics(m.Logger(), scope, callback)
 		}
 	} else {
 		// using subscription iterator
 		iterator := AzureSubscriptionsIterator
 
-		err := iterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+		err := iterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 			m.collectBudgetMetrics(
 				logger,
 				*subscription.ID,
@@ -129,15 +130,15 @@ func (m *MetricsCollectorAzureRmBudgets) Collect(callback chan<- func()) {
 			)
 		})
 		if err != nil {
-			m.Logger().Panic(err)
+			panic(err)
 		}
 	}
 }
 
-func (m *MetricsCollectorAzureRmBudgets) collectBudgetMetrics(logger *zap.SugaredLogger, scope string, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmBudgets) collectBudgetMetrics(logger *slog.Logger, scope string, callback chan<- func()) {
 	clientFactory, err := armconsumption.NewClientFactory("<subscription-id>", AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	infoMetric := m.Collector.GetMetricList("consumptionBudgetInfo")
@@ -151,7 +152,7 @@ func (m *MetricsCollectorAzureRmBudgets) collectBudgetMetrics(logger *zap.Sugare
 	for pager.More() {
 		result, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		if result.Value == nil {

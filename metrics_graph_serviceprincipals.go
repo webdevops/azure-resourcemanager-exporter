@@ -84,7 +84,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 	}
 	result, err := MsGraphClient.ServiceClient().ServicePrincipals().Get(m.Context(), &opts)
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 
 	serviceprincipalMetrics := m.Collector.GetMetricList("serviceprincipal")
@@ -93,7 +93,7 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 
 	i, err := msgraphcore.NewPageIterator[models.ServicePrincipalable](result, MsGraphClient.RequestAdapter(), models.CreateServicePrincipalCollectionResponseFromDiscriminatorValue)
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 
 	err = i.Iterate(m.Context(), func(serviceprincipal models.ServicePrincipalable) bool {
@@ -163,6 +163,6 @@ func (m *MetricsCollectorGraphServicePrincipals) Collect(callback chan<- func())
 		return true
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }

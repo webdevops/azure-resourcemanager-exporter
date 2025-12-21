@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
@@ -9,7 +10,6 @@ import (
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type MetricsCollectorPortscanner struct {
@@ -74,17 +74,17 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.Collector.RegisterMetricList("publicIpPortscanPort", m.prometheus.publicIpPortscanPort, false)
 
 	m.portscanner.Callbacks.FinishScan = func(c *Portscanner) {
-		m.Logger().Infof("finished for %v IPs", len(m.portscanner.Data.PublicIps))
+		m.Logger().Info("finished for IP addresses", slog.Int("count", len(m.portscanner.Data.PublicIps)))
 	}
 
 	m.portscanner.Callbacks.StartupScan = func(c *Portscanner) {
-		m.Logger().Infof(
-			"starting for %v IPs (parallel:%v, threads per run:%v, timeout:%vs, portranges:%v)",
-			len(c.Data.PublicIps),
-			Config.Collectors.Portscan.Scanner.Parallel,
-			Config.Collectors.Portscan.Scanner.Threads,
-			Config.Collectors.Portscan.Scanner.Timeout,
-			portscanPortRange,
+		m.Logger().Info(
+			"starting portscan for IPs",
+			slog.Int("count", len(c.Data.PublicIps)),
+			slog.Int("parallel", Config.Collectors.Portscan.Scanner.Parallel),
+			slog.Int("threadsPerRun", Config.Collectors.Portscan.Scanner.Threads),
+			slog.Int("timeout", Config.Collectors.Portscan.Scanner.Timeout),
+			slog.Any("portRange", portscanPortRange),
 		)
 
 		m.prometheus.publicIpPortscanStatus.Reset()
@@ -93,7 +93,7 @@ func (m *MetricsCollectorPortscanner) Setup(collector *collector.Collector) {
 	m.portscanner.Callbacks.StartScanIpAdress = func(c *Portscanner, pip armnetwork.PublicIPAddress) {
 		ipAddress := to.StringLower(pip.Properties.IPAddress)
 
-		m.Logger().With(zap.String("ipAddress", ipAddress)).Infof("start port scanning")
+		m.Logger().With(slog.String("ipAddress", ipAddress)).Info("start port scanning")
 
 		// set the ipAdress to be scanned
 		m.Collector.GetMetricList("publicIpPortscanStatus").Add(prometheus.Labels{
@@ -147,7 +147,7 @@ func (m *MetricsCollectorPortscanner) Reset() {
 func (m *MetricsCollectorPortscanner) Collect(callback chan<- func()) {
 	subscriptionList, err := AzureSubscriptionsIterator.ListSubscriptions()
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 
 	m.portscanner.CacheLoad()
@@ -165,11 +165,10 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 
 	for _, val := range subscriptions {
 		subscription := val
-		contextLogger := m.Logger().With(zap.String("azureSubscription", *subscription.SubscriptionID))
 
 		client, err := armnetwork.NewPublicIPAddressesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 		if err != nil {
-			contextLogger.Panic(err)
+			panic(err)
 		}
 
 		pager := client.NewListAllPager(nil)
@@ -177,7 +176,7 @@ func (m *MetricsCollectorPortscanner) fetchPublicIpAdresses(subscriptions map[st
 		for pager.More() {
 			result, err := pager.NextPage(m.Context())
 			if err != nil {
-				contextLogger.Panic(err)
+				panic(err)
 			}
 
 			if result.Value == nil {

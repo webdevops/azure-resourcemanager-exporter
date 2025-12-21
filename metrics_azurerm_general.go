@@ -1,11 +1,12 @@
 package main
 
 import (
+	"log/slog"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmGeneral struct {
@@ -41,16 +42,16 @@ func (m *MetricsCollectorAzureRmGeneral) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmGeneral) Reset() {}
 
 func (m *MetricsCollectorAzureRmGeneral) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 		m.collectSubscription(subscription, logger, callback)
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }
 
 // Collect Azure Subscription metrics
-func (m *MetricsCollectorAzureRmGeneral) collectSubscription(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmGeneral) collectSubscription(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	subscriptionMetric := m.Collector.GetMetricList("subscription")
 
 	spendingLimit := ""

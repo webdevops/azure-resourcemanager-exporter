@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"strconv"
 	"sync"
 	"time"
@@ -9,8 +10,8 @@ import (
 	scanner "github.com/anvie/port-scanner"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/remeh/sizedwaitgroup"
+	"github.com/webdevops/go-common/log/slogger"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type PortscannerResult struct {
@@ -24,7 +25,7 @@ type Portscanner struct {
 	Enabled bool `json:"-"`
 	mux     sync.Mutex
 
-	logger *zap.SugaredLogger
+	logger *slogger.Logger
 
 	Callbacks struct {
 		RestoreCache       func(c *Portscanner) interface{}
@@ -50,7 +51,7 @@ func (c *Portscanner) Init() {
 		PublicIps: map[string]*armnetwork.PublicIPAddress{},
 	}
 
-	c.logger = logger.With(zap.String("component", "portscanner"))
+	c.logger = logger.With(slog.String("component", "portscanner"))
 
 	c.Callbacks.RestoreCache = func(c *Portscanner) interface{} { return nil }
 	c.Callbacks.StoreCache = func(c *Portscanner, data interface{}) {}
@@ -195,7 +196,7 @@ func (c *Portscanner) scanIp(pip armnetwork.PublicIPAddress, portscanTimeout tim
 	ipAddress := to.String(pip.Properties.IPAddress)
 	startTime := time.Now().Unix()
 
-	contextLogger := c.logger.With(zap.String("ipAddress", ipAddress))
+	contextLogger := c.logger.With(slog.String("ipAddress", ipAddress))
 
 	// check if public ip is still owned
 	if _, ok := c.Data.PublicIps[ipAddress]; !ok {
@@ -208,7 +209,7 @@ func (c *Portscanner) scanIp(pip armnetwork.PublicIPAddress, portscanTimeout tim
 		openedPorts := ps.GetOpenedPort(portrange.FirstPort, portrange.LastPort)
 
 		for _, port := range openedPorts {
-			contextLogger.With(zap.Int("port", port)).Debugf("detected open port %v", port)
+			contextLogger.With(slog.Int("port", port)).Debugf("detected open port %v", port)
 			result = append(
 				result,
 				PortscannerResult{

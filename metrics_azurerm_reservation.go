@@ -1,13 +1,13 @@
 package main
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 // Define MetricsCollectorAzureRmReservation struct
@@ -106,11 +106,11 @@ func (m *MetricsCollectorAzureRmReservation) Reset() {}
 
 func (m *MetricsCollectorAzureRmReservation) Collect(callback chan<- func()) {
 	for _, scope := range Config.Collectors.Reservation.Scopes {
-		m.collectReservationUsage(logger, scope, callback)
+		m.collectReservationUsage(m.Logger(), scope, callback)
 	}
 }
 
-func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap.SugaredLogger, scope string, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *slog.Logger, scope string, callback chan<- func()) {
 	reservationInfo := m.Collector.GetMetricList("reservationInfo")
 	reservationUsage := m.Collector.GetMetricList("reservationUsage")
 	reservationMinUsage := m.Collector.GetMetricList("reservationMinUsage")
@@ -128,7 +128,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 
 	clientFactory, err := armconsumption.NewClientFactory("<subscription-id>", AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	// Create a pager to retrieve daily booking summaries
@@ -144,7 +144,7 @@ func (m *MetricsCollectorAzureRmReservation) collectReservationUsage(logger *zap
 	for pager.More() {
 		page, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		for _, reservationProperties := range page.Value {

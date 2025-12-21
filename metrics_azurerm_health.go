@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log/slog"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resourcehealth/armresourcehealth"
@@ -10,7 +11,6 @@ import (
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmHealth struct {
@@ -75,18 +75,18 @@ func (m *MetricsCollectorAzureRmHealth) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmHealth) Reset() {}
 
 func (m *MetricsCollectorAzureRmHealth) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 		m.collectSubscription(subscription, logger, callback)
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }
 
-func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armresourcehealth.NewAvailabilityStatusesClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	resourceHealthMetric := m.Collector.GetMetricList("resourceHealth")
@@ -100,7 +100,7 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 	for pager.More() {
 		result, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		if result.Value == nil {
@@ -144,16 +144,16 @@ func (m *MetricsCollectorAzureRmHealth) collectSubscription(subscription *armsub
 						if resourceHealthData, err := json.Marshal(resourceHealth); err == nil {
 							err := json.Unmarshal(resourceHealthData, &resourceHealthLogObject)
 							if err != nil {
-								m.Logger().Warnf("unable to convert resourcehealth to json: %v", err.Error())
+								logger.Warn("unable to convert resourcehealth to json", slog.Any("error", err))
 							}
 						}
 
-						m.Logger().With(
-							zap.String("subscriptionID", azureResource.Subscription),
-							zap.String("resourceID", stringToStringLower(resourceId)),
-							zap.String("resourceGroup", azureResource.ResourceGroup),
-							zap.String("availabilityState", stringToStringLower(string(availabilityState))),
-							zap.Any("resourceHealth", resourceHealthLogObject),
+						logger.With(
+							slog.String("subscriptionID", azureResource.Subscription),
+							slog.String("resourceID", stringToStringLower(resourceId)),
+							slog.String("resourceGroup", azureResource.ResourceGroup),
+							slog.String("availabilityState", stringToStringLower(string(availabilityState))),
+							slog.Any("resourceHealth", resourceHealthLogObject),
 						).Info("unhealthy resource detected")
 
 						if Config.Collectors.ResourceHealth.SummaryMaxLength > 0 {

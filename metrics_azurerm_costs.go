@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,7 +18,6 @@ import (
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 
 	"github.com/webdevops/azure-resourcemanager-exporter/config"
 	metrics "github.com/webdevops/azure-resourcemanager-exporter/policy"
@@ -125,9 +125,9 @@ func (m *MetricsCollectorAzureRmCosts) Collect(callback chan<- func()) {
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.CollectorCostsQuery, exportType armcostmanagement.ExportType, callback chan<- func()) {
-	queryLogger := logger.With(zap.String("query", query.Name))
+	queryLogger := m.Logger().With(slog.String("query", query.Name))
 	for _, timeframe := range query.TimeFrames {
-		timeframeLogger := queryLogger.With(zap.String("timeframe", timeframe))
+		timeframeLogger := queryLogger.With(slog.String("timeframe", timeframe))
 		if query.Scopes != nil && len(*query.Scopes) > 0 {
 			// using custom scope
 			for _, scope := range *query.Scopes {
@@ -148,8 +148,8 @@ func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.Collect
 				iterator = armclient.NewSubscriptionIterator(AzureClient, *query.Subscriptions...)
 			}
 
-			err := iterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
-				subscriptionLogger := timeframeLogger.With(zap.String("subscriptionID", *subscription.SubscriptionID))
+			err := iterator.ForEach(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
+				subscriptionLogger := timeframeLogger.With(slog.String("subscriptionID", *subscription.SubscriptionID))
 				m.collectCostManagementMetrics(
 					subscriptionLogger,
 					m.Collector.GetMetricList(fmt.Sprintf(`query:%v`, query.Name)),
@@ -162,14 +162,14 @@ func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.Collect
 
 			})
 			if err != nil {
-				m.Logger().Panic(err)
+				panic(err)
 			}
 		}
 	}
 }
 
-func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.SugaredLogger, metricList *collector.MetricList, scope string, exportType armcostmanagement.ExportType, query *config.CollectorCostsQuery, timeframe string, subscription *armsubscriptions.Subscription) {
-	logger.Infof(`fetching cost report for query "%v"`, query.Name)
+func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *slog.Logger, metricList *collector.MetricList, scope string, exportType armcostmanagement.ExportType, query *config.CollectorCostsQuery, timeframe string, subscription *armsubscriptions.Subscription) {
+	logger.Info(`fetching cost report for query`, slog.String("query", query.Name))
 
 	queryConfig := query.GetConfig()
 
@@ -191,7 +191,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 				dimensionConfig.Name = dimensionParts[1]
 				dimensionConfig.ResultColumnName = "TagValue"
 			default:
-				logger.Fatalf(`cost dimension %v is not supported`, dimension)
+				panic(fmt.Errorf(`cost dimension %v is not supported`, dimension))
 			}
 		}
 
@@ -229,8 +229,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	}
 
 	if timeframe == "Custom" && (timePeriod.From == nil || timePeriod.To == nil) {
-		logger.Panic("If custom, then a specific time period must be provided.")
-		return
+		panic("if custom, then a specific time period must be provided.")
 	}
 
 	timeframeType := armcostmanagement.TimeframeType(timeframe)
@@ -260,12 +259,12 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 
 	result, err := m.sendCostQuery(m.Context(), logger, scope, params)
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	if result.Properties == nil || result.Properties.Columns == nil || result.Properties.Rows == nil {
 		// no result
-		logger.Warnln("got invalid response (no columns or rows)")
+		logger.Warn("got invalid response (no columns or rows)")
 		return
 	}
 
@@ -306,13 +305,13 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 
 	// check if we detected all columns
 	if columnNumberCost == -1 || columnNumberCurrency == -1 {
-		logger.Warnln("unable to detect columns")
+		logger.Warn("unable to detect columns")
 		return
 	}
 
 	for _, dimensionConfig := range dimensionList {
 		if dimensionConfig.ResultColumnNumber == -1 {
-			logger.Warnf(`unable to detect column "%s"`, dimensionConfig.Name)
+			logger.Warn(`unable to detect column`, slog.String("dimension", dimensionConfig.Name))
 			return
 		}
 	}
@@ -343,14 +342,14 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 			case float64:
 				datetime, err := time.Parse("20060102", strconv.FormatFloat(v, 'g', 8, 64))
 				if err != nil {
-					logger.Errorf("Can't parse date %d", v)
+					logger.Error("cannot parse date", slog.Any("date", v))
 				}
 				date = datetime.Unix()
 				dateISO = datetime.Format(time.RFC3339)
 			case string:
 				datetime, err := time.Parse("2006-01-02T00:00:00", v)
 				if err != nil {
-					logger.Errorf("Can't parse date %s", v)
+					logger.Error("cannot parse date %s", slog.Any("date", v))
 				}
 				date = datetime.Unix()
 				dateISO = datetime.Format(time.RFC3339)
@@ -399,7 +398,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *zap.
 	time.Sleep(Config.Collectors.Costs.RequestDelay)
 }
 
-func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger *zap.SugaredLogger, scope string, parameters armcostmanagement.QueryDefinition) (armcostmanagement.QueryClientUsageResponse, error) {
+func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger *slog.Logger, scope string, parameters armcostmanagement.QueryDefinition) (armcostmanagement.QueryClientUsageResponse, error) {
 	clientOpts := AzureClient.NewArmClientOptions()
 
 	// Initialize the client with appropriate retry options.
@@ -412,18 +411,18 @@ func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger
 
 	client, err := armcostmanagement.NewQueryClient(AzureClient.GetCred(), clientOpts)
 	if err != nil {
-		logger.Panic(err.Error())
+		panic(err.Error())
 	}
 
 	result, err := client.Usage(ctx, scope, parameters, nil)
 	if err != nil {
-		logger.Panic(err.Error())
+		panic(err.Error())
 	}
 
 	// Set up the pipeline for paging.
 	pl, err := armruntime.NewPipeline("azurerm-costs", gitTag, AzureClient.GetCred(), runtime.PipelineOptions{}, AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err.Error())
+		panic(err.Error())
 	}
 
 	nextLink := result.Properties.NextLink
@@ -449,10 +448,10 @@ func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger
 					retryAfterHeader := resp.Header.Get("X-Ms-Ratelimit-Microsoft.costmanagement-Entity-Retry-After")
 					retryAfter, err := strconv.Atoi(retryAfterHeader)
 					if err != nil {
-						logger.Errorf("Unable to parse retry-after header: %v", retryAfterHeader)
+						logger.Error("unable to parse retry-after header", slog.String("retryAfter", retryAfterHeader), slog.Any("error", err))
 						return fmt.Errorf("unable to parse retry-after header: %v", retryAfterHeader)
 					}
-					logger.Errorf("Received 429 Too Many Requests. Retrying after %d seconds. Headers: %v", retryAfter, resp.Header)
+					logger.Error("received 429 Too Many Requests, will retry after pausing", slog.Duration("retryAfter", time.Duration(retryAfter)), slog.Any("headers", resp.Header))
 					time.Sleep(time.Duration(retryAfter) * time.Second)
 					return fmt.Errorf("received 429 Too Many Requests, retrying after %d seconds", retryAfter)
 				}
@@ -463,7 +462,7 @@ func (m *MetricsCollectorAzureRmCosts) sendCostQuery(ctx context.Context, logger
 						result.Properties.Rows = append(result.Properties.Rows, pagerResult.Properties.Rows...)
 						nextLink = pagerResult.Properties.NextLink
 					} else {
-						logger.Panic(err.Error())
+						panic(err.Error())
 					}
 				} else {
 					return fmt.Errorf("unexpected status code: %v", resp.StatusCode)

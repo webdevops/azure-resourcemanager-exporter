@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"strings"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmDefender struct {
@@ -112,20 +112,20 @@ func (m *MetricsCollectorAzureRmDefender) Setup(collector *collector.Collector) 
 func (m *MetricsCollectorAzureRmDefender) Reset() {}
 
 func (m *MetricsCollectorAzureRmDefender) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 		m.collectAzureSecureScore(subscription, logger, callback)
 		m.collectAzureSecurityCompliance(subscription, logger, callback)
 		m.collectAzureAdvisorRecommendations(subscription, logger, callback)
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }
 
-func (m *MetricsCollectorAzureRmDefender) collectAzureSecureScore(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmDefender) collectAzureSecureScore(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armsecurity.NewSecureScoresClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	secureScorePercentageMetrics := m.Collector.GetMetricList("defenderSecureScorePercentage")
@@ -136,7 +136,7 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureSecureScore(subscription *
 	for pager.More() {
 		result, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		for _, secureScore := range result.Value {
@@ -151,10 +151,10 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureSecureScore(subscription *
 	}
 }
 
-func (m *MetricsCollectorAzureRmDefender) collectAzureSecurityCompliance(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmDefender) collectAzureSecurityCompliance(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armsecurity.NewCompliancesClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	complianceMetric := m.Collector.GetMetricList("defenderComplianceScore")
@@ -167,7 +167,7 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureSecurityCompliance(subscri
 	for pager.More() {
 		result, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		if result.Value == nil {
@@ -186,7 +186,7 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureSecurityCompliance(subscri
 	if lastReportName != "" {
 		report, err := client.Get(m.Context(), *subscription.ID, lastReportName, nil)
 		if err != nil {
-			logger.Error(err)
+			logger.Error(err.Error())
 			return
 		}
 
@@ -206,10 +206,10 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureSecurityCompliance(subscri
 	}
 }
 
-func (m *MetricsCollectorAzureRmDefender) collectAzureAdvisorRecommendations(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmDefender) collectAzureAdvisorRecommendations(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armadvisor.NewRecommendationsClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	recommendationMetrics := m.Collector.GetMetricList("defenderAdvisorRecommendations")
@@ -218,7 +218,7 @@ func (m *MetricsCollectorAzureRmDefender) collectAzureAdvisorRecommendations(sub
 	for pager.More() {
 		result, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		for _, recommendation := range result.Value {

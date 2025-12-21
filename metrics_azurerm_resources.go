@@ -1,12 +1,13 @@
 package main
 
 import (
+	"log/slog"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmResources struct {
@@ -62,20 +63,20 @@ func (m *MetricsCollectorAzureRmResources) Setup(collector *collector.Collector)
 func (m *MetricsCollectorAzureRmResources) Reset() {}
 
 func (m *MetricsCollectorAzureRmResources) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 		m.collectAzureResourceGroup(subscription, logger, callback)
 		m.collectAzureResources(subscription, logger, callback)
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }
 
 // Collect Azure ResourceGroup metrics
-func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	list, err := AzureClient.ListResourceGroups(m.Context(), *subscription.SubscriptionID)
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	infoMetric := m.Collector.GetMetricList("resourceGroup")
@@ -97,10 +98,10 @@ func (m *MetricsCollectorAzureRmResources) collectAzureResourceGroup(subscriptio
 	}
 }
 
-func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmResources) collectAzureResources(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	list, err := AzureClient.ListResources(m.Context(), *subscription.SubscriptionID)
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	resourceMetric := m.Collector.GetMetricList("resource")

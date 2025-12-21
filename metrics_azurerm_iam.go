@@ -1,13 +1,14 @@
 package main
 
 import (
+	"log/slog"
+
 	armauthorization "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/azuresdk/armclient"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmIam struct {
@@ -84,19 +85,19 @@ func (m *MetricsCollectorAzureRmIam) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmIam) Reset() {}
 
 func (m *MetricsCollectorAzureRmIam) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 		m.collectRoleDefinitions(subscription, logger, callback)
 		m.collectRoleAssignments(subscription, logger, callback)
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	client, err := armauthorization.NewRoleDefinitionsClient(AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	infoMetric := m.Collector.GetMetricList("roleDefinition")
@@ -106,7 +107,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsub
 	for pager.More() {
 		result, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		if result.Value == nil {
@@ -129,12 +130,12 @@ func (m *MetricsCollectorAzureRmIam) collectRoleDefinitions(subscription *armsub
 	}
 }
 
-func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger, callback chan<- func()) {
+func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsubscriptions.Subscription, logger *slog.Logger, callback chan<- func()) {
 	principalIdMap := map[string]string{}
 
 	client, err := armauthorization.NewRoleAssignmentsClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	infoMetric := m.Collector.GetMetricList("roleAssignment")
@@ -147,7 +148,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsub
 	for pager.More() {
 		result, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		if result.Value == nil {
@@ -182,7 +183,7 @@ func (m *MetricsCollectorAzureRmIam) collectRoleAssignments(subscription *armsub
 
 	principalList, err := MsGraphClient.LookupPrincipalID(m.Context(), principalIdList...)
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	for _, principal := range principalList {

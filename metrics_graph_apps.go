@@ -84,7 +84,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 	}
 	result, err := MsGraphClient.ServiceClient().Applications().Get(m.Context(), &opts)
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 
 	appMetrics := m.Collector.GetMetricList("app")
@@ -93,7 +93,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 
 	i, err := msgraphcore.NewPageIterator[models.Applicationable](result, MsGraphClient.RequestAdapter(), models.CreateApplicationCollectionResponseFromDiscriminatorValue)
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 
 	err = i.Iterate(m.Context(), func(application models.Applicationable) bool {
@@ -163,6 +163,6 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 		return true
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }
