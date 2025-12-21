@@ -34,6 +34,13 @@ collectors:
   quota:
     scrapeTime: 5m
 
+    resourceProviders:
+      - Microsoft.App
+      - Microsoft.Compute
+      - Microsoft.Network
+      - Microsoft.Storage
+      - Microsoft.MachineLearningServices
+
   # Azure Advisor recommendations
   advisor:
     scrapeTime: 5m

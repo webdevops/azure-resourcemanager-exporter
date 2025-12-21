@@ -11,7 +11,7 @@ type (
 		Collectors struct {
 			General        CollectorBase           `json:"general"`
 			Resource       CollectorBase           `json:"resource"`
-			Quota          CollectorBase           `json:"quota"`
+			Quota          CollectorQuota          `json:"quota"`
 			Advisor        CollectorAdvisor        `json:"advisor"`
 			Defender       CollectorBase           `json:"defender"`
 			ResourceHealth CollectorResourceHealth `json:"resourceHealth"`
@@ -37,6 +37,10 @@ type (
 		// Cron *string
 	}
 )
+
+func (c *CollectorBase) Validate() []error {
+	return nil
+}
 
 func (c *CollectorBase) IsEnabled() bool {
 	if c == nil {
