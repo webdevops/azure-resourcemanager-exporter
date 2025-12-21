@@ -283,17 +283,19 @@ func initMetricCollector() {
 
 	collectorName = "advisor"
 	if Config.Collectors.Advisor.IsEnabled() {
-		c := collector.New(collectorName, &MetricsCollectorAzureRmAdvisor{}, logger)
+		c := collector.New(collectorName, &MetricsCollectorAzureRmAdvisor{}, logger.Slog())
 		c.SetScapeTime(*Config.Collectors.Advisor.ScrapeTime)
-		c.SetCache(
+		if err := c.SetCache(
 			Opts.GetCachePath(collectorName+".json"),
 			collector.BuildCacheTag(cacheTag, Config.Azure, Config.Collectors.Advisor),
-		)
+		); err != nil {
+			logger.Fatal(err.Error())
+		}
 		if err := c.Start(); err != nil {
 			logger.Fatal(err.Error())
 		}
 	} else {
-		logger.With(zap.String("collector", collectorName)).Infof("collector disabled")
+		logger.With(slog.String("collector", collectorName)).Infof("collector disabled")
 	}
 
 	collectorName = "defender"

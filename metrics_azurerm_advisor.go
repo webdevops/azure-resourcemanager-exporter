@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/advisor/armadvisor"
@@ -8,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/webdevops/go-common/prometheus/collector"
 	"github.com/webdevops/go-common/utils/to"
-	"go.uber.org/zap"
 )
 
 type MetricsCollectorAzureRmAdvisor struct {
@@ -45,18 +45,18 @@ func (m *MetricsCollectorAzureRmAdvisor) Setup(collector *collector.Collector) {
 func (m *MetricsCollectorAzureRmAdvisor) Reset() {}
 
 func (m *MetricsCollectorAzureRmAdvisor) Collect(callback chan<- func()) {
-	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 		m.collectAzureAdvisorRecommendations(subscription, logger)
 	})
 	if err != nil {
-		m.Logger().Panic(err)
+		panic(err)
 	}
 }
 
-func (m *MetricsCollectorAzureRmAdvisor) collectAzureAdvisorRecommendations(subscription *armsubscriptions.Subscription, logger *zap.SugaredLogger) {
+func (m *MetricsCollectorAzureRmAdvisor) collectAzureAdvisorRecommendations(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 	client, err := armadvisor.NewRecommendationsClient(*subscription.SubscriptionID, AzureClient.GetCred(), AzureClient.NewArmClientOptions())
 	if err != nil {
-		logger.Panic(err)
+		panic(err)
 	}
 
 	// Generate recommendations first (async operation)
@@ -64,7 +64,7 @@ func (m *MetricsCollectorAzureRmAdvisor) collectAzureAdvisorRecommendations(subs
 	// so newly generated recommendations will be available in the next scrape cycle.
 	_, err = client.Generate(m.Context(), nil)
 	if err != nil {
-		logger.Warnf("failed to generate recommendations for subscription %s: %v", to.StringLower(subscription.SubscriptionID), err)
+		logger.Warn("failed to generate recommendations for subscription", slog.String("subscriptionID", to.StringLower(subscription.SubscriptionID)), slog.Any("error", err))
 	}
 
 	recommendationMetrics := m.Collector.GetMetricList("advisorRecommendation")
@@ -73,7 +73,7 @@ func (m *MetricsCollectorAzureRmAdvisor) collectAzureAdvisorRecommendations(subs
 	for pager.More() {
 		result, err := pager.NextPage(m.Context())
 		if err != nil {
-			logger.Panic(err)
+			panic(err)
 		}
 
 		for _, recommendation := range result.Value {
