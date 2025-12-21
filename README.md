@@ -102,6 +102,7 @@ This exporter needs `Reader` permissions on subscription level.
 | `azurerm_publicip_info`                     | Portscan   | Azure PublicIP information                                                                   |
 | `azurerm_publicip_portscan_status`          | Portscan   | Status of scanned ports (finished scan, elapsed time, updated timestamp)                     |
 | `azurerm_publicip_portscan_port`            | Portscan   | List of opened ports per IP                                                                  |
+| `azurerm_advisor_recommendation`            | Advisor    | Azure Advisor recommendation    |
 
 ### ResourceTags handling
 
@@ -114,4 +115,3 @@ see [armclient tracing documentation](https://github.com/webdevops/go-common/blo
 ### Caching
 
 see [prometheus collector cache documentation](https://github.com/webdevops/go-common/blob/main/prometheus/README.md#caching)
-

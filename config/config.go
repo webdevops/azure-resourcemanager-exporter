@@ -12,6 +12,7 @@ type (
 			General        CollectorBase           `json:"general"`
 			Resource       CollectorBase           `json:"resource"`
 			Quota          CollectorBase           `json:"quota"`
+			Advisor        CollectorAdvisor        `json:"advisor"`
 			Defender       CollectorBase           `json:"defender"`
 			ResourceHealth CollectorResourceHealth `json:"resourceHealth"`
 			Iam            CollectorBase           `json:"iam"`
