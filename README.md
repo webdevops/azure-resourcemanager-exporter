@@ -77,6 +77,7 @@ This exporter needs `Reader` permissions on subscription level.
 | `azurerm_costs_budget_limit`                | Costs      | Limit of CostManagemnet budget                                                               |
 | `azurerm_costs_budget_usage`                | Costs      | Percentage of usage of CostManagemnet budget                                                 |
 | `azurerm_costs_{queryName}`                 | Costs      | Costs query result (see `example.yaml`)                                                      |
+| `azurerm_costs_metric_timestamp_seconds`    | Costs      | Timestamp of last update per cost query                                                      |
 | `azurerm_subscription_info`                 | General    | Azure Subscription details (ID, name, ...)                                                   |
 | `azurerm_resource_health`                   | Health     | Azure Resource health information                                                            |
 | `azurerm_iam_roleassignment_info`           | IAM        | Azure IAM RoleAssignment information                                                         |
@@ -103,7 +104,7 @@ This exporter needs `Reader` permissions on subscription level.
 | `azurerm_publicip_info`                     | Portscan   | Azure PublicIP information                                                                   |
 | `azurerm_publicip_portscan_status`          | Portscan   | Status of scanned ports (finished scan, elapsed time, updated timestamp)                     |
 | `azurerm_publicip_portscan_port`            | Portscan   | List of opened ports per IP                                                                  |
-| `azurerm_advisor_recommendation`            | Advisor    | Azure Advisor recommendation    |
+| `azurerm_advisor_recommendation`            | Advisor    | Azure Advisor recommendation                                                                 |
 
 ### ResourceTags handling
 

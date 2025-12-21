@@ -30,6 +30,10 @@ const (
 type (
 	MetricsCollectorAzureRmCosts struct {
 		collector.Processor
+
+		prometheus struct {
+			lastUpdate *prometheus.GaugeVec
+		}
 	}
 
 	MetricsCollectorAzureRmCostsQuery struct {
@@ -55,6 +59,19 @@ type (
 
 func (m *MetricsCollectorAzureRmCosts) Setup(collector *collector.Collector) {
 	m.Processor.Setup(collector)
+
+	// ----------------------------------------------------
+	// Last update
+	m.prometheus.lastUpdate = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_costs_metric_timestamp_seconds",
+			Help: "Azure ResourceManager cost query last update timestamp budget info",
+		},
+		[]string{
+			"metric",
+		},
+	)
+	m.Collector.RegisterMetricList("lastUpdate", m.prometheus.lastUpdate, true)
 
 	// ----------------------------------------------------
 	// Costs (by Query)
@@ -159,13 +176,14 @@ func (m *MetricsCollectorAzureRmCosts) collectRunCostQuery(query *config.Collect
 					timeframe,
 					subscription,
 				)
-
 			})
 			if err != nil {
 				panic(err)
 			}
 		}
 	}
+
+	m.Collector.GetMetricList("lastUpdate").AddTime(prometheus.Labels{"metric": query.GetMetricName()}, time.Now())
 }
 
 func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *slog.Logger, metricList *collector.MetricList, scope string, exportType armcostmanagement.ExportType, query *config.CollectorCostsQuery, timeframe string, subscription *armsubscriptions.Subscription) {
