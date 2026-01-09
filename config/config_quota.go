@@ -4,6 +4,11 @@ type (
 	CollectorQuota struct {
 		*CollectorBase `yaml:",inline"`
 
-		ResourceProviders []string `json:"resourceProviders"`
+		ResourceProviders []CollectorQuotaResourceProvider `json:"resourceProviders"`
+	}
+
+	CollectorQuotaResourceProvider struct {
+		Provider   string `json:"provider"`
+		ApiVersion string `json:"apiVersion"`
 	}
 )

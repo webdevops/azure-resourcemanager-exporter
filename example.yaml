@@ -35,11 +35,11 @@ collectors:
     scrapeTime: 5m
 
     resourceProviders:
-      - Microsoft.App
-      - Microsoft.Compute
-      - Microsoft.Network
-      - Microsoft.Storage
-      - Microsoft.MachineLearningServices
+      - {provider: Microsoft.App, apiVersion: "2025-06-01"}
+      - {provider: Microsoft.Compute, apiVersion: "2025-04-01"}
+      - {provider: Microsoft.Network, apiVersion: "2025-05-01"}
+      - {provider: Microsoft.Storage, apiVersion: "2025-06-01"}
+      - {provider: Microsoft.MachineLearningServices, apiVersion: "2025-06-01"}
 
   # Azure Advisor recommendations
   advisor:
