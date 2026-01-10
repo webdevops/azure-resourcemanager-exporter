@@ -262,7 +262,7 @@ func (m *MetricsCollectorAzureRmCosts) collectCostManagementMetrics(logger *slog
 				},
 			},
 			Configuration: nil,
-			Filter:        nil,
+			Filter:        query.Filter,
 			Granularity:   &granularity,
 			Grouping:      queryGrouping,
 		},

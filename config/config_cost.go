@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/costmanagement/armcostmanagement"
 )
 
 type (
@@ -23,6 +25,7 @@ type (
 		TimeFrames    []string                       `json:"timeFrames"`
 		Dimensions    []string                       `json:"dimensions"`
 		ExportType    string                         `json:"exportType"`
+		Filter        *armcostmanagement.QueryFilter `json:"filter"`
 		Granularity   string                         `json:"granularity"`
 		ValueField    string                         `json:"valueField"`
 		Labels        map[string]string              `json:"labels"`
