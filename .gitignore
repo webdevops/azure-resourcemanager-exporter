@@ -2,3 +2,4 @@
 /azure-resourcemanager-exporter*
 /release-assets
 /.vscode
+/example.dev.yaml

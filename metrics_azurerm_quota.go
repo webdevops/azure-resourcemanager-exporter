@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -198,6 +197,33 @@ func (m *MetricsCollectorAzureRmQuota) collectQuotaUsage(subscription *armsubscr
 	quotaLimitMetric := m.Collector.GetMetricList("quotaLimit")
 	quotaUsageMetric := m.Collector.GetMetricList("quotaUsage")
 
+	if provider.ApiVersion == "" || strings.EqualFold(provider.ApiVersion, "auto") {
+		provider.ApiVersion = ""
+
+		// lookup api version
+		providerInfo, err := AzureClient.GetResourceProvider(m.Context(), *subscription.SubscriptionID, provider.Provider)
+		if err != nil {
+			logger.Error("failed to lookup Azure resource provider", slog.Any("error", err))
+			panic(err)
+		}
+
+		if providerInfo != nil {
+			for _, providerResource := range providerInfo.ResourceTypes {
+				if to.String(providerResource.DefaultAPIVersion) != "" {
+					provider.ApiVersion = to.String(providerResource.DefaultAPIVersion)
+					break
+				}
+			}
+		}
+
+		if provider.ApiVersion == "" {
+			logger.Error("failed to lookup Azure resource provider apiVersion")
+			panic("failed to lookup Azure resource provider apiVersion")
+		}
+	}
+
+	logger = logger.With(slog.String("apiVersion", provider.ApiVersion))
+
 	options := AzureClient.NewArmClientOptions()
 	ep := cloud.AzurePublic.Services[cloud.ResourceManager].Endpoint
 	if c, ok := options.Cloud.Services[cloud.ResourceManager]; ok {
@@ -215,8 +241,8 @@ func (m *MetricsCollectorAzureRmQuota) collectQuotaUsage(subscription *armsubscr
 	urlPath = strings.ReplaceAll(urlPath, "{provider}", url.PathEscape(provider.Provider))
 	urlPath = strings.ReplaceAll(urlPath, "{location}", url.PathEscape(location))
 
+	logger.Info("fetch resource usage and quota")
 	requestUrl := runtime.JoinPaths(ep, urlPath)
-	fmt.Println(requestUrl)
 	for {
 		req, err := runtime.NewRequest(m.Context(), http.MethodGet, requestUrl)
 		if err != nil {

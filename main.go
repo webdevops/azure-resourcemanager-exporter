@@ -102,7 +102,7 @@ func initArgparser() {
 func initConfig() {
 	var err error
 
-	err = yaml.UnmarshalWithOptions(defaultConfig, &Config, yaml.Strict())
+	err = yaml.UnmarshalWithOptions(defaultConfig, &Config, yaml.Strict(), yaml.UseJSONUnmarshaler())
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
@@ -114,7 +114,7 @@ func initConfig() {
 		logger.Fatal(err.Error())
 	}
 
-	err = yaml.UnmarshalWithOptions(content, &Config, yaml.Strict())
+	err = yaml.UnmarshalWithOptions(content, &Config, yaml.Strict(), yaml.UseJSONUnmarshaler())
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
