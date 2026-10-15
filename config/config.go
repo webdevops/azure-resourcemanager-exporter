@@ -9,18 +9,18 @@ type (
 	Config struct {
 		Azure      Azure `json:"azure"`
 		Collectors struct {
-			General        CollectorBase           `json:"general"`
-			Resource       CollectorBase           `json:"resource"`
-			Quota          CollectorQuota          `json:"quota"`
-			Advisor        CollectorAdvisor        `json:"advisor"`
-			Defender       CollectorBase           `json:"defender"`
-			ResourceHealth CollectorResourceHealth `json:"resourceHealth"`
-			Iam            CollectorBase           `json:"iam"`
-			Graph          CollectorGraph          `json:"graph"`
-			Costs          CollectorCosts          `json:"costs"`
-			Budgets        CollectorBudgets        `json:"budgets"`
-			Reservation    CollectorReservation    `json:"reservation"`
-			Portscan       CollectorPortscan       `json:"portscan"`
+			General        *CollectorBase           `json:"general"`
+			Resource       *CollectorBase           `json:"resource"`
+			Quota          *CollectorQuota          `json:"quota"`
+			Advisor        *CollectorAdvisor        `json:"advisor"`
+			Defender       *CollectorBase           `json:"defender"`
+			ResourceHealth *CollectorResourceHealth `json:"resourceHealth"`
+			Iam            *CollectorBase           `json:"iam"`
+			Graph          *CollectorGraph          `json:"graph"`
+			Costs          *CollectorCosts          `json:"costs"`
+			Budgets        *CollectorBudgets        `json:"budgets"`
+			Reservation    *CollectorReservation    `json:"reservation"`
+			Portscan       *CollectorPortscan       `json:"portscan"`
 		} `json:"collectors"`
 	}
 
@@ -36,10 +36,20 @@ type (
 		ScrapeTime *time.Duration `json:"scrapeTime"`
 		// Cron *string
 	}
+
+	CollectorBaseInterface interface {
+		Validate() []error
+		IsEnabled() bool
+		GetScrapeTime() time.Duration
+	}
 )
 
 func (c *CollectorBase) Validate() []error {
 	return nil
+}
+
+func (c *CollectorBase) GetScrapeTime() time.Duration {
+	return *c.ScrapeTime
 }
 
 func (c *CollectorBase) IsEnabled() bool {
