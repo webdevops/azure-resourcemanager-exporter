@@ -35,7 +35,7 @@ collectors:
     scrapeTime: 5m
 
     resourceProviders:
-      - Microsoft.App # simple version, uses auto detected apiVersion
+      - Microsoft.App # simple version, uses auto-detected apiVersion (stable version over preview)
       - {provider: Microsoft.Compute, apiVersion: "auto"} # full version
       - {provider: Microsoft.Network, apiVersion: "auto"}
       - {provider: Microsoft.Storage, apiVersion: "auto"}

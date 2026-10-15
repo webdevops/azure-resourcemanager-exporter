@@ -207,12 +207,35 @@ func (m *MetricsCollectorAzureRmQuota) collectQuotaUsage(subscription *armsubscr
 			panic(err)
 		}
 
+		// try to find a good apiVersion, use stable over preview
 		if providerInfo != nil {
+			apiVersionStable := ""
+			apiVersionPreview := ""
 			for _, providerResource := range providerInfo.ResourceTypes {
 				if to.String(providerResource.DefaultAPIVersion) != "" {
-					provider.ApiVersion = to.String(providerResource.DefaultAPIVersion)
-					break
+					val := to.String(providerResource.DefaultAPIVersion)
+					if strings.Contains(val, "-preview") {
+						if apiVersionPreview == "" {
+							apiVersionPreview = val
+						}
+
+					} else {
+						if apiVersionStable == "" {
+							apiVersionStable = val
+						}
+					}
+
+					if apiVersionPreview != "" && apiVersionStable != "" {
+						break
+					}
 				}
+			}
+
+			// set detected apiversion
+			if apiVersionStable != "" {
+				provider.ApiVersion = apiVersionStable
+			} else if apiVersionPreview != "" {
+				provider.ApiVersion = apiVersionPreview
 			}
 		}
 
