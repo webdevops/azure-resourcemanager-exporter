@@ -106,21 +106,17 @@ func (m *MetricsCollectorAzureRmQuota) Collect(callback chan<- func()) {
 	err := AzureSubscriptionsIterator.ForEachAsync(m.Logger(), func(subscription *armsubscriptions.Subscription, logger *slog.Logger) {
 		m.collectAuthorizationUsage(subscription, logger, callback)
 
-		if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, "Microsoft.Capacity"); registered {
-			for _, provider := range Config.Collectors.Quota.ResourceProviders {
-				if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, provider.Provider); registered {
+		for _, provider := range Config.Collectors.Quota.ResourceProviders {
+			if registered, err := AzureClient.IsResourceProviderRegistered(m.Context(), *subscription.SubscriptionID, provider.Provider); registered {
 
-					for _, location := range Config.Azure.Locations {
-						quotaLogger := logger.With(slog.String("provider", provider.Provider), slog.String("location", location))
-						m.collectQuotaUsage(subscription, provider, location, quotaLogger, callback)
-					}
-
-				} else if err != nil {
-					logger.Error("quota for resourceProvider requested, but not registered", slog.String("resourceProvider", provider.Provider), slog.Any("error", err))
+				for _, location := range Config.Azure.Locations {
+					quotaLogger := logger.With(slog.String("provider", provider.Provider), slog.String("location", location))
+					m.collectQuotaUsage(subscription, provider, location, quotaLogger, callback)
 				}
+
+			} else if err != nil {
+				logger.Error("quota for resourceProvider requested, but not registered", slog.String("resourceProvider", provider.Provider), slog.Any("error", err))
 			}
-		} else if err != nil {
-			logger.Error("resourceProvider Microsoft.Capacity is needed for quotas", slog.Any("error", err))
 		}
 	})
 	if err != nil {
