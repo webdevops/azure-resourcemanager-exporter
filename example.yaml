@@ -146,6 +146,8 @@ collectors:
     # for BillingProfile scope (modern).
     #
     # see https://learn.microsoft.com/en-us/rest/api/consumption/reservations-summaries/list?view=rest-consumption-2023-05-01&tabs=HTTP
+    #
+    # If no scopes are set, the exporter will only collect Expiry Time and Provisioning State metrics
     scopes: []
 
     granularity: daily # or monthly

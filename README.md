@@ -65,7 +65,7 @@ This exporter is using Azure ResourceGraph queries and not wasting Azure API cal
 
 ## Azure permissions
 
-This exporter needs `Reader` permissions on subscription level.
+This exporter needs `Reader` permissions on subscription level. For Metrics about Reservation State and Expiry Time `Reservation Reader` is required.
 
 ## Metrics
 
