@@ -18,8 +18,8 @@ require (
 	github.com/anvie/port-scanner v0.0.0-20180225151059-8159197d3770
 	github.com/goccy/go-yaml v1.19.2
 	github.com/jessevdk/go-flags v1.6.1
-	github.com/microsoft/kiota-abstractions-go v1.11.3
-	github.com/microsoftgraph/msgraph-sdk-go v1.104.0
+	github.com/microsoft/kiota-abstractions-go v1.11.4
+	github.com/microsoftgraph/msgraph-sdk-go v1.105.0
 	github.com/microsoftgraph/msgraph-sdk-go-core v1.4.1
 	github.com/prometheus/client_golang v1.25.0
 	github.com/remeh/sizedwaitgroup v1.0.0
