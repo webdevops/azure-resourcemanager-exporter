@@ -96,6 +96,7 @@ This exporter needs `Reader` permissions on subscription level. For Metrics abou
 | `azurerm_defender_compliance_resources`     | Defender   | Azure Defender count of compliance resource in assessment                                    |
 | `azurerm_defender_advisor_recommendation`   | Defender   | Azure Defender recommendations (eg. security findings)                                       |
 | `azurerm_graph_app_info`                    | Graph      | AzureAD graph application information                                                        |
+| `azurerm_graph_app_access_token_version`    | Graph      | Effective application access token version (1 when unset, 2 for v2) |
 | `azurerm_graph_app_tag`                     | Graph      | AzureAD graph application tag                                                                |
 | `azurerm_graph_app_credential`              | Graph      | AzureAD graph application credentials (create,expiry) information                            |
 | `azurerm_graph_serviceprincipal_info`       | Graph      | AzureAD graph servicePrincipal information                                                   |

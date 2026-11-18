@@ -16,9 +16,10 @@ type MetricsCollectorGraphApps struct {
 	collector.Processor
 
 	prometheus struct {
-		app           *prometheus.GaugeVec
-		appTags       *prometheus.GaugeVec
-		appCredential *prometheus.GaugeVec
+		app                   *prometheus.GaugeVec
+		appTags               *prometheus.GaugeVec
+		appCredential         *prometheus.GaugeVec
+		appAccessTokenVersion *prometheus.GaugeVec
 	}
 }
 
@@ -65,6 +66,15 @@ func (m *MetricsCollectorGraphApps) Setup(collector *collector.Collector) {
 		},
 	)
 	m.Collector.RegisterMetricList("appCredential", m.prometheus.appCredential, true)
+
+	m.prometheus.appAccessTokenVersion = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "azurerm_graph_app_access_token_version",
+			Help: "Effective access token version of the Microsoft Entra application",
+		},
+		[]string{"appAppID"},
+	)
+	m.Collector.RegisterMetricList("appAccessTokenVersion", m.prometheus.appAccessTokenVersion, true)
 }
 
 func (m *MetricsCollectorGraphApps) Reset() {}
@@ -90,6 +100,7 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 	appMetrics := m.Collector.GetMetricList("app")
 	appTagMetrics := m.Collector.GetMetricList("appTag")
 	appCredentialMetrics := m.Collector.GetMetricList("appCredential")
+	appAccessTokenVersionMetrics := m.Collector.GetMetricList("appAccessTokenVersion")
 
 	i, err := msgraphcore.NewPageIterator[models.Applicationable](result, MsGraphClient.RequestAdapter(), models.CreateApplicationCollectionResponseFromDiscriminatorValue)
 	if err != nil {
@@ -105,6 +116,8 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 			"appObjectID":    objId,
 			"appDisplayName": to.String(application.GetDisplayName()),
 		})
+
+		appAccessTokenVersionMetrics.Add(prometheus.Labels{"appAppID": appId}, float64(accessTokenVersion(application.GetApi())))
 
 		for _, tagValue := range application.GetTags() {
 			appTagMetrics.AddInfo(prometheus.Labels{
@@ -165,4 +178,13 @@ func (m *MetricsCollectorGraphApps) Collect(callback chan<- func()) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func accessTokenVersion(api models.ApiApplicationable) int32 {
+	if api != nil {
+		if version := api.GetRequestedAccessTokenVersion(); version != nil {
+			return *version
+		}
+	}
+	return 1
 }
